@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\{Category, PaymentMethod, CashRegister};
+use App\Services\RegisterSessionService;
 use Illuminate\Http\Request;
 
 class RegisterController extends Controller
@@ -15,7 +16,7 @@ class RegisterController extends Controller
     {
         // Récupérer les données nécessaires pour l'initialisation
         $categories = Category::orderBy('name')->get();
-        $paymentMethods = PaymentMethod::active()->ordered()->get();
+        $paymentMethods = PaymentMethod::where('is_active', true)->orderBy('name')->get();
         $cashRegisters = CashRegister::active()->get();
 
         // Vérifier qu'un utilisateur est connecté et a les permissions
@@ -45,7 +46,7 @@ class RegisterController extends Controller
     }
 
     /**
-     * Change la caisse active
+     * Change de caisse
      */
     public function switchCashRegister(Request $request)
     {
@@ -62,7 +63,7 @@ class RegisterController extends Controller
             ], 422);
         }
 
-        session(['current_cash_register_id' => $cashRegister->id]);
+        RegisterSessionService::setCurrentCashRegister($cashRegister->id);
 
         return response()->json([
             'success' => true,
@@ -77,11 +78,11 @@ class RegisterController extends Controller
     public function getSessionInfo()
     {
         $user = auth()->user();
-        $cashRegisterId = session('current_cash_register_id');
+        $cashRegisterId = RegisterSessionService::getCurrentCashRegister();
         $cashRegister = $cashRegisterId ? CashRegister::find($cashRegisterId) : null;
 
         // Récupérer le panier de la session
-        $cart = session('register_cart', []);
+        $cart = RegisterSessionService::getCart();
         $cartCount = collect($cart)->sum('quantity');
 
         return response()->json([
@@ -100,6 +101,39 @@ class RegisterController extends Controller
                 'total_items' => count($cart)
             ],
             'session_id' => session()->getId()
+        ]);
+    }
+
+    /**
+     * Récupère les sessions en attente pour l'utilisateur
+     */
+    public function getPendingSessions()
+    {
+        $sessions = RegisterSessionService::getPendingSessions(auth()->id());
+
+        return response()->json([
+            'success' => true,
+            'sessions' => $sessions
+        ]);
+    }
+
+    /**
+     * Restaure une session
+     */
+    public function restoreSession($sessionId)
+    {
+        $success = RegisterSessionService::restoreSession($sessionId);
+
+        if (!$success) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Session non trouvée ou inaccessible'
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Session restaurée avec succès'
         ]);
     }
 }

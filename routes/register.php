@@ -7,6 +7,8 @@ Route::prefix('register')->name('register.')->group(function () {
     Route::get('/', [RegisterController::class, 'index'])->name('index');
     Route::post('/switch-cash-register', [RegisterController::class, 'switchCashRegister'])->name('switch-cash-register');
     Route::get('/session-info', [RegisterController::class, 'getSessionInfo'])->name('session-info');
+    Route::get('/pending-sessions', [RegisterController::class, 'getPendingSessions'])->name('pending-sessions');
+    Route::post('/restore-session/{sessionId}', [RegisterController::class, 'restoreSession'])->name('restore-session');
 
     Route::prefix('partials')->name('partials.')->group(function () {
 

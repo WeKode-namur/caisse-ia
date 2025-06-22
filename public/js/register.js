@@ -7,8 +7,6 @@ class RegisterManager {
         this.discounts = [];
         this.totals = {};
         this.isProcessing = false;
-
-        this.init();
     }
 
     init() {
@@ -20,6 +18,10 @@ class RegisterManager {
 
     // ===== EVENT LISTENERS =====
     setupEventListeners() {
+        // Protection anti-double attachement
+        if (window.__registerManagerListenersAdded) return;
+        window.__registerManagerListenersAdded = true;
+
         // Bouton payer
         document.addEventListener('click', (e) => {
             if (e.target.closest('#pay-button')) {
@@ -240,21 +242,21 @@ class RegisterManager {
     async loadCart() {
         try {
             const response = await this.request('/register/partials/cart');
-
             const data = await response.json();
 
             if (data.success) {
-                this.cart = data.cart;
-                this.customer = data.customer;
-                this.discounts = data.discounts;
-                this.totals = data.totals;
-
+                this.cart = Object.values(data.cart || {});
+                this.customer = data.customer || null;
+                this.discounts = data.discounts || [];
+                this.totals = data.totals || {};
                 this.renderCart();
                 this.renderTotals();
                 this.renderCustomer();
+            } else {
+                this.showNotification('Erreur lors du chargement du panier', 'error');
             }
         } catch (error) {
-            console.error('Erreur lors du chargement du panier:', error);
+            this.showNotification('Erreur réseau', 'error');
         }
     }
 
@@ -275,7 +277,7 @@ class RegisterManager {
             return;
         }
 
-        cartContainer.innerHTML = this.cart.map(item => `
+        const cartItemsHtml = this.cart.map(item => `
             <div class="border-b dark:border-gray-700 hover:scale-105 duration-300 bg-white dark:bg-gray-800 hover:border hover:shadow-lg p-3 flex gap-6 group">
                 <div class="">
                     <div class="flex items-center gap-3">
@@ -308,47 +310,36 @@ class RegisterManager {
                 </div>
             </div>
         `).join('');
+
+        cartContainer.innerHTML = cartItemsHtml;
     }
 
     renderTotals() {
         const totalsContainer = document.querySelector('.cart-totals');
-        if (!totalsContainer || !this.totals) return;
+        if (!totalsContainer) return;
 
-        totalsContainer.innerHTML = `
-            <table>
-                <tbody class="*:*:px-2 text-gray-500">
-                    <tr>
-                        <td class="text-end">Articles</td>
-                        <td class="font-semibold">${this.totals.items_count || 0}</td>
-                    </tr>
-                    <tr>
-                        <td class="text-end">Prix TVAC</td>
-                        <td class="font-semibold">${this.totals.subtotal || '0.00'}€</td>
-                    </tr>
-                    ${this.totals.discount_amount > 0 ? `
-                    <tr>
-                        <td class="text-end">Remise</td>
-                        <td class="font-semibold text-red-500">-${this.totals.discount_amount}€</td>
-                    </tr>
-                    ` : ''}
-                    <tr class="border-t">
-                        <td class="text-end font-bold">Total</td>
-                        <td class="font-bold text-lg">${this.totals.total || '0.00'}€</td>
-                    </tr>
-                </tbody>
-            </table>
+        const itemsCount = this.totals.items_count || 0;
+        const total = this.totals.total || 0;
+
+        const totalsHtml = `
+            <div class="flex justify-between items-center">
+                <span class="text-sm text-gray-500 dark:text-gray-400">Articles: ${itemsCount}</span>
+                <span class="text-lg font-bold dark:text-white">Prix: ${total.toFixed(2)} €</span>
+            </div>
         `;
+        
+        totalsContainer.innerHTML = totalsHtml;
     }
 
     renderCustomer() {
-        const customerDisplay = document.querySelector('.customer-display');
-        if (!customerDisplay) return;
+        const customerContainer = document.querySelector('.customer-display');
+        if (!customerContainer) return;
 
         // Vérifier si la gestion des clients est activée
         const customerManagementEnabled = window.registerConfig?.customerManagement || false;
 
         if (!customerManagementEnabled) {
-            customerDisplay.innerHTML = `
+            customerContainer.innerHTML = `
                 <div class="p-2 text-center text-gray-500 text-sm">
                     <i class="fas fa-user-slash mr-2"></i>
                     Gestion des clients désactivée
@@ -358,7 +349,7 @@ class RegisterManager {
         }
 
         if (this.customer) {
-            customerDisplay.innerHTML = `
+            customerContainer.innerHTML = `
                 <div class="flex items-center justify-between p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
                     <div>
                         <span class="font-medium">${this.customer.name}</span>
@@ -370,7 +361,7 @@ class RegisterManager {
                 </div>
             `;
         } else {
-            customerDisplay.innerHTML = `
+            customerContainer.innerHTML = `
                 <button onclick="registerManager.selectCustomer()" class="w-full p-2 border border-dashed border-gray-300 rounded text-gray-500 hover:border-blue-500 hover:text-blue-500">
                     + Sélectionner un client
                 </button>
@@ -572,7 +563,9 @@ class RegisterManager {
 }
 
 // Initialiser le gestionnaire de caisse
-let registerManager;
 document.addEventListener('DOMContentLoaded', function() {
-    registerManager = new RegisterManager();
+    if (!window.registerManager) {
+        window.registerManager = new RegisterManager();
+        window.registerManager.init(); // Rendre accessible globalement
+    }
 });

@@ -187,12 +187,10 @@
             }
         }
 
-
-
         // Fonction pour ajouter un variant unique au panier
         async function addSingleVariantToCart(articleId) {
             try {
-                showNotification('Ajout au panier...', 'info');
+                // showNotification('Ajout au panier...', 'info'); // SUPPRIMÉ pour éviter le doublon
 
                 const response = await fetch(`/register/partials/products/article/${articleId}/variants`, {
                     credentials: 'same-origin',

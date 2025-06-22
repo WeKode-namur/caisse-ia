@@ -35,6 +35,11 @@ class SessionItem extends Model
         'attributes' => 'array'
     ];
 
+    public function session(): BelongsTo
+    {
+        return $this->belongsTo(RegisterSession::class, 'session_id', 'id');
+    }
+
     public function variant(): BelongsTo
     {
         return $this->belongsTo(Variant::class);
@@ -43,5 +48,22 @@ class SessionItem extends Model
     public function stock(): BelongsTo
     {
         return $this->belongsTo(Stock::class);
+    }
+
+    /**
+     * Met à jour le prix total basé sur la quantité et le prix unitaire
+     */
+    public function updateTotalPrice(): void
+    {
+        $this->total_price = $this->quantity * $this->unit_price;
+        $this->save();
+    }
+
+    /**
+     * Vérifie si le stock est suffisant
+     */
+    public function hasSufficientStock(): bool
+    {
+        return $this->stock && $this->stock->quantity >= $this->quantity;
     }
 }
