@@ -206,8 +206,8 @@ class ProductController extends Controller
 
         // Formater le prix
         $priceDisplay = $minPrice == $maxPrice ?
-            number_format($minPrice, 2) . '€' :
-            number_format($minPrice, 2) . '-' . number_format($maxPrice, 2) . '€';
+            number_format($minPrice, 0) . '€' :
+            number_format($minPrice, 0) . '-' . number_format($maxPrice, 0) . '€';
 
         // Stock total
         $totalStock = $variantsInStock->sum(function($variant) {
