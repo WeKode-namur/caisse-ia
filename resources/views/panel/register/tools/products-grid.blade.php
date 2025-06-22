@@ -229,6 +229,7 @@
                 showNotification('Erreur lors de l\'ajout', 'error');
             }
         }
+        window.addSingleVariantToCart = addSingleVariantToCart;
 
         // Fonction pour afficher les variants d'un article
         async function showArticleVariants(articleId) {
@@ -259,15 +260,16 @@
                 closeModal('product-variants');
             }
         }
+        window.showArticleVariants = showArticleVariants;
 
         // Fonction pour afficher le modal des variants
-        function showVariantsModal(currentVariant, variants) {
+        function showVariantsModal(article, variants) {
             // Remplir les informations du produit
-            document.getElementById('product-name').textContent = currentVariant.article.name;
-            document.getElementById('product-description').textContent = currentVariant.article.description || 'Aucune description disponible';
+            document.getElementById('product-name').textContent = article.name;
+            document.getElementById('product-description').textContent = article.description || 'Aucune description disponible';
 
-            // Préparer tous les variants (current + autres)
-            const allVariants = [currentVariant, ...variants];
+            // Variants à afficher
+            const allVariants = variants;
 
             // Remplir la liste des variants
             const variantsList = document.getElementById('variants-list');
