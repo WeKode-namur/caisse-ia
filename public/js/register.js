@@ -325,7 +325,7 @@ class RegisterManager {
                     </tr>
                     <tr>
                         <td class="text-end">Prix TVAC</td>
-                        <td class="font-semibold">${this.totals.subtotal_ttc || '0.00'}€</td>
+                        <td class="font-semibold">${this.totals.subtotal || '0.00'}€</td>
                     </tr>
                     ${this.totals.discount_amount > 0 ? `
                     <tr>
@@ -335,7 +335,7 @@ class RegisterManager {
                     ` : ''}
                     <tr class="border-t">
                         <td class="text-end font-bold">Total</td>
-                        <td class="font-bold text-lg">${this.totals.total_amount || '0.00'}€</td>
+                        <td class="font-bold text-lg">${this.totals.total || '0.00'}€</td>
                     </tr>
                 </tbody>
             </table>
