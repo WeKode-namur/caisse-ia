@@ -26,9 +26,6 @@
     <i class="fas fa-comment"></i>
 </button>
 
-<button onclick="clearFilters()" class="bg-gray-500 text-white text-sm px-3 py-1.5 flex items-center justify-center w-12 h-8 rounded shadow hover:shadow-lg hover:scale-105 hover:bg-opacity-75 hover:dark:bg-opacity-50 transition duration-300 ease-in-out">
-    <i class="fas fa-refresh"></i>
-</button>
 
 
 <!-- Script corrigé -->
