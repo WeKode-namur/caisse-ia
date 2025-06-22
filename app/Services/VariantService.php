@@ -1,0 +1,169 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\{Article, Variant, Stock, AttributeValue, Media};
+use Illuminate\Support\Facades\{DB, Storage};
+use Illuminate\Http\UploadedFile;
+
+class VariantService
+{
+    public function createVariant(Article $article, array $data): Variant
+    {
+        return DB::transaction(function () use ($article, $data) {
+            // Créer le variant
+            $variant = $article->variants()->create([
+                'barcode' => $data['barcode'] ?? null,
+                'reference' => $data['reference'] ?? null,
+                'sell_price' => $data['sell_price'] ?? null,
+                'buy_price' => $data['buy_price'] ?? null,
+            ]);
+
+            // Gérer les attributs
+            $this->handleAttributes($variant, $data['attributes'] ?? []);
+
+            // Gérer le stock
+            if (isset($data['stock']) && $this->hasStockData($data['stock'])) {
+                $this->handleStock($variant, $data['stock']);
+            }
+
+            // Gérer les images
+            if (isset($data['images'])) {
+                $this->handleImages($variant, $data['images']);
+            }
+
+            return $variant->load(['attributeValues.attribute', 'stocks', 'medias']);
+        });
+    }
+
+    public function updateVariant(Variant $variant, array $data): Variant
+    {
+        return DB::transaction(function () use ($variant, $data) {
+            // Mettre à jour les données de base
+            $variant->update([
+                'barcode' => $data['barcode'] ?? $variant->barcode,
+                'reference' => $data['reference'] ?? $variant->reference,
+                'sell_price' => $data['sell_price'] ?? $variant->sell_price,
+                'buy_price' => $data['buy_price'] ?? $variant->buy_price,
+            ]);
+
+            // Mettre à jour les attributs
+            if (isset($data['attributes'])) {
+                $this->handleAttributes($variant, $data['attributes']);
+            }
+
+            // Mettre à jour le stock
+            if (isset($data['stock']) && $this->hasStockData($data['stock'])) {
+                $this->handleStock($variant, $data['stock']);
+            }
+
+            // Ajouter de nouvelles images
+            if (isset($data['images'])) {
+                $this->handleImages($variant, $data['images']);
+            }
+
+            return $variant->load(['attributeValues.attribute', 'stocks', 'medias']);
+        });
+    }
+
+    private function handleAttributes(Variant $variant, array $attributes): void
+    {
+        // Supprimer les anciennes relations
+        $variant->attributeValues()->detach();
+
+        foreach ($attributes as $attrData) {
+            if (empty($attrData['attribute_id']) || empty($attrData['value'])) {
+                continue;
+            }
+
+            // Créer ou récupérer la valeur d'attribut
+            $attributeValue = AttributeValue::firstOrCreate([
+                'attribute_id' => $attrData['attribute_id'],
+                'value' => $attrData['value'],
+                'secondValue' => $attrData['second_value'] ?? null,
+            ]);
+
+            // Associer au variant
+            $variant->attributeValues()->attach($attributeValue->id);
+        }
+    }
+
+    private function handleStock(Variant $variant, array $stockData): void
+    {
+        if (empty($stockData['quantity']) || $stockData['quantity'] <= 0) {
+            return;
+        }
+
+        Stock::updateOrCreate(
+            ['variant_id' => $variant->id],
+            [
+                'buy_price' => $stockData['buy_price'] ?? 0,
+                'quantity' => $stockData['quantity'],
+                'lot_reference' => $stockData['lot_reference'] ?? null,
+                'expiry_date' => isset($stockData['expiry_date']) ?
+                    \Carbon\Carbon::parse($stockData['expiry_date']) : null,
+            ]
+        );
+    }
+
+    private function handleImages(Variant $variant, array $images): void
+    {
+        foreach ($images as $image) {
+            if ($image instanceof UploadedFile) {
+                $path = $image->store(
+                    config('inventory.images.storage_path', 'variants'),
+                    config('inventory.images.storage_disk', 'public')
+                );
+
+                $variant->medias()->create([
+                    'path' => $path,
+                    'type' => 'image'
+                ]);
+            }
+        }
+    }
+
+    private function hasStockData(array $stockData): bool
+    {
+        return !empty($stockData['quantity']) && $stockData['quantity'] > 0;
+    }
+
+    public function deleteVariant(Variant $variant): bool
+    {
+        return DB::transaction(function () use ($variant) {
+            // Supprimer les relations
+            $variant->attributeValues()->detach();
+
+            // Supprimer les stocks
+            $variant->stocks()->delete();
+
+            // Supprimer les médias (les fichiers seront supprimés automatiquement)
+            $variant->medias()->delete();
+
+            // Supprimer le variant
+            return $variant->delete();
+        });
+    }
+
+    public function generateBarcode(): string
+    {
+        $prefix = config('inventory.barcode.country_prefix', '541');
+        $company = config('inventory.barcode.company_code', '007600');
+
+        do {
+            $product = str_pad(mt_rand(0, 99999), 5, '0', STR_PAD_LEFT);
+            $code = $prefix . $company . $product;
+
+            // Calcul du chiffre de contrôle EAN-13
+            $sum = 0;
+            for ($i = 0; $i < 12; $i++) {
+                $sum += (int)$code[$i] * ($i % 2 === 0 ? 1 : 3);
+            }
+            $checkDigit = (10 - ($sum % 10)) % 10;
+            $barcode = $code . $checkDigit;
+
+        } while (Variant::where('barcode', $barcode)->exists());
+
+        return $barcode;
+    }
+}
