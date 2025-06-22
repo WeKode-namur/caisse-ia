@@ -64,9 +64,15 @@ class RegisterManager {
         document.addEventListener('click', (e) => {
             if (e.target.closest('.product-card')) {
                 const productCard = e.target.closest('.product-card');
-                const variantId = productCard.dataset.variantId;
-                if (variantId) {
-                    this.addProductToCart(variantId);
+                const articleId = productCard.dataset.articleId;
+                const hasVariants = productCard.dataset.hasVariants === 'true';
+
+                if (hasVariants) {
+                    if (window.showArticleVariants) {
+                        window.showArticleVariants(articleId);
+                    }
+                } else if (window.addSingleVariantToCart) {
+                    window.addSingleVariantToCart(articleId);
                 }
             }
         });
