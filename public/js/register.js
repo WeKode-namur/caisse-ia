@@ -125,9 +125,7 @@ class RegisterManager {
         }
 
         try {
-            const response = await fetch(`/register/partials/products/barcode/${barcode}`, {
-                headers: this.getHeaders()
-            });
+            const response = await this.request(`/register/partials/products/barcode/${barcode}`);
 
             const data = await response.json();
 
@@ -149,9 +147,8 @@ class RegisterManager {
         this.isProcessing = true;
 
         try {
-            const response = await fetch('/register/partials/cart/add', {
+            const response = await this.request('/register/partials/cart/add', {
                 method: 'POST',
-                headers: this.getHeaders(),
                 body: JSON.stringify({
                     variant_id: variantId,
                     quantity: quantity,
@@ -181,9 +178,8 @@ class RegisterManager {
         const newQuantity = Math.max(0.001, parseFloat(currentItem.quantity) + change);
 
         try {
-            const response = await fetch(`/register/partials/cart/update/${itemId}`, {
+            const response = await this.request(`/register/partials/cart/update/${itemId}`, {
                 method: 'PUT',
-                headers: this.getHeaders(),
                 body: JSON.stringify({
                     quantity: newQuantity
                 })
@@ -203,9 +199,8 @@ class RegisterManager {
 
     async removeCartItem(itemId) {
         try {
-            const response = await fetch(`/register/partials/cart/remove/${itemId}`, {
-                method: 'DELETE',
-                headers: this.getHeaders()
+            const response = await this.request(`/register/partials/cart/remove/${itemId}`, {
+                method: 'DELETE'
             });
 
             const data = await response.json();
@@ -227,9 +222,8 @@ class RegisterManager {
         }
 
         try {
-            const response = await fetch('/register/partials/cart/clear', {
-                method: 'DELETE',
-                headers: this.getHeaders()
+            const response = await this.request('/register/partials/cart/clear', {
+                method: 'DELETE'
             });
 
             const data = await response.json();
@@ -245,9 +239,7 @@ class RegisterManager {
 
     async loadCart() {
         try {
-            const response = await fetch('/register/partials/cart', {
-                headers: this.getHeaders()
-            });
+            const response = await this.request('/register/partials/cart');
 
             const data = await response.json();
 
@@ -417,9 +409,8 @@ class RegisterManager {
             }
 
             // 1. Créer la transaction
-            const transactionResponse = await fetch('/register/partials/transactions/create', {
+            const transactionResponse = await this.request('/register/partials/transactions/create', {
                 method: 'POST',
-                headers: this.getHeaders(),
                 body: JSON.stringify(transactionData)
             });
 
@@ -430,9 +421,8 @@ class RegisterManager {
             }
 
             // 2. Traiter le paiement
-            const paymentResponse = await fetch('/register/partials/payment/process', {
+            const paymentResponse = await this.request('/register/partials/payment/process', {
                 method: 'POST',
-                headers: this.getHeaders(),
                 body: JSON.stringify({
                     transaction_id: transactionResult.transaction.id,
                     payment_method_id: paymentData.method_id,
@@ -466,9 +456,8 @@ class RegisterManager {
         }
 
         try {
-            const response = await fetch('/register/partials/customers/remove', {
-                method: 'DELETE',
-                headers: this.getHeaders()
+            const response = await this.request('/register/partials/customers/remove', {
+                method: 'DELETE'
             });
 
             const data = await response.json();
@@ -504,6 +493,17 @@ class RegisterManager {
             'Accept': 'application/json',
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
         };
+    }
+
+    async request(url, options = {}) {
+        const defaultOptions = {
+            credentials: 'same-origin',
+            headers: this.getHeaders()
+        };
+        if (options.headers) {
+            defaultOptions.headers = { ...defaultOptions.headers, ...options.headers };
+        }
+        return fetch(url, { ...defaultOptions, ...options });
     }
 
     showNotification(message, type = 'info') {
