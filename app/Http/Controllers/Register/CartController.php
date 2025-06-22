@@ -9,6 +9,7 @@ use App\Models\Customer;
 use App\Models\Company;
 use App\Models\Discount;
 use App\Models\GiftCard;
+use App\Models\SessionItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -19,7 +20,14 @@ class CartController extends Controller
      */
     public function index()
     {
-        $cart = session('register_cart', []);
+        $sessionId = session()->getId();
+        $dbItems = SessionItem::where('session_id', $sessionId)->get();
+        $cart = [];
+        foreach ($dbItems as $item) {
+            $cart[$item->id] = $item->toArray();
+        }
+        session(['register_cart' => $cart]);
+
         $customer = session('register_customer');
         $discounts = session('register_discounts', []);
 
@@ -60,7 +68,7 @@ class CartController extends Controller
 
         // Générer un ID unique pour l'item du panier (convertir en string)
         $cartItemId = (string) Str::uuid();
-
+        
         // Récupérer le panier actuel
         $cart = session('register_cart', []);
 
@@ -97,6 +105,23 @@ class CartController extends Controller
         // Sauvegarder le panier
         session(['register_cart' => $cart]);
 
+        // Sauvegarder aussi en base pour persistance multi-appareils
+        SessionItem::create([
+            'id' => $cartItemId,
+            'session_id' => session()->getId(),
+            'variant_id' => $variant->id,
+            'stock_id' => $stockToUse->id,
+            'article_name' => $variant->article->name,
+            'variant_reference' => $variant->reference,
+            'barcode' => $variant->barcode,
+            'quantity' => $quantity,
+            'unit_price' => $unitPrice,
+            'total_price' => $unitPrice * $quantity,
+            'tax_rate' => $variant->article->tva ?? 21,
+            'cost_price' => (float) $stockToUse->buy_price,
+            'attributes' => $this->getVariantAttributes($variant)
+        ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Article ajouté au panier',
@@ -118,10 +143,16 @@ class CartController extends Controller
         $cart = session('register_cart', []);
 
         if (!isset($cart[$itemId])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Article non trouvé dans le panier'
-            ], 404);
+            $dbItem = SessionItem::where('id', $itemId)
+                ->where('session_id', session()->getId())
+                ->first();
+            if (!$dbItem) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Article non trouvé dans le panier'
+                ], 404);
+            }
+            $cart[$itemId] = $dbItem->toArray();
         }
 
         $item = $cart[$itemId];
@@ -147,6 +178,15 @@ class CartController extends Controller
 
         session(['register_cart' => $cart]);
 
+        // Mise à jour en base
+        SessionItem::where('id', $itemId)
+            ->where('session_id', session()->getId())
+            ->update([
+                'quantity' => $cart[$itemId]['quantity'],
+                'unit_price' => $cart[$itemId]['unit_price'],
+                'total_price' => $cart[$itemId]['total_price']
+            ]);
+
         return response()->json([
             'success' => true,
             'message' => 'Article mis à jour',
@@ -163,14 +203,24 @@ class CartController extends Controller
         $cart = session('register_cart', []);
 
         if (!isset($cart[$itemId])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Article non trouvé dans le panier'
-            ], 404);
+            $dbItem = SessionItem::where('id', $itemId)
+                ->where('session_id', session()->getId())
+                ->first();
+            if (!$dbItem) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Article non trouvé dans le panier'
+                ], 404);
+            }
+            $cart[$itemId] = $dbItem->toArray();
         }
 
         unset($cart[$itemId]);
         session(['register_cart' => $cart]);
+
+        SessionItem::where('id', $itemId)
+            ->where('session_id', session()->getId())
+            ->delete();
 
         return response()->json([
             'success' => true,
@@ -184,7 +234,9 @@ class CartController extends Controller
      */
     public function clear()
     {
+        $sessionId = session()->getId();
         session()->forget(['register_cart', 'register_customer', 'register_discounts']);
+        SessionItem::where('session_id', $sessionId)->delete();
 
         return response()->json([
             'success' => true,
@@ -723,8 +775,8 @@ class CartController extends Controller
             'variant_reference' => $item['variant_reference'],
             'barcode' => $item['barcode'],
             'quantity' => $item['quantity'],
-            'unit_price' => number_format($item['unit_price'], 2),
-            'total_price' => number_format($item['total_price'], 2),
+            'unit_price' => number_format($item['unit_price'], 0),
+            'total_price' => number_format($item['total_price'], 0),
             'attributes' => $item['attributes'] ?? null
         ];
     }
@@ -741,10 +793,10 @@ class CartController extends Controller
 
         return [
             'items_count' => $itemsCount,
-            'subtotal' => number_format($subtotal, 2),
-            'discount_amount' => number_format($totalDiscount, 2),
-            'total' => number_format($total, 2),
-            'tax_amount' => number_format($total * 0.21, 2) // Simplifié, à améliorer
+            'subtotal' => number_format($subtotal, 0),
+            'discount_amount' => number_format($totalDiscount, 0),
+            'total' => number_format($total, 0),
+            'tax_amount' => number_format($total * 0.21, 0) // Simplifié, à améliorer
         ];
     }
 

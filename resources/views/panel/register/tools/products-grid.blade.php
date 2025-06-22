@@ -117,6 +117,7 @@
                 if (currentSearch) params.append('search', currentSearch);
 
                 const response = await fetch(`/register/partials/products?${params}`, {
+                    credentials: 'same-origin',
                     headers: {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
@@ -186,22 +187,7 @@
             }
         }
 
-        // Gestionnaire de clic sur les produits
-        productsContainer.addEventListener('click', async function(e) {
-            const productCard = e.target.closest('.product-card');
-            if (!productCard) return;
 
-            const articleId = productCard.dataset.articleId;
-            const hasVariants = productCard.dataset.hasVariants === 'true';
-
-            if (hasVariants) {
-                // Afficher le modal des variants
-                await showArticleVariants(articleId);
-            } else {
-                // Un seul variant, récupérer son ID et l'ajouter directement
-                await addSingleVariantToCart(articleId);
-            }
-        });
 
         // Fonction pour ajouter un variant unique au panier
         async function addSingleVariantToCart(articleId) {
@@ -209,6 +195,7 @@
                 showNotification('Ajout au panier...', 'info');
 
                 const response = await fetch(`/register/partials/products/article/${articleId}/variants`, {
+                    credentials: 'same-origin',
                     headers: {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
@@ -229,6 +216,7 @@
                 showNotification('Erreur lors de l\'ajout', 'error');
             }
         }
+        window.addSingleVariantToCart = addSingleVariantToCart;
 
         // Fonction pour afficher les variants d'un article
         async function showArticleVariants(articleId) {
@@ -239,6 +227,7 @@
                 openModal('product-variants');
 
                 const response = await fetch(`/register/partials/products/article/${articleId}/variants`, {
+                    credentials: 'same-origin',
                     headers: {
                         'Accept': 'application/json',
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
@@ -259,15 +248,16 @@
                 closeModal('product-variants');
             }
         }
+        window.showArticleVariants = showArticleVariants;
 
         // Fonction pour afficher le modal des variants
-        function showVariantsModal(currentVariant, variants) {
+        function showVariantsModal(article, variants) {
             // Remplir les informations du produit
-            document.getElementById('product-name').textContent = currentVariant.article.name;
-            document.getElementById('product-description').textContent = currentVariant.article.description || 'Aucune description disponible';
+            document.getElementById('product-name').textContent = article.name;
+            document.getElementById('product-description').textContent = article.description || 'Aucune description disponible';
 
-            // Préparer tous les variants (current + autres)
-            const allVariants = [currentVariant, ...variants];
+            // Variants à afficher
+            const allVariants = variants;
 
             // Remplir la liste des variants
             const variantsList = document.getElementById('variants-list');
