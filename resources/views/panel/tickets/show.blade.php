@@ -4,7 +4,7 @@
         function formatNumber($number, $decimals = 2, $dec_point = ',', $thousands_sep = ' ') {
             return rtrim(rtrim(number_format($number, $decimals, $dec_point, $thousands_sep), '0'), $dec_point);
         }
-        
+
         // Helper function pour traduire les statuts
         function translateStatus($status) {
             $translations = [
@@ -21,7 +21,7 @@
                 'published' => 'Publié',
                 'archived' => 'Archivé'
             ];
-            
+
             return $translations[strtolower($status)] ?? ucfirst($status);
         }
     @endphp
@@ -440,105 +440,95 @@
             const printContent = document.getElementById('printContent').innerHTML;
 
             printWindow.document.write(`
-                <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>Ticket #{{ $transaction->transaction_number }}</title>
+                    <title>Ticket #${{ $transaction->transaction_number }}</title>
                     <style>
+                        @media print {
+                            @page {
+                                size: 80mm auto;
+                                margin: 0;
+                            }
+                            body {
+                                margin: 0;
+                            }
+                        }
                         body {
                             font-family: 'Courier New', monospace;
                             font-size: 12px;
-                            line-height: 1.2;
+                            line-height: 1.3;
                             margin: 0;
-                            padding: 10px;
+                            padding: 0;
                             background: white;
                             color: black;
+                            -webkit-font-smoothing: antialiased;
+                            -moz-osx-font-smoothing: grayscale;
                         }
                         .ticket {
-                            max-width: 300px;
-                            margin: 0 auto;
-                            border: 1px solid #ccc;
-                            padding: 10px;
+                            width: 80mm;
+                            padding: 3mm;
+                            box-sizing: border-box;
                         }
-                        .header {
-                            text-align: center;
-                            border-bottom: 1px dashed #ccc;
-                            padding-bottom: 10px;
-                            margin-bottom: 10px;
-                        }
-                        .company-name {
-                            font-size: 14px;
-                            font-weight: bold;
-                            margin-bottom: 5px;
-                        }
-                        .ticket-info {
-                            font-size: 10px;
-                            margin-bottom: 10px;
-                        }
-                        .items {
-                            margin-bottom: 10px;
-                        }
-                        .item {
-                            display: flex;
-                            justify-content: space-between;
-                            margin-bottom: 3px;
-                            font-size: 11px;
-                        }
-                        .item-name {
-                            flex: 1;
-                        }
-                        .item-price {
-                            text-align: right;
-                            min-width: 60px;
-                        }
-                        .totals {
-                            border-top: 1px dashed #ccc;
-                            padding-top: 10px;
-                            margin-top: 10px;
-                        }
-                        .total-line {
-                            display: flex;
-                            justify-content: space-between;
-                            margin-bottom: 2px;
-                        }
-                        .final-total {
-                            font-weight: bold;
-                            font-size: 14px;
-                            border-top: 1px solid #000;
-                            padding-top: 5px;
-                            margin-top: 5px;
-                        }
-                        .payments {
-                            margin-top: 10px;
-                            border-top: 1px dashed #ccc;
-                            padding-top: 10px;
-                        }
-                        .payment {
-                            display: flex;
-                            justify-content: space-between;
-                            margin-bottom: 2px;
-                            font-size: 11px;
-                        }
-                        .change {
-                            margin-top: 10px;
-                            border-top: 1px dashed #ccc;
-                            padding-top: 10px;
-                        }
-                        .footer {
-                            text-align: center;
-                            margin-top: 15px;
-                            font-size: 9px;
-                            border-top: 1px dashed #ccc;
-                            padding-top: 10px;
-                        }
-                        @media print {
-                            body { margin: 0; padding: 0; }
-                        }
+                        .header { text-align: center; padding-bottom: 5px; margin-bottom: 5px; }
+                        .company-name { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+                        .ticket-info { font-size: 11px; margin-bottom: 5px; }
+                        .items, .totals, .payments, .change, .footer { margin-top: 8px; border-top: 1px dashed #000; padding-top: 8px; }
+                        .item, .total-line, .payment { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+                        .item-name { flex: 1; word-break: break-word; }
+                        .item-price { text-align: right; min-width: 60px; }
+                        .final-total { font-weight: bold; font-size: 15px; border-top: 1px solid #000; padding-top: 5px; margin-top: 5px; }
+                        .footer { text-align: center; margin-top: 10px; font-size: 10px; border-top: 1px dashed #000; padding-top: 10px; }
                     </style>
                 </head>
                 <body>
                     <div class="ticket">
-                        ${printContent}
+                        <div class="header">
+                            <div class="company-name">${{ config('app.name') }}</div>
+                            <div class="ticket-info">
+                                Ticket #${{ $transaction->transaction_number }}<br>
+                                ${{ $transaction->created_at->format('d/m/Y H:i') }}<br>
+                                ${{ $transaction->user->name ?? 'Vendeur' }}
+                            </div>
+                        </div>
+                        <div class="items">${printContent}</div>
+                        <div class="totals">
+                            <div class="total-line"><span>Sous-total HT:</span><span>€${{ number_format($totals['subtotal_ht'], 2, ',', ' ') }}</span></div>
+                            <div class="total-line"><span>TVA:</span><span>€${{ number_format($totals['total_tva'], 2, ',', ' ') }}</span></div>
+                            <div class="total-line"><span>Sous-total TTC:</span><span>€${{ number_format($totals['subtotal_ttc'], 2, ',', ' ') }}</span></div>
+                            @if($totals['total_discount'] > 0)
+                                <div class="total-line"><span>Remise:</span><span>-€${{ number_format($totals['total_discount'], 2, ',', ' ') }}</span></div>
+                            @endif
+                            <div class="total-line final-total"><span>TOTAL:</span><span>€${{ number_format($totals['final_total'], 2, ',', ' ') }}</span></div>
+                        </div>
+                        <div class="payments">
+                            @foreach($transaction->payments as $payment)
+                                <div class="payment">
+                                    <span>${{ $payment->paymentMethod->name }}:</span>
+                                    <span>€${{ number_format($payment->amount, 2, ',', ' ') }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                        @php
+                            $totalPaid = $transaction->payments->sum('amount');
+                            $changeAmount = $totalPaid - $totals['final_total'];
+                        @endphp
+                        @if($changeAmount > 0)
+                            <div class="change">
+                                <div class="payment">
+                                    <span>Monnaie rendue:</span>
+                                    <span>€${{ number_format($changeAmount, 2, ',', ' ') }}</span>
+                                </div>
+                            </div>
+                        @endif
+                        @if($transaction->notes)
+                            <div class="note">
+                                <div class="text-sm">
+                                    <strong>Note:</strong><br>
+                                    {{ $transaction->notes }}
+                                </div>
+                            </div>
+                        @endif
+                        <div class="footer">Merci de votre visite !<br>${{ config('app.name') }} - {{ date('Y') }}</div>
                     </div>
                 </body>
                 </html>
@@ -548,220 +538,154 @@
         }
 
         function printTicketDirect() {
-            // Ouvrir une fenêtre popup avec des dimensions spécifiques
-            const popupFeatures = 'width=400,height=600,scrollbars=yes,resizable=yes,status=no,location=no,toolbar=no,menubar=no';
-            const printWindow = window.open('', 'printPopup', popupFeatures);
+            // Rassembler les données nécessaires depuis le PHP
+            const transaction = @json($transaction->load('items.variant', 'payments.paymentMethod', 'cashier'));
+            const totals = @json($totals);
+            const appName = @json(config('app.name'));
+            const changeAmount = {{ $transaction->payments->sum('amount') - $totals['final_total'] }};
 
-            printWindow.document.write(`
-                <!DOCTYPE html>
+            // Construire les lignes d'articles
+            let itemsHtml = '';
+            transaction.items.forEach(item => {
+                const quantity = parseFloat(item.quantity);
+                const formattedQuantity = new Intl.NumberFormat('fr-FR', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 3
+                }).format(quantity);
+
+                let attributesHtml = '';
+                if (item.variant_attributes && Object.keys(item.variant_attributes).length > 0) {
+                    attributesHtml = `<div style="font-size: 10px; color: #555; padding-left: 10px;">${Object.values(item.variant_attributes).join(' - ')}</div>`;
+                }
+
+                let barcodeHtml = '';
+                // Utilise le barcode de l'item de transaction, car il est copié lors de la vente
+                if (item.barcode) {
+                    barcodeHtml = `<div style="font-size: 10px; color: #555; padding-left: 10px;">EAN: ${item.barcode}</div>`;
+                }
+
+                itemsHtml += `
+                    <div class="item">
+                        <div class="item-name">
+                            <span>${formattedQuantity}x ${item.article_name}</span>
+                            ${attributesHtml}
+                            ${barcodeHtml}
+                        </div>
+                        <div class="item-price">€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(item.total_price_ttc)}</div>
+                    </div>
+                `;
+
+                // Afficher le prix unitaire si la quantité est supérieure à 1
+                if (quantity > 1) {
+                    itemsHtml += `
+                        <div class="item" style="font-size: 10px; color: #555;">
+                            <div class="item-name" style="padding-left: 10px;">Prix unitaire</div>
+                            <div class="item-price">€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(item.unit_price_ttc)}</div>
+                        </div>
+                    `;
+                }
+            });
+
+            // Construire les lignes de paiement
+            let paymentsHtml = '';
+            transaction.payments.forEach(payment => {
+                paymentsHtml += `
+                    <div class="payment">
+                        <span>${payment.payment_method.name}:</span>
+                        <span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(payment.amount)}</span>
+                    </div>
+                `;
+            });
+
+            // Construire la section "Monnaie rendue"
+            let changeHtml = '';
+            if (changeAmount > 0) {
+                changeHtml = `
+                    <div class="change">
+                        <div class="payment">
+                            <span>Monnaie rendue:</span>
+                            <span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(changeAmount)}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Template HTML complet du ticket
+            const ticketContent = `
                 <html>
                 <head>
-                    <title>Ticket #{{ $transaction->transaction_number }}</title>
+                    <title>Ticket #${transaction.transaction_number}</title>
                     <style>
+                        @media print {
+                            @page {
+                                size: auto auto;
+                                margin: 0;
+                            }
+                            body {
+                                margin: 0;
+                            }
+                        }
                         body {
                             font-family: 'Courier New', monospace;
                             font-size: 12px;
-                            line-height: 1.2;
+                            line-height: 1.3;
                             margin: 0;
-                            padding: 10px;
+                            padding: 0;
                             background: white;
                             color: black;
+                            -webkit-font-smoothing: antialiased;
+                            -moz-osx-font-smoothing: grayscale;
                         }
                         .ticket {
-                            max-width: 300px;
-                            margin: 0 auto;
-                            border: 1px solid #ccc;
-                            padding: 10px;
+                            width: 100%;
+                            padding: 3mm;
+                            box-sizing: border-box;
                         }
-                        .header {
-                            text-align: center;
-                            border-bottom: 1px dashed #ccc;
-                            padding-bottom: 10px;
-                            margin-bottom: 10px;
-                        }
-                        .company-name {
-                            font-size: 14px;
-                            font-weight: bold;
-                            margin-bottom: 5px;
-                        }
-                        .ticket-info {
-                            font-size: 10px;
-                            margin-bottom: 10px;
-                        }
-                        .items {
-                            margin-bottom: 10px;
-                        }
-                        .item {
-                            display: flex;
-                            justify-content: space-between;
-                            margin-bottom: 3px;
-                            font-size: 11px;
-                        }
-                        .item-name {
-                            flex: 1;
-                        }
-                        .item-price {
-                            text-align: right;
-                            min-width: 60px;
-                        }
-                        .totals {
-                            border-top: 1px dashed #ccc;
-                            padding-top: 10px;
-                            margin-top: 10px;
-                        }
-                        .total-line {
-                            display: flex;
-                            justify-content: space-between;
-                            margin-bottom: 2px;
-                        }
-                        .final-total {
-                            font-weight: bold;
-                            font-size: 14px;
-                            border-top: 1px solid #000;
-                            padding-top: 5px;
-                            margin-top: 5px;
-                        }
-                        .payments {
-                            margin-top: 10px;
-                            border-top: 1px dashed #ccc;
-                            padding-top: 10px;
-                        }
-                        .payment {
-                            display: flex;
-                            justify-content: space-between;
-                            margin-bottom: 2px;
-                            font-size: 11px;
-                        }
-                        .change {
-                            margin-top: 10px;
-                            border-top: 1px dashed #ccc;
-                            padding-top: 10px;
-                        }
-                        .footer {
-                            text-align: center;
-                            margin-top: 15px;
-                            font-size: 9px;
-                            border-top: 1px dashed #ccc;
-                            padding-top: 10px;
-                        }
-                        @media print {
-                            body { margin: 0; padding: 0; }
-                        }
+                        .header { text-align: center; padding-bottom: 5px; margin-bottom: 5px; }
+                        .company-name { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+                        .ticket-info { font-size: 11px; margin-bottom: 5px; }
+                        .items, .totals, .payments, .change, .footer { margin-top: 8px; border-top: 1px dashed #000; padding-top: 8px; }
+                        .item, .total-line, .payment { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
+                        .item-name { flex: 1; word-break: break-word; }
+                        .item-price { text-align: right; min-width: 60px; }
+                        .final-total { font-weight: bold; font-size: 15px; border-top: 1px solid #000; padding-top: 5px; margin-top: 5px; }
+                        .footer { text-align: center; margin-top: 10px; font-size: 10px; border-top: 1px dashed #000; padding-top: 10px; }
                     </style>
                 </head>
                 <body>
                     <div class="ticket">
                         <div class="header">
-                            <div class="company-name">{{ config('app.name') }}</div>
+                            <div class="company-name">${appName}</div>
                             <div class="ticket-info">
-                                Ticket #{{ $transaction->transaction_number }}<br>
-                                {{ $transaction->created_at->format('d/m/Y H:i') }}<br>
-                                {{ $transaction->user->name ?? 'Vendeur' }}
+                                Ticket #${transaction.transaction_number}<br>
+                                ${new Date(transaction.created_at).toLocaleString('fr-FR')}<br>
+                                ${transaction.cashier ? transaction.cashier.name : 'Vendeur'}
                             </div>
                         </div>
-
-                        <div class="items">
-                            @foreach($transaction->items as $item)
-                                <div class="item">
-                                    <div class="item-name">
-                                        {{ $item->quantity }}x {{ $item->article_name }}
-                                        @if($item->variant_name)
-                                            <br><small>{{ $item->variant_name }}</small>
-                                        @endif
-                                    </div>
-                                    <div class="item-price">
-                                        €{{ number_format($item->unit_price_ttc, 2, ',', ' ') }}
-                                    </div>
-                                </div>
-                                <div class="item">
-                                    <div class="item-name"></div>
-                                    <div class="item-price">
-                                        €{{ number_format($item->total_price_ttc, 2, ',', ' ') }}
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
+                        <div class="items">${itemsHtml}</div>
                         <div class="totals">
-                            <div class="total-line">
-                                <span>Sous-total HT:</span>
-                                <span>€{{ number_format($totals['subtotal_ht'], 2, ',', ' ') }}</span>
-                            </div>
-                            <div class="total-line">
-                                <span>TVA:</span>
-                                <span>€{{ number_format($totals['total_tva'], 2, ',', ' ') }}</span>
-                            </div>
-                            <div class="total-line">
-                                <span>Sous-total TTC:</span>
-                                <span>€{{ number_format($totals['subtotal_ttc'], 2, ',', ' ') }}</span>
-                            </div>
-                            @if($totals['total_discount'] > 0)
-                                <div class="total-line">
-                                    <span>Remise:</span>
-                                    <span>-€{{ number_format($totals['total_discount'], 2, ',', ' ') }}</span>
-                                </div>
-                            @endif
-                            <div class="total-line final-total">
-                                <span>TOTAL:</span>
-                                <span>€{{ number_format($totals['final_total'], 2, ',', ' ') }}</span>
-                            </div>
+                            <div class="total-line"><span>Sous-total HT:</span><span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(totals.subtotal_ht)}</span></div>
+                            <div class="total-line"><span>TVA:</span><span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(totals.total_tva)}</span></div>
+                            <div class="total-line"><span>Sous-total TTC:</span><span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(totals.subtotal_ttc)}</span></div>
+                            ${totals.total_discount > 0 ? `<div class="total-line"><span>Remise:</span><span>-€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(totals.total_discount)}</span></div>` : ''}
+                            <div class="total-line final-total"><span>TOTAL:</span><span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(totals.final_total)}</span></div>
                         </div>
-
-                        <div class="payments">
-                            @foreach($transaction->payments as $payment)
-                                <div class="payment">
-                                    <span>{{ $payment->paymentMethod->name }}:</span>
-                                    <span>€{{ number_format($payment->amount, 2, ',', ' ') }}</span>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        @php
-                            $totalPaid = $transaction->payments->sum('amount');
-                            $changeAmount = $totalPaid - $totals['final_total'];
-                        @endphp
-
-                        @if($changeAmount > 0)
-                            <div class="change">
-                                <div class="payment">
-                                    <span>Monnaie rendue:</span>
-                                    <span>€{{ number_format($changeAmount, 2, ',', ' ') }}</span>
-                                </div>
-                            </div>
-                        @endif
-
-                        @if($transaction->notes)
-                            <div style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
-                                <strong>Note:</strong><br>
-                                {{ $transaction->notes }}
-                            </div>
-                        @endif
-
-                        <div class="footer">
-                            Merci de votre visite !<br>
-                            {{ config('app.name') }} - {{ date('Y') }}
-                        </div>
+                        <div class="payments">${paymentsHtml}</div>
+                        ${changeHtml}
+                        <div class="footer">Merci de votre visite !<br>${appName} - ${new Date().getFullYear()}</div>
                     </div>
                 </body>
                 </html>
-            `);
+            `;
 
+            const printWindow = window.open('', '_blank', 'width=320,height=480,scrollbars=yes,resizable=yes');
+            printWindow.document.write(ticketContent);
             printWindow.document.close();
-
-            // Lancer l'impression après un court délai pour s'assurer que le contenu est chargé
-            setTimeout(function() {
+            printWindow.focus();
+            setTimeout(() => {
                 printWindow.print();
-                // Fermer la popup automatiquement après l'impression
-                printWindow.onafterprint = function() {
-                    printWindow.close();
-                };
-                // Fallback : fermer après 5 secondes si l'impression ne se lance pas
-                setTimeout(function() {
-                    if (!printWindow.closed) {
-                        printWindow.close();
-                    }
-                }, 2000);
-            }, 100);
+                printWindow.close();
+            }, 250);
         }
 
         // Fermer le modal en cliquant à l'extérieur

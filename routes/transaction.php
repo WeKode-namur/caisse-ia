@@ -7,7 +7,6 @@ Route::get('/transactions', [TransactionController::class, 'index'])->name('tran
 
 Route::prefix('tickets')->name('tickets.')->group(function () {
     Route::get('/{id}', [TicketController::class, 'show'])->name('index');
-    Route::get('/{id}/print', [TicketController::class, 'print'])->name('print');
     Route::post('/{id}/email', [TicketController::class, 'email'])->name('email');
 });
 

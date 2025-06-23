@@ -65,34 +65,6 @@ class TicketController extends Controller
     }
 
     /**
-     * Imprime un ticket
-     */
-    public function print($id)
-    {
-        $withRelations = [
-            'items',
-            'payments.paymentMethod',
-            'cashier',
-        ];
-
-        // Charger les relations client seulement si activé
-        if (config('app.register_customer_management')) {
-            $withRelations[] = 'customer';
-            $withRelations[] = 'company';
-        }
-
-        $transaction = Transaction::with($withRelations)->findOrFail($id);
-
-        if ($transaction->transaction_type !== 'ticket') {
-            abort(404, 'Cette transaction n\'est pas un ticket de caisse.');
-        }
-
-        $totals = $this->calculateTotals($transaction);
-
-        return view('panel.tickets.print', compact('transaction', 'totals'));
-    }
-
-    /**
      * Envoie le ticket par email
      */
     public function email($id, Request $request)
