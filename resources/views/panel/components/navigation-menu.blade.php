@@ -107,12 +107,12 @@
                                 </x-dropdown-link>
 
                                 <!-- Support -->
-                                <x-dropdown-link href="{{ route('support') }}">
-                                    <div class="flex items-center w-full">
-                                        <i class="fas fa-headset mr-3"></i>
-                                        <span class="flex-1">{{ __('Support') }}</span>
-                                    </div>
-                                </x-dropdown-link>
+{{--                                <x-dropdown-link href="{{ route('support') }}">--}}
+{{--                                    <div class="flex items-center w-full">--}}
+{{--                                        <i class="fas fa-headset mr-3"></i>--}}
+{{--                                        <span class="flex-1">{{ __('Support') }}</span>--}}
+{{--                                    </div>--}}
+{{--                                </x-dropdown-link>--}}
 
                                 <div class="border-t border-gray-200 dark:border-gray-600"></div>
 
