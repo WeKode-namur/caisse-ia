@@ -15,7 +15,7 @@
                             <i class="fas fa-user"></i>
                             <p>Clients</p>
                         </div>
-                        <div class="text-center text-4xl">112</div>
+                        <div class="text-center text-4xl text-gray-300 dark:text-gray-700">- -</div>
                     </div>
                 </div>
                 <div class="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50  dark:text-gray-200 overflow-hidden shadow-xl rounded-lg">
@@ -24,7 +24,7 @@
                             <i class="fas fa-cash-register"></i>
                             <p>Transactions</p>
                         </div>
-                        <div class="text-center text-4xl">18</div>
+                        <div class="text-center text-4xl text-gray-300 dark:text-gray-700">- -</div>
                     </div>
                 </div>
                 <div class="bg-white/50 backdrop-blur-sm dark:bg-gray-800/50  dark:text-gray-200 overflow-hidden shadow-xl rounded-lg">
@@ -33,7 +33,7 @@
                             <i class="fas fa-boxes-stacked"></i>
                             <p>Stock</p>
                         </div>
-                        <div class="text-center text-4xl">1 885</div>
+                        <div class="text-center text-4xl text-gray-300 dark:text-gray-700">- -</div>
                     </div>
                 </div>
                 <div class="dark:text-gray-200 border-2 border-dashed dark:border-gray-700 overflow-hidden rounded-lg">

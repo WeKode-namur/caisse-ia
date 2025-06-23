@@ -41,12 +41,16 @@
                     <i class="fas fa-boxes mr-2"></i>
                     Stock & Prix
                 </button>
-                <button @click="activeTab = 'history'"
-                        :class="{ 'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'history', 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300': activeTab !== 'history' }"
-                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
+{{--                <button @click="activeTab = 'history'"--}}
+{{--                        :class="{ 'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'history', 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300': activeTab !== 'history' }"--}}
+{{--                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">--}}
+{{--                    <i class="fas fa-history mr-2"></i>--}}
+{{--                    Historique--}}
+{{--                </button>--}}
+                <div class="text-gray-300 dark:text-gray-600 cursor-not-allowed font-medium text-sm py-2 px-1 border-b-2 border-transparent whitespace-nowrap">
                     <i class="fas fa-history mr-2"></i>
                     Historique
-                </button>
+                </div>
             </nav>
         </div>
 
@@ -149,14 +153,14 @@
     </div>
 
     <x-slot:actions>
-        <button onclick="quickAdjustStock()" class="bg-green-600 dark:bg-green-700 text-white px-3 py-2 rounded-md hover:opacity-75 hover:scale-105 duration-500">
-            <i class="fas fa-plus mr-2"></i>
-            Ajuster stock
-        </button>
-        <button onclick="quickEdit()" class="bg-blue-600 dark:bg-blue-700 text-white px-3 py-2 rounded-md hover:opacity-75 hover:scale-105 duration-500">
-            <i class="fas fa-edit mr-2"></i>
-            Modifier
-        </button>
+{{--        <button onclick="quickAdjustStock()" class="bg-green-600 dark:bg-green-700 text-white px-3 py-2 rounded-md hover:opacity-75 hover:scale-105 duration-500">--}}
+{{--            <i class="fas fa-plus mr-2"></i>--}}
+{{--            Ajuster stock--}}
+{{--        </button>--}}
+{{--        <button onclick="quickEdit()" class="bg-blue-600 dark:bg-blue-700 text-white px-3 py-2 rounded-md hover:opacity-75 hover:scale-105 duration-500">--}}
+{{--            <i class="fas fa-edit mr-2"></i>--}}
+{{--            Modifier--}}
+{{--        </button>--}}
     </x-slot:actions>
 </x-modal>
 

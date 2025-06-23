@@ -361,12 +361,23 @@
                         _availableValues: []
                     };
                 },
-                // AJOUTER ces méthodes manquantes
                 calculateMargin() {
-                    const sellPrice = parseFloat(this.modalForm.sell_price) || 0;
-                    const buyPrice = parseFloat(this.modalForm.buy_price) || parseFloat(this.modalForm.stock.buy_price) || 0;
-                    if (sellPrice > 0 && buyPrice > 0) {
-                        return sellPrice - buyPrice;
+                    const sellPriceTvac = parseFloat(this.modalForm.sell_price) || 0;
+                    const buyPriceHtva  = parseFloat(this.modalForm.buy_price)
+                        || parseFloat(this.modalForm.stock.buy_price) || 0;
+                    const tvaRate       = parseFloat(this.tvaRate) || 0;
+
+                    console.log({
+                        sellPriceTvac,
+                        buyPriceHtva,
+                        tvaRate,
+                        sellPriceHtva: sellPriceTvac / (1 + tvaRate / 100),
+                        marge: (sellPriceTvac / (1 + tvaRate / 100)) - buyPriceHtva
+                    });
+
+                    if (sellPriceTvac > 0 && buyPriceHtva > 0) {
+                        const sellPriceHtva = sellPriceTvac / (1 + tvaRate / 100);
+                        return +(sellPriceHtva - buyPriceHtva).toFixed(2);
                     }
                     return null;
                 },

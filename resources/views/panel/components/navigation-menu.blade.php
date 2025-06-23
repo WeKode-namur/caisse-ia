@@ -99,12 +99,12 @@
                                 </x-dropdown-link>
 
                                 <!-- Paramètres -->
-                                <x-dropdown-link href="{{ route('settings.index') }}">
-                                    <div class="flex items-center w-full">
-                                        <i class="fa-solid fa-gear mr-3"></i>
-                                        <span class="flex-1">{{ __('Paramètres') }}</span>
-                                    </div>
-                                </x-dropdown-link>
+{{--                                <x-dropdown-link href="{{ route('settings.index') }}">--}}
+{{--                                    <div class="flex items-center w-full">--}}
+{{--                                        <i class="fa-solid fa-gear mr-3"></i>--}}
+{{--                                        <span class="flex-1">{{ __('Paramètres') }}</span>--}}
+{{--                                    </div>--}}
+{{--                                </x-dropdown-link>--}}
 
                                 <!-- Support -->
 {{--                                <x-dropdown-link href="{{ route('support') }}">--}}
