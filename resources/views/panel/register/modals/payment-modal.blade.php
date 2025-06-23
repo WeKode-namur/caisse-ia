@@ -43,7 +43,7 @@
         <button type="button" @click="open = false" class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-500">
             Annuler
         </button>
-        <button type="submit" form="payment-form" class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700">
+        <button id="finalize-payment-btn" @click="window.registerManager.finalizePayment()" disabled class="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
             <i class="fas fa-check mr-2"></i>
             Valider le paiement
         </button>

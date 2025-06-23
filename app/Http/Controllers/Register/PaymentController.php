@@ -249,6 +249,7 @@ class PaymentController extends Controller
                 'customer_id' => $sessionData['customer']['id'] ?? null,
                 'transaction_type' => 'ticket',
                 'total_amount' => $sessionData['totals']['total'],
+                'items_count' => $sessionData['totals']['items_count'],
                 'payment_status' => 'paid', // Payé directement
                 'notes' => $request->notes,
             ]);
@@ -274,7 +275,7 @@ class PaymentController extends Controller
 
             DB::commit();
             
-            return redirect()->route('panel.tickets.show', $transaction)
+            return redirect()->route('panel.tickets.index', $transaction)
                              ->with('success', 'Vente finalisée avec succès.');
 
         } catch (\Exception $e) {

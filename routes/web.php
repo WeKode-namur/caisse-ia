@@ -19,17 +19,7 @@ Route::middleware([
     require __DIR__ . '/register.php';
 
     // 🧾 Tickets & Factures
-    Route::get('/transactions', function () {
-        return view('panel.transactions.view');
-    })->name('transactions');
-
-    Route::get('/tickets/{id}', function ($id) {
-        return view('panel.tickets.show', compact('id'));
-    })->name('tickets.show');
-
-    Route::get('/factures/{id}', function ($id) {
-        return view('panel.factures.show', compact('id'));
-    })->name('factures.show');
+    require __DIR__ . '/transaction.php';
 
     // 📦 Inventaire
     require __DIR__ . '/inventory.php';
