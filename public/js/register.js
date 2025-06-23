@@ -301,7 +301,7 @@ class RegisterManager {
         }
 
         const cartItemsHtml = this.cart.map(item => `
-            <div class="border-b dark:border-gray-700 hover:scale-105 duration-300 bg-white dark:bg-gray-800 hover:border hover:shadow-lg p-3 flex gap-6 group">
+            <div class="border-b dark:border-gray-700 hover:scale-105 duration-300 bg-white dark:bg-gray-800 hover:border hover:shadow-lg p-3 flex gap-6 group z-20">
                 <div class="">
                     <div class="flex items-center gap-3">
                         <p>${item.article_name}</p>
@@ -350,7 +350,7 @@ class RegisterManager {
                 <span class="text-lg font-bold dark:text-white">Prix: ${total.toFixed(2)} €</span>
             </div>
         `;
-        
+
         totalsContainer.innerHTML = totalsHtml;
     }
 
@@ -410,7 +410,7 @@ class RegisterManager {
                     <i class="fas fa-${method.icon || 'credit-card'} w-6 text-center mr-2"></i>
                     ${method.name}
                 </label>
-                <input type="number" step="0.01" min="0" id="payment-method-${method.id}" 
+                <input type="number" step="0.01" min="0" id="payment-method-${method.id}"
                        data-method-id="${method.id}" data-method-name="${method.name}"
                        class="payment-input w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="0.00">
                 <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 pt-6">€</span>
@@ -420,7 +420,7 @@ class RegisterManager {
         this.updatePaymentStateFromInputs(); // Initialiser le récapitulatif
         window.openModal('payment-modal');
     }
-    
+
     updatePaymentStateFromInputs() {
         this.pendingPayments = [];
         document.querySelectorAll('.payment-input').forEach(input => {
@@ -495,7 +495,7 @@ class RegisterManager {
                     notes: notes
                 })
             });
-            
+
             // Si la réponse est une redirection (succès), le navigateur suivra
             if(response.ok && response.redirected) {
                  window.location.href = response.url;

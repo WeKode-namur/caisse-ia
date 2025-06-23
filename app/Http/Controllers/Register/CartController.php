@@ -45,9 +45,11 @@ class CartController extends Controller
             'price_override' => 'nullable|numeric|min:0'
         ]);
 
-        $variant = Variant::with(['article', 'stocks' => function($query) {
-            $query->where('quantity', '>', 0)->orderBy('expiry_date');
-        }])->findOrFail($request->variant_id);
+        $variant = Variant::with([
+            'article',
+            'stocks' => fn($q) => $q->where('quantity', '>', 0)->orderBy('expiry_date'),
+            'attributeValues.attribute'
+        ])->findOrFail($request->variant_id);
 
         // Vérifier le stock disponible
         $availableStock = $variant->stocks->sum('quantity');
@@ -85,7 +87,7 @@ class CartController extends Controller
             'total_price' => $unitPrice * $quantity,
             'tax_rate' => $variant->article->tva ?? 21,
             'cost_price' => (float) $stockToUse->buy_price,
-            'attributes' => $this->getVariantAttributes($variant)
+            'variant_attributes' => $this->getVariantAttributes($variant)
         ];
 
         // Ajouter l'item au panier
@@ -386,7 +388,7 @@ class CartController extends Controller
             'quantity' => $item['quantity'],
             'unit_price' => number_format($item['unit_price'], 0),
             'total_price' => number_format($item['total_price'], 0),
-            'attributes' => $item['attributes'] ?? null
+            'attributes' => $item['variant_attributes'] ?? null
         ];
     }
 

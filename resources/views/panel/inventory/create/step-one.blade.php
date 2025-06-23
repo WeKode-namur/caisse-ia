@@ -128,7 +128,7 @@
                             <div>
                                 <label for="reference" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Référence article
-                                    <span class="text-xs text-gray-500">(auto-générée si vide)</span>
+{{--                                    <span class="text-xs text-gray-500">(auto-générée si vide)</span>--}}
                                 </label>
                                 <input type="text"
                                        name="reference"
@@ -139,7 +139,7 @@
                                 @error('reference')
                                 <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
                                 @enderror
-                                <p class="text-xs text-gray-500 mt-1">Si vous laissez vide, une référence sera automatiquement générée basée sur la catégorie.</p>
+{{--                                <p class="text-xs text-gray-500 mt-1">Si vous laissez vide, une référence sera automatiquement générée basée sur la catégorie.</p>--}}
                             </div>
 
                             <!-- Info sur les codes-barres -->

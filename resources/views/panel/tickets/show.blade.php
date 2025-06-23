@@ -129,14 +129,22 @@
                                                 </div>
                                                 <div>
                                                     <p class="font-medium">{{ $item->article_name }}</p>
-                                                    <p class="text-sm text-gray-500 font-mono">{{ $item->barcode ?? 'N/A' }}</p>
+                                                    @if($item->barcode)
+                                                    <p class="text-sm text-gray-500 font-mono">{{ $item->barcode }}</p>
+                                                    @endif
                                                     @if($item->variant_reference)
                                                         <p class="text-sm text-gray-500">Réf: {{ $item->variant_reference }}</p>
                                                     @endif
-                                                    @if($item->variant_attributes)
+                                                    @if($item->variant && $item->variant->attributeValues->count() > 0)
                                                         <div class="flex flex-wrap gap-1 mt-1">
-                                                            @foreach($item->variant_attributes as $key => $value)
-                                                                <span class="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 text-xs rounded">{{ ucfirst($key) }}: {{ $value }}</span>
+                                                            @foreach($item->variant->attributeValues as $attributeValue)
+                                                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                                                    {{ $loop->index % 4 == 0 ? 'bg-purple-50 text-purple-800 dark:bg-purple-900 dark:text-purple-200' : '' }}
+                                                                    {{ $loop->index % 4 == 1 ? 'bg-pink-50 text-pink-800 dark:bg-pink-900 dark:text-pink-200' : '' }}
+                                                                    {{ $loop->index % 4 == 2 ? 'bg-green-50 text-green-800 dark:bg-green-900 dark:text-green-200' : '' }}
+                                                                    {{ $loop->index % 4 == 3 ? 'bg-orange-50 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : '' }}">
+                                                                    {{ $attributeValue->attribute->name }}: {{ $attributeValue->value }}
+                                                                </span>
                                                             @endforeach
                                                         </div>
                                                     @endif
@@ -539,7 +547,7 @@
 
         function printTicketDirect() {
             // Rassembler les données nécessaires depuis le PHP
-            const transaction = @json($transaction->load('items.variant', 'payments.paymentMethod', 'cashier'));
+            const transaction = @json($transaction);
             const totals = @json($totals);
             const appName = @json(config('app.name'));
             const changeAmount = {{ $transaction->payments->sum('amount') - $totals['final_total'] }};
@@ -554,12 +562,12 @@
                 }).format(quantity);
 
                 let attributesHtml = '';
-                if (item.variant_attributes && Object.keys(item.variant_attributes).length > 0) {
-                    attributesHtml = `<div style="font-size: 10px; color: #555; padding-left: 10px;">${Object.values(item.variant_attributes).join(' - ')}</div>`;
+                if (item.variant && item.variant.attributeValues && item.variant.attributeValues.length > 0) {
+                    const values = item.variant.attributeValues.map(attr => attr.value).join(' - ');
+                    attributesHtml = `<div style="font-size: 10px; color: #555; padding-left: 10px;">${values}</div>`;
                 }
 
                 let barcodeHtml = '';
-                // Utilise le barcode de l'item de transaction, car il est copié lors de la vente
                 if (item.barcode) {
                     barcodeHtml = `<div style="font-size: 10px; color: #555; padding-left: 10px;">EAN: ${item.barcode}</div>`;
                 }
@@ -575,7 +583,6 @@
                     </div>
                 `;
 
-                // Afficher le prix unitaire si la quantité est supérieure à 1
                 if (quantity > 1) {
                     itemsHtml += `
                         <div class="item" style="font-size: 10px; color: #555;">

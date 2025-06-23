@@ -494,7 +494,7 @@ class TransactionController extends Controller
             'stock_id' => $cartItem['stock_id'],
             'article_name' => $cartItem['article_name'],
             'variant_reference' => $cartItem['variant_reference'],
-            'variant_attributes' => $cartItem['attributes'] ?? null,
+            'variant_attributes' => $cartItem['variant_attributes'] ?? null,
             'barcode' => $cartItem['barcode'] ?? null,
             'quantity' => $cartItem['quantity'],
             'unit_price_ht' => $cartItem['unit_price'] / 1.21, // Simplifié

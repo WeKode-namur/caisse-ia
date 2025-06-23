@@ -25,6 +25,19 @@ class TicketController extends Controller
         
         $transaction = $query->findOrFail($id);
 
+        // Charger les vrais variants avec leurs attributs pour chaque item
+        foreach ($transaction->items as $item) {
+            if ($item->barcode) {
+                $variant = \App\Models\Variant::with('attributeValues.attribute')
+                    ->where('barcode', $item->barcode)
+                    ->first();
+                
+                if ($variant) {
+                    $item->variant = $variant;
+                }
+            }
+        }
+
         // Calculer les totaux
         $totals = [
             'subtotal_ht' => $transaction->subtotal_ht ?? 0,

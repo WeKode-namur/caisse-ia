@@ -1,7 +1,7 @@
 <!--
     #listing-items      - Affiche le panier
 -->
-<div class="border-r dark:border-gray-700 lg:w-1/3 flex flex-col z-0">
+<div class="border-r dark:border-gray-700 lg:w-1/3 flex flex-col hover:z-10">
     <div class="border-b dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-0.5 flex gap-6 text-gray-400 dark:text-gray-500 text-xs">
         <div class="">Nom de l'article</div>
         <div class="flex flex-1 gap-6">

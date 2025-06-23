@@ -31,7 +31,7 @@ class DraftController extends Controller
             });
         }
 
-        $drafts = $query->paginate(1);
+        $drafts = $query->paginate(20);
 
         return view('panel.inventory.partials.drafts-table', compact('drafts'))->render();
     }
