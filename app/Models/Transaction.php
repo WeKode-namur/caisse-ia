@@ -11,10 +11,16 @@ class Transaction extends Model
     use HasFactory;
 
     protected $fillable = [
-        'transaction_number',
-        'transaction_type',
-        'is_wix_release',
+        'cashier_id',
+        'cash_register_id',
         'customer_id',
+        'transaction_type',
+        'transaction_number',
+        'total_amount',
+        'items_count',
+        'payment_status',
+        'notes',
+        'is_wix_release',
         'company_id',
         'parent_transaction_id',
         'return_reason',
@@ -23,17 +29,11 @@ class Transaction extends Model
         'subtotal_ttc',
         'tax_amount',
         'discount_amount',
-        'total_amount',
         'total_cost',
         'total_margin',
         'margin_percentage',
         'currency',
         'exchange_rate',
-        'notes',
-        'status',
-        'payment_status',
-        'cashier_id',
-        'cash_register_id',
         'pos_terminal',
         'voided_by',
         'voided_at',
@@ -53,6 +53,30 @@ class Transaction extends Model
         'exchange_rate' => 'decimal:6',
         'voided_at' => 'datetime'
     ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($transaction) {
+            if (empty($transaction->transaction_number)) {
+                $prefix = 'TICKET-';
+                $date = now()->format('Ymd');
+                $latestTransaction = self::where('transaction_number', 'like', $prefix . $date . '%')
+                                         ->latest('transaction_number')
+                                         ->first();
+                
+                if ($latestTransaction) {
+                    $lastNumber = (int) substr($latestTransaction->transaction_number, -4);
+                    $newNumber = str_pad($lastNumber + 1, 4, '0', STR_PAD_LEFT);
+                } else {
+                    $newNumber = '0001';
+                }
+
+                $transaction->transaction_number = $prefix . $date . '-' . $newNumber;
+            }
+        });
+    }
 
     // ===== RELATIONS =====
 
@@ -253,27 +277,6 @@ class Transaction extends Model
     }
 
     // ===== METHODS =====
-
-    /**
-     * Génère un numéro de transaction unique
-     */
-    public static function generateTransactionNumber($type = 'ticket')
-    {
-        $prefix = match($type) {
-            'ticket' => 'T',
-            'invoice' => 'F',
-            'return' => 'R',
-            'refund' => 'RF',
-            default => 'T'
-        };
-
-        $date = now()->format('Ymd');
-        $counter = self::whereDate('created_at', today())
-                ->where('transaction_type', $type)
-                ->count() + 1;
-
-        return $prefix . $date . str_pad($counter, 4, '0', STR_PAD_LEFT);
-    }
 
     /**
      * Calcule les totaux de la transaction

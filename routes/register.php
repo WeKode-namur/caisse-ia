@@ -61,6 +61,7 @@ Route::prefix('register')->name('register.')->group(function () {
         Route::prefix('payment')->name('payment.')->group(function () {
             Route::get('/methods', [PaymentController::class, 'getMethods'])->name('methods');
             Route::post('/process', [PaymentController::class, 'processPayment'])->name('process');
+            Route::post('/finalize', [PaymentController::class, 'finalizeSale'])->name('finalize');
             Route::post('/calculate-change', [PaymentController::class, 'calculateChange'])->name('calculate-change');
             Route::post('/refund', [PaymentController::class, 'processRefund'])->name('refund');
         });
@@ -68,6 +69,7 @@ Route::prefix('register')->name('register.')->group(function () {
         // === TRANSACTIONS ===
         Route::prefix('transactions')->name('transactions.')->group(function () {
             Route::post('/create', [TransactionController::class, 'create'])->name('create');
+            Route::post('/create-from-cart', [TransactionController::class, 'createFromCart'])->name('create-from-cart');
             Route::get('/{transaction}/print', [TransactionController::class, 'print'])->name('print');
             Route::post('/{transaction}/void', [TransactionController::class, 'void'])->name('void');
             Route::post('/wix-release', [TransactionController::class, 'wixRelease'])->name('wix-release');

@@ -434,6 +434,51 @@ class TransactionController extends Controller
         ]);
     }
 
+    /**
+     * Crée une transaction à partir de la session de caisse actuelle
+     */
+    public function createFromCart(Request $request)
+    {
+        $sessionData = \App\Services\RegisterSessionService::exportSessionData();
+
+        if (empty($sessionData['cart'])) {
+            return response()->json(['success' => false, 'message' => 'Le panier est vide.'], 400);
+        }
+
+        try {
+            DB::beginTransaction();
+            
+            // Créer la transaction principale
+            $transaction = Transaction::create([
+                'cashier_id' => auth()->id(),
+                'cash_register_id' => \App\Services\RegisterSessionService::getCurrentCashRegister(),
+                'customer_id' => $sessionData['customer']['id'] ?? null,
+                'transaction_type' => 'ticket',
+                'total_amount' => $sessionData['totals']['total'],
+                'items_count' => $sessionData['totals']['items_count'],
+                'payment_status' => 'pending',
+                'notes' => $request->notes,
+            ]);
+
+            // Ajouter les items
+            foreach ($sessionData['cart'] as $item) {
+                // S'assurer que les données sont correctes
+                $itemData = $item;
+                unset($itemData['id'], $itemData['added_at']); // Retirer les clés non pertinentes
+                $transaction->items()->create($itemData);
+            }
+            
+            DB::commit();
+
+            return response()->json(['success' => true, 'transaction' => $transaction]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erreur lors de la création de la transaction depuis le panier: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Une erreur est survenue.'], 500);
+        }
+    }
+
     // ===== MÉTHODES PRIVÉES =====
 
     /**

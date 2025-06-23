@@ -21,8 +21,10 @@ class DatabaseSeeder extends Seeder
 //        ]);
 
 
-//        $this->call([
-//            ModuleSeeder::class,
-//        ]);
+        $this->call([
+            ModuleSeeder::class,
+            InventorySeeder::class,
+            PaymentMethodSeeder::class,
+        ]);
     }
 }

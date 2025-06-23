@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Register;
 use App\Http\Controllers\Controller;
 use App\Models\{PaymentMethod, Transaction, Payment};
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaymentController extends Controller
 {
@@ -212,6 +213,74 @@ class PaymentController extends Controller
                 'success' => false,
                 'message' => 'Erreur lors du remboursement: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    /**
+     * Finalise une vente complète (création transaction + paiements multiples)
+     */
+    public function finalizeSale(Request $request)
+    {
+        $request->validate([
+            'payments' => 'required|array|min:1',
+            'payments.*.payment_method_id' => 'required|exists:payment_methods,id',
+            'payments.*.amount' => 'required|numeric|min:0.01',
+            'notes' => 'nullable|string',
+        ]);
+
+        $sessionData = \App\Services\RegisterSessionService::exportSessionData();
+        if (empty($sessionData['cart'])) {
+            return back()->with('error', 'Le panier est vide.');
+        }
+
+        // Vérifier si le montant payé correspond au total
+        $totalPaid = collect($request->payments)->sum('amount');
+        if ($totalPaid < $sessionData['totals']['total']) {
+            return back()->with('error', 'Le montant payé est insuffisant.');
+        }
+
+        try {
+            DB::beginTransaction();
+
+            // 1. Créer la transaction
+            $transaction = Transaction::create([
+                'cashier_id' => auth()->id(),
+                'cash_register_id' => \App\Services\RegisterSessionService::getCurrentCashRegister(),
+                'customer_id' => $sessionData['customer']['id'] ?? null,
+                'transaction_type' => 'ticket',
+                'total_amount' => $sessionData['totals']['total'],
+                'payment_status' => 'paid', // Payé directement
+                'notes' => $request->notes,
+            ]);
+
+            // 2. Ajouter les items
+            foreach ($sessionData['cart'] as $item) {
+                $itemData = $item;
+                unset($itemData['id'], $itemData['added_at']);
+                $transaction->items()->create($itemData);
+            }
+            
+            // 3. Créer les paiements
+            foreach ($request->payments as $paymentData) {
+                $transaction->payments()->create([
+                    'payment_method_id' => $paymentData['payment_method_id'],
+                    'amount' => $paymentData['amount'],
+                    'status' => 'completed',
+                ]);
+            }
+
+            // 4. Vider la session
+            \App\Services\RegisterSessionService::clearSession();
+
+            DB::commit();
+            
+            return redirect()->route('panel.tickets.show', $transaction)
+                             ->with('success', 'Vente finalisée avec succès.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            \Log::error('Erreur lors de la finalisation de la vente: ' . $e->getMessage());
+            return back()->with('error', 'Une erreur est survenue lors de la finalisation de la vente.');
         }
     }
 

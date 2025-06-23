@@ -7,6 +7,8 @@ class RegisterManager {
         this.discounts = [];
         this.totals = {};
         this.isProcessing = false;
+        this.currentTransaction = null;
+        this.pendingPayments = [];
     }
 
     init() {
@@ -94,6 +96,27 @@ class RegisterManager {
                 this.removeCartItem(e.target.closest('.remove-item').dataset.itemId);
             }
         });
+
+        // Gestion du modal de paiement
+        this.setupPaymentModalListeners();
+    }
+
+    setupPaymentModalListeners() {
+        const container = document.getElementById('payment-inputs-container');
+        if (container) {
+            container.addEventListener('input', () => {
+                this.updatePaymentStateFromInputs();
+            });
+        }
+
+        const addPaymentForm = document.getElementById('add-payment-form');
+        if(addPaymentForm) {
+            addPaymentForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                // Cette fonction n'existe plus, nous laissons le bouton de finalisation gérer la soumission.
+                // this.addPendingPayment();
+            });
+        }
     }
 
     setupBarcodeScanner() {
@@ -376,9 +399,116 @@ class RegisterManager {
             return;
         }
 
-        // Implémenter l'ouverture du modal de paiement
-        console.log('Ouverture du modal de paiement');
-        // TODO: Implémenter le modal de paiement
+        const paymentInputsContainer = document.getElementById('payment-inputs-container');
+        const paymentMethods = window.registerConfig.paymentMethods || [];
+
+        paymentInputsContainer.innerHTML = paymentMethods
+            .filter(method => method.is_active)
+            .map(method => `
+            <div class="relative">
+                <label for="payment-method-${method.id}" class="flex items-center text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <i class="fas fa-${method.icon || 'credit-card'} w-6 text-center mr-2"></i>
+                    ${method.name}
+                </label>
+                <input type="number" step="0.01" min="0" id="payment-method-${method.id}" 
+                       data-method-id="${method.id}" data-method-name="${method.name}"
+                       class="payment-input w-full pl-3 pr-10 py-2 border border-gray-300 rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white" placeholder="0.00">
+                <span class="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 pt-6">€</span>
+            </div>
+        `).join('');
+
+        this.updatePaymentStateFromInputs(); // Initialiser le récapitulatif
+        window.openModal('payment-modal');
+    }
+    
+    updatePaymentStateFromInputs() {
+        this.pendingPayments = [];
+        document.querySelectorAll('.payment-input').forEach(input => {
+            const amount = parseFloat(input.value) || 0;
+            if (amount > 0) {
+                this.pendingPayments.push({
+                    payment_method_id: input.dataset.methodId,
+                    amount: amount,
+                    methodName: input.dataset.methodName
+                });
+            }
+        });
+        this.updatePaymentRecap();
+    }
+
+    updatePaymentRecap() {
+        const total = this.totals.total || 0;
+        const paid = this.pendingPayments.reduce((sum, p) => sum + p.amount, 0);
+        let remaining = total - paid;
+        let change = 0;
+
+        if (remaining < 0) {
+            change = -remaining;
+            remaining = 0;
+        }
+
+        const breakdownContainer = document.getElementById('payments-breakdown-list');
+        breakdownContainer.innerHTML = `
+            <div class="flex justify-between">
+                <span class="text-gray-600 dark:text-gray-400">À Payer :</span>
+                <span class="font-semibold dark:text-white">${total.toFixed(2)} €</span>
+            </div>
+            ${this.pendingPayments.map(p => `
+                <div class="flex justify-between pl-4">
+                    <span class="text-gray-500 dark:text-gray-400">${p.methodName} :</span>
+                    <span class="font-semibold dark:text-white">${p.amount.toFixed(2)} €</span>
+                </div>
+            `).join('')}
+        `;
+
+        const finalRecapContainer = document.getElementById('recap-final');
+        const remainingLabel = document.getElementById('recap-remaining-label');
+        const remainingAmountEl = document.getElementById('recap-remaining');
+
+        if (change > 0) {
+            remainingLabel.textContent = 'Monnaie à rendre :';
+            remainingAmountEl.textContent = `${change.toFixed(2)} €`;
+            remainingAmountEl.className = 'font-bold text-green-500';
+        } else {
+            remainingLabel.textContent = 'Reste à payer :';
+            remainingAmountEl.textContent = `${remaining.toFixed(2)} €`;
+            remainingAmountEl.className = 'font-bold text-red-600';
+        }
+
+        const finalizeBtn = document.getElementById('finalize-payment-btn');
+        if (finalizeBtn) {
+            finalizeBtn.disabled = remaining > 0;
+        }
+    }
+
+    async finalizePayment() {
+        if (this.isProcessing) return;
+        this.isProcessing = true;
+
+        const notes = document.getElementById('payment_notes')?.value || '';
+
+        try {
+            const response = await this.request('/register/partials/payment/finalize', {
+                method: 'POST',
+                body: JSON.stringify({
+                    payments: this.pendingPayments,
+                    notes: notes
+                })
+            });
+            
+            // Si la réponse est une redirection (succès), le navigateur suivra
+            if(response.ok && response.redirected) {
+                 window.location.href = response.url;
+            } else {
+                 const result = await response.json();
+                 throw new Error(result.message || 'Une erreur est survenue.');
+            }
+
+        } catch (error) {
+            this.showNotification(error.message, 'error');
+        } finally {
+            this.isProcessing = false;
+        }
     }
 
     async processPayment(paymentData) {
@@ -563,9 +693,9 @@ class RegisterManager {
 }
 
 // Initialiser le gestionnaire de caisse
-document.addEventListener('DOMContentLoaded', function() {
+window.addEventListener('load', function() {
     if (!window.registerManager) {
         window.registerManager = new RegisterManager();
-        window.registerManager.init(); // Rendre accessible globalement
+        window.registerManager.init();
     }
 });
