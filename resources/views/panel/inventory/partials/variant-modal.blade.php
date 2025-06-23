@@ -318,59 +318,59 @@
                             </div>
                         </div>
 
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-                            <div class="flex items-center space-x-2 mb-4">
-                                <i class="far fa-image text-lg text-indigo-600"></i>
-                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Photo du variant</h4>
-                            </div>
+{{--                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">--}}
+{{--                            <div class="flex items-center space-x-2 mb-4">--}}
+{{--                                <i class="far fa-image text-lg text-indigo-600"></i>--}}
+{{--                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Photo du variant</h4>--}}
+{{--                            </div>--}}
 
-                            <!-- Zone de drop -->
-                            <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors cursor-pointer bg-white dark:bg-gray-800"
-                                 @dragover.prevent
-                                 @drop.prevent="handleFileDrop($event)"
-                                 @click="$refs.imageInput.click()">
-                                <input type="file" x-ref="imageInput" class="hidden" accept="image/*" multiple
-                                       @change="handleFileSelect($event)">
-                                <i class="mx-auto fas fa-cloud-arrow-up text-4xl text-gray-400 mb-3"></i>
-                                <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                                    <span class="font-medium text-blue-600 hover:text-blue-500">Cliquez pour ajouter</span> ou glissez-déposez
-                                </div>
-                                <p class="text-xs text-gray-500">PNG, JPG, GIF jusqu'à 2MB par image</p>
-                            </div>
+{{--                            <!-- Zone de drop -->--}}
+{{--                            <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors cursor-pointer bg-white dark:bg-gray-800"--}}
+{{--                                 @dragover.prevent--}}
+{{--                                 @drop.prevent="handleFileDrop($event)"--}}
+{{--                                 @click="$refs.imageInput.click()">--}}
+{{--                                <input type="file" x-ref="imageInput" class="hidden" accept="image/*" multiple--}}
+{{--                                       @change="handleFileSelect($event)">--}}
+{{--                                <i class="mx-auto fas fa-cloud-arrow-up text-4xl text-gray-400 mb-3"></i>--}}
+{{--                                <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">--}}
+{{--                                    <span class="font-medium text-blue-600 hover:text-blue-500">Cliquez pour ajouter</span> ou glissez-déposez--}}
+{{--                                </div>--}}
+{{--                                <p class="text-xs text-gray-500">PNG, JPG, GIF jusqu'à 2MB par image</p>--}}
+{{--                            </div>--}}
 
-                            <!-- Aperçu des images -->
-                            <div class="mt-4 grid grid-cols-2 gap-3" x-show="previewImages.length > 0" style="display: none;">
-                                <template x-for="(image, index) in previewImages" :key="index">
-                                    <div class="relative group">
-                                        <img :src="image.url" class="w-full h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600">
-                                        <button type="button" @click="removePreviewImage(index)"
-                                                class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500">
-                                            ×
-                                        </button>
-                                        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">
-                                            <div x-text="image.name" class="truncate"></div>
-                                            <div x-text="image.size"></div>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
+{{--                            <!-- Aperçu des images -->--}}
+{{--                            <div class="mt-4 grid grid-cols-2 gap-3" x-show="previewImages.length > 0" style="display: none;">--}}
+{{--                                <template x-for="(image, index) in previewImages" :key="index">--}}
+{{--                                    <div class="relative group">--}}
+{{--                                        <img :src="image.url" class="w-full h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600">--}}
+{{--                                        <button type="button" @click="removePreviewImage(index)"--}}
+{{--                                                class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500">--}}
+{{--                                            ×--}}
+{{--                                        </button>--}}
+{{--                                        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">--}}
+{{--                                            <div x-text="image.name" class="truncate"></div>--}}
+{{--                                            <div x-text="image.size"></div>--}}
+{{--                                        </div>--}}
+{{--                                    </div>--}}
+{{--                                </template>--}}
+{{--                            </div>--}}
 
-                            <!-- Conseils optimisés pour la caisse -->
-                            <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                                <div class="flex items-start space-x-2">
-                                    <i class="far fa-lightbulb text-amber-600 mt-0.5 flex-shrink-0"></i>
-                                    <div class="text-xs text-amber-700 dark:text-amber-300">
-                                        <p class="font-medium mb-1">Photo pour la caisse :</p>
-                                        <ul class="space-y-1">
-                                            <li>• <strong>Fond neutre</strong> : blanc ou transparent</li>
-                                            <li>• <strong>Article centré</strong> et bien visible</li>
-                                            <li>• <strong>Taille optimale</strong> : 300x300px minimum</li>
-                                            <li>• <strong>Format carré</strong> recommandé</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+{{--                            <!-- Conseils optimisés pour la caisse -->--}}
+{{--                            <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">--}}
+{{--                                <div class="flex items-start space-x-2">--}}
+{{--                                    <i class="far fa-lightbulb text-amber-600 mt-0.5 flex-shrink-0"></i>--}}
+{{--                                    <div class="text-xs text-amber-700 dark:text-amber-300">--}}
+{{--                                        <p class="font-medium mb-1">Photo pour la caisse :</p>--}}
+{{--                                        <ul class="space-y-1">--}}
+{{--                                            <li>• <strong>Fond neutre</strong> : blanc ou transparent</li>--}}
+{{--                                            <li>• <strong>Article centré</strong> et bien visible</li>--}}
+{{--                                            <li>• <strong>Taille optimale</strong> : 300x300px minimum</li>--}}
+{{--                                            <li>• <strong>Format carré</strong> recommandé</li>--}}
+{{--                                        </ul>--}}
+{{--                                    </div>--}}
+{{--                                </div>--}}
+{{--                            </div>--}}
+{{--                        </div>--}}
                     </div>
                 </div>
             </div>
