@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\Blade;
+use App\Helpers\TransactionHelper;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +21,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // Rendre la fonction translateStatus disponible globalement dans les vues
+        Blade::directive('translateStatus', function ($expression) {
+            return "<?php echo App\\Helpers\\TransactionHelper::translateStatus($expression); ?>";
+        });
     }
 }

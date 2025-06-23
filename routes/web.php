@@ -18,7 +18,7 @@ Route::middleware([
     // 💰 Module Caisse
     require __DIR__ . '/register.php';
 
-    // 🧾 Tickets & Factures
+    // 🧾 Transaction / Tickets & Factures
     require __DIR__ . '/transaction.php';
 
     // 📦 Inventaire

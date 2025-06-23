@@ -13,27 +13,26 @@ class TicketController extends Controller
      */
     public function show($id)
     {
-        $withRelations = [
-            'items',
-            'payments.paymentMethod',
-            'cashier',
-        ];
-
-        // Charger les relations client seulement si activé
-        if (config('app.register_customer_management')) {
-            $withRelations[] = 'customer';
-            $withRelations[] = 'company';
+        $query = Transaction::with(['cashier', 'items', 'payments']);
+        
+        // Ajouter les relations customer et company seulement si elles existent
+        if (class_exists('App\Models\Customer')) {
+            $query->with('customer');
         }
-
-        $transaction = Transaction::with($withRelations)->findOrFail($id);
-
-        // Vérifier que c'est bien un ticket
-        if ($transaction->transaction_type !== 'ticket') {
-            abort(404, 'Cette transaction n\'est pas un ticket de caisse.');
+        if (class_exists('App\Models\Company')) {
+            $query->with('company');
         }
+        
+        $transaction = $query->findOrFail($id);
 
         // Calculer les totaux
-        $totals = $this->calculateTotals($transaction);
+        $totals = [
+            'subtotal_ht' => $transaction->subtotal_ht ?? 0,
+            'total_tva' => $transaction->tax_amount ?? 0,
+            'subtotal_ttc' => $transaction->subtotal_ttc ?? 0,
+            'total_discount' => $transaction->discount_amount ?? 0,
+            'final_total' => $transaction->total_amount ?? 0
+        ];
 
         return view('panel.tickets.show', compact('transaction', 'totals'));
     }
