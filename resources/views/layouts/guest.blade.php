@@ -18,6 +18,15 @@
         @livewireStyles
     </head>
     <body>
+        <x-animated-grid-pattern
+            :width="40"
+            :height="40"
+            :numSquares="50"
+            :maxOpacity="0.5"
+            :duration="4"
+            :repeatDelay="0.1"
+            class="pointer-events-none lg:block hidden z-0"
+        />
         <div class="font-sans text-gray-900 antialiased">
             {{ $slot }}
         </div>
