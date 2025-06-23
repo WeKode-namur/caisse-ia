@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Register;
 
 use App\Http\Controllers\Controller;
-use App\Models\{PaymentMethod, Transaction, Payment};
+use App\Models\{PaymentMethod, Transaction, Payment, Stock, TransactionItem};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -243,22 +243,108 @@ class PaymentController extends Controller
             DB::beginTransaction();
 
             // 1. Créer la transaction
-            $transaction = Transaction::create([
+            // Calculer les totaux depuis les items du panier
+            $subtotalHT = 0;
+            $subtotalTTC = 0;
+            $totalTaxAmount = 0;
+            $totalDiscountAmount = 0;
+            $totalCost = 0; // Sera recalculé après les mouvements de stock
+            $totalMargin = 0; // Sera recalculé après les mouvements de stock
+
+            foreach ($sessionData['cart'] as $item) {
+                $unitPriceHT = $item['unit_price'] ?? 0;
+                $taxRate = $item['tax_rate'] ?? 0;
+                $unitPriceTTC = $unitPriceHT * (1 + $taxRate / 100);
+                $quantity = $item['quantity'] ?? 1;
+                
+                $itemSubtotalHT = $unitPriceHT * $quantity;
+                $itemSubtotalTTC = $unitPriceTTC * $quantity;
+                $itemTaxAmount = $itemSubtotalTTC - $itemSubtotalHT;
+                $itemDiscountAmount = $item['discount_amount'] ?? 0;
+                
+                $subtotalHT += $itemSubtotalHT;
+                $subtotalTTC += $itemSubtotalTTC;
+                $totalTaxAmount += $itemTaxAmount;
+                $totalDiscountAmount += $itemDiscountAmount;
+            }
+
+            // Préparer les données de la transaction
+            $transactionData = [
                 'cashier_id' => auth()->id(),
                 'cash_register_id' => \App\Services\RegisterSessionService::getCurrentCashRegister(),
-                'customer_id' => $sessionData['customer']['id'] ?? null,
                 'transaction_type' => 'ticket',
                 'total_amount' => $sessionData['totals']['total'],
                 'items_count' => $sessionData['totals']['items_count'],
-                'payment_status' => 'paid', // Payé directement
+                'payment_status' => 'paid',
                 'notes' => $request->notes,
-            ]);
+                'subtotal_ht' => $subtotalHT,
+                'subtotal_ttc' => $subtotalTTC,
+                'tax_amount' => $totalTaxAmount,
+                'discount_amount' => $totalDiscountAmount,
+                'total_cost' => 0, // Sera mis à jour après les mouvements de stock
+                'total_margin' => 0, // Sera mis à jour après les mouvements de stock
+                'margin_percentage' => 0, // Sera mis à jour après les mouvements de stock
+                'currency' => 'EUR',
+                'exchange_rate' => 1.000000,
+                'status' => 'completed',
+                'is_wix_release' => false,
+            ];
+
+            // Ajouter les champs client seulement si activé
+            if (config('app.register_customer_management')) {
+                $transactionData['customer_id'] = $sessionData['customer']['id'] ?? null;
+                $transactionData['company_id'] = $sessionData['company']['id'] ?? null;
+            } else {
+                $transactionData['customer_id'] = $sessionData['customer']['id'] ?? null;
+                $transactionData['company_id'] = null;
+            }
+
+            $transaction = Transaction::create($transactionData);
 
             // 2. Ajouter les items
             foreach ($sessionData['cart'] as $item) {
-                $itemData = $item;
-                unset($itemData['id'], $itemData['added_at']);
-                $transaction->items()->create($itemData);
+                // Calculer les prix unitaires
+                $unitPriceHT = $item['unit_price'] ?? 0;
+                $taxRate = $item['tax_rate'] ?? 0;
+                $unitPriceTTC = $unitPriceHT * (1 + $taxRate / 100);
+                
+                // Calculer les totaux
+                $quantity = $item['quantity'] ?? 1;
+                $totalPriceHT = $unitPriceHT * $quantity;
+                $totalPriceTTC = $unitPriceTTC * $quantity;
+                $taxAmount = $totalPriceTTC - $totalPriceHT;
+                
+                // Calculer les remises
+                $discountRate = $item['discount_rate'] ?? 0;
+                $discountAmount = $item['discount_amount'] ?? 0;
+                
+                // Calculer le coût et la marge
+                $costPrice = $item['cost_price'] ?? 0;
+                $totalCost = $costPrice * $quantity;
+                $margin = $totalPriceTTC - $discountAmount - $totalCost;
+                
+                $transactionItem = $transaction->items()->create([
+                    'variant_id' => $item['variant_id'],
+                    'stock_id' => $item['stock_id'],
+                    'article_name' => $item['article_name'],
+                    'variant_reference' => $item['variant_reference'] ?? null,
+                    'variant_attributes' => $item['variant_attributes'] ?? null,
+                    'barcode' => $item['barcode'] ?? null,
+                    'quantity' => $quantity,
+                    'unit_price_ht' => $unitPriceHT,
+                    'unit_price_ttc' => $unitPriceTTC,
+                    'total_price_ht' => $totalPriceHT,
+                    'total_price_ttc' => $totalPriceTTC,
+                    'tax_rate' => $taxRate,
+                    'tax_amount' => $taxAmount,
+                    'discount_rate' => $discountRate,
+                    'discount_amount' => $discountAmount,
+                    'total_cost' => $totalCost,
+                    'margin' => $margin,
+                ]);
+
+                // 3. Décompter le stock en FIFO
+                $this->decrementStockFIFO($transactionItem, $item['variant_id'], $quantity);
             }
             
             // 3. Créer les paiements
@@ -270,12 +356,29 @@ class PaymentController extends Controller
                 ]);
             }
 
-            // 4. Vider la session
+            // 4. Mettre à jour les totaux de coût et marge après les mouvements de stock
+            $totalCost = $transaction->items()
+                ->with('stockMovements')
+                ->get()
+                ->sum(function ($item) {
+                    return $item->stockMovements->sum('total_cost');
+                });
+
+            $totalMargin = $subtotalTTC - $totalDiscountAmount - $totalCost;
+            $marginPercentage = $subtotalTTC > 0 ? ($totalMargin / $subtotalTTC) * 100 : 0;
+
+            $transaction->update([
+                'total_cost' => $totalCost,
+                'total_margin' => $totalMargin,
+                'margin_percentage' => $marginPercentage,
+            ]);
+
+            // 5. Vider la session
             \App\Services\RegisterSessionService::clearSession();
 
             DB::commit();
             
-            return redirect()->route('panel.tickets.index', $transaction)
+            return redirect()->route('tickets.index', $transaction->id)
                              ->with('success', 'Vente finalisée avec succès.');
 
         } catch (\Exception $e) {
@@ -415,5 +518,48 @@ class PaymentController extends Controller
         }
 
         return $breakdown;
+    }
+
+    /**
+     * Décompte le stock en FIFO (First In, First Out)
+     */
+    private function decrementStockFIFO(TransactionItem $transactionItem, $variantId, $quantity)
+    {
+        $remainingQuantity = $quantity;
+        
+        // Récupérer tous les stocks disponibles pour ce variant, triés par date de création (plus ancien en premier)
+        $availableStocks = Stock::where('variant_id', $variantId)
+            ->where('quantity', '>', 0)
+            ->orderBy('created_at', 'asc') // FIFO : plus ancien en premier
+            ->get();
+
+        foreach ($availableStocks as $stock) {
+            if ($remainingQuantity <= 0) {
+                break; // On a décompté toute la quantité nécessaire
+            }
+
+            // Calculer combien on peut prendre de ce stock
+            $quantityToTake = min($remainingQuantity, $stock->quantity);
+            
+            // Créer le mouvement de stock
+            $transactionItem->stockMovements()->create([
+                'stock_id' => $stock->id,
+                'quantity_used' => $quantityToTake,
+                'cost_price' => $stock->buy_price,
+                'total_cost' => $quantityToTake * $stock->buy_price,
+                'lot_reference' => $stock->lot_reference,
+            ]);
+
+            // Décompter du stock
+            $stock->decrement('quantity', $quantityToTake);
+            
+            // Mettre à jour la quantité restante à décompter
+            $remainingQuantity -= $quantityToTake;
+        }
+
+        // Si on n'a pas pu décompter toute la quantité, c'est un problème
+        if ($remainingQuantity > 0) {
+            throw new \Exception("Stock insuffisant pour le variant {$variantId}. Manquant: {$remainingQuantity}");
+        }
     }
 }

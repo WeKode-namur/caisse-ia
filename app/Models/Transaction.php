@@ -60,7 +60,15 @@ class Transaction extends Model
 
         static::creating(function ($transaction) {
             if (empty($transaction->transaction_number)) {
-                $prefix = 'TICKET-';
+                // Déterminer le préfixe selon le type de transaction
+                $prefix = match($transaction->transaction_type) {
+                    'ticket' => 'T',
+                    'invoice' => 'F',
+                    'return' => 'R',
+                    'refund' => 'RF',
+                    default => 'T'
+                };
+                
                 $date = now()->format('Ymd');
                 $latestTransaction = self::where('transaction_number', 'like', $prefix . $date . '%')
                                          ->latest('transaction_number')
