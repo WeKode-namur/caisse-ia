@@ -2,6 +2,7 @@
     <x-authentication-card>
         <x-slot name="logo">
 {{--            <x-authentication-card-logo />--}}
+            <h1 class="font-bold lg:text-3xl text-xl">{{ config('app.name') }}</h1>
         </x-slot>
 
         <x-validation-errors class="mb-4" />
@@ -25,7 +26,7 @@
                 <x-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="current-password" />
             </div>
 
-            <div class="lg:flex items-center justify-between mt-4 mb-4 text-sm text-gray-600 sm:text-right sm:block">
+            <div class="lg:flex items-center justify-between mt-4 text-sm text-gray-600 sm:text-right sm:block">
                 <label for="remember_me" class="flex items-center">
                     <x-checkbox id="remember_me" name="remember" />
                     <span class="ms-2 text-sm text-gray-600">{{ __('Se souvenir de moi') }}</span>
