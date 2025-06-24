@@ -396,7 +396,7 @@
                         <tr class="border-b border-gray-200 dark:border-gray-700">
                             <td class="text-center">
                                 <input type="checkbox" name="variants[]" value="{{ $variant->id }}"
-                                       class="variant-checkbox">
+                                       class="variant-checkbox hover:scale-110 duration-500 hover:shadow-lg">
                             </td>
                             <td class="font-medium text-gray-900 dark:text-gray-100 variant-name cursor-pointer">{{ $variant->name ?? $article->name }}</td>
                             <td class="text-gray-700 dark:text-gray-300">
@@ -411,14 +411,15 @@
                             <td class="text-center">
                                 <div class="flex items-center justify-end space-x-1">
                                     <button type="button"
-                                            class="qty-minus px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded text-lg"
+                                            class="qty-minus px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded text-lg hover:scale-105 duration-500 hover:text-red-500 disabled:hover:text-gray-500 disabled:hover:scale-100"
                                             disabled>-
                                     </button>
                                     <input type="number" name="qty[{{ $variant->id }}]" value="0" min="0"
                                            max="{{ $variant->total_stock ?? 1 }}"
                                            class="w-16 px-2 py-1 border rounded text-center" disabled>
                                     <button type="button"
-                                            class="qty-plus px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded text-lg">+
+                                            class="qty-plus px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded text-lg hover:scale-105 duration-500 hover:text-green-500 disabled:hover:text-gray-500 disabled:hover:scale-100">
+                                        +
                                     </button>
                                 </div>
                             </td>
