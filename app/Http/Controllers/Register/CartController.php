@@ -363,6 +363,53 @@ class CartController extends Controller
         ]);
     }
 
+    /**
+     * Applique une remise personnalisée (pourcentage ou montant fixe)
+     */
+    public function applyCustomDiscount(Request $request)
+    {
+        $request->validate([
+            'type' => 'required|in:percentage,fixed',
+            'value' => 'required|numeric|min:0',
+            'description' => 'nullable|string|max:255'
+        ]);
+
+        $cart = RegisterSessionService::getCart();
+        if (empty($cart)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Le panier est vide'
+            ], 422);
+        }
+
+        $subtotal = collect($cart)->sum('total_price');
+        $discountAmount = 0;
+        if ($request->type === 'percentage') {
+            $discountAmount = $subtotal * ($request->value / 100);
+        } else {
+            $discountAmount = min($request->value, $subtotal);
+        }
+
+        $discountData = [
+            'discount_id' => null,
+            'name' => $request->description ?? ($request->type === 'percentage' ? 'Remise personnalisée' : 'Remise fixe'),
+            'code' => 'CUSTOM',
+            'type' => $request->type,
+            'value' => $request->value,
+            'amount' => $discountAmount,
+            'applied_to' => 'total'
+        ];
+
+        $discountId = RegisterSessionService::addDiscount($discountData);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Remise appliquée',
+            'discount' => array_merge($discountData, ['id' => $discountId]),
+            'cart_totals' => RegisterSessionService::calculateTotals()
+        ]);
+    }
+
     // ===== MÉTHODES PRIVÉES =====
 
     /**

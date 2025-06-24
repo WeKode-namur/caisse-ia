@@ -379,12 +379,35 @@ class RegisterSessionService
 
         $subtotal = collect($cart)->sum('total_price');
         $itemsCount = collect($cart)->sum('quantity');
-        $totalDiscount = collect($discounts)->sum('amount');
+        $totalDiscount = 0;
+        $discountsRecalculated = [];
+
+        foreach ($discounts as $discountId => $discount) {
+            $amount = 0;
+            if (($discount['type'] ?? null) === 'percentage') {
+                $amount = $subtotal * (($discount['value'] ?? 0) / 100);
+            } elseif (($discount['type'] ?? null) === 'fixed') {
+                $amount = min($discount['value'] ?? 0, $subtotal);
+            }
+            $discount['amount'] = round($amount, 2);
+            $discountsRecalculated[$discountId] = $discount;
+            $totalDiscount += $amount;
+        }
+
+        // Mettre à jour la session et la BDD avec les montants recalculés
+        $session = self::getOrCreateSession();
+        $session->update([
+            'discounts_data' => $discountsRecalculated,
+            'last_activity' => now()
+        ]);
+        session([self::DISCOUNTS_KEY => $discountsRecalculated]);
+
         $total = max(0, $subtotal - $totalDiscount);
 
         return [
             'items_count' => $itemsCount,
-            'total' => round($total, 2)
+            'total' => round($total, 2),
+            'total_discount' => round($totalDiscount, 2)
         ];
     }
 

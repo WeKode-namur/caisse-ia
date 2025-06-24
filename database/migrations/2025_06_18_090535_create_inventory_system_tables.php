@@ -168,5 +168,6 @@ return new class extends Migration
         Schema::dropIfExists('subtypes');
         Schema::dropIfExists('types');
         Schema::dropIfExists('categories');
+        Schema::dropIfExists('register_sessions');
     }
 };

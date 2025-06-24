@@ -99,6 +99,13 @@ class RegisterManager {
 
         // Gestion du modal de paiement
         this.setupPaymentModalListeners();
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.remove-discount')) {
+                const discountId = e.target.closest('.remove-discount').dataset.discountId;
+                this.removeDiscount(discountId);
+            }
+        });
     }
 
     setupPaymentModalListeners() {
@@ -270,7 +277,7 @@ class RegisterManager {
             if (data.success) {
                 this.cart = Object.values(data.cart || {});
                 this.customer = data.customer || null;
-                this.discounts = data.discounts || [];
+                this.discounts = Array.isArray(data.discounts) ? data.discounts : Object.values(data.discounts || {});
                 this.totals = data.totals || {};
                 this.renderCart();
                 this.renderTotals();
@@ -287,7 +294,7 @@ class RegisterManager {
         const cartContainer = document.getElementById('listing-items');
         if (!cartContainer) return;
 
-        if (this.cart.length === 0) {
+        if (this.cart.length === 0 && (!this.discounts || this.discounts.length === 0)) {
             cartContainer.innerHTML = `
                 <div class="h-full flex justify-center items-center">
                     <div class="p-8 text-center text-gray-300 dark:text-gray-700">
@@ -334,7 +341,38 @@ class RegisterManager {
             </div>
         `).join('');
 
-        cartContainer.innerHTML = cartItemsHtml;
+        // Ajout des remises en bas du panier
+        let discountsHtml = '';
+        if (this.discounts && this.discounts.length > 0) {
+            this.discounts.forEach(discount => {
+                let valueLabel = '';
+                if (discount.type === 'percentage') {
+                    valueLabel = `-${discount.value}%`;
+                } else if (discount.type === 'fixed') {
+                    valueLabel = `-${discount.amount.toFixed(2)} €`;
+                }
+                discountsHtml += `
+                    <div class="border-b dark:border-gray-700 bg-blue-50 dark:bg-blue-900/30 p-3 flex gap-6 group z-10 items-center">
+                        <div class="flex-1 flex items-center gap-2">
+                            <i class="fas fa-percent text-blue-600"></i>
+                            <span class="font-semibold text-blue-700 dark:text-blue-300">${discount.name || 'Remise'}</span>
+                            <span class="ml-2 text-blue-600 dark:text-blue-300 text-sm">${valueLabel}</span>
+                        </div>
+                        <div class="flex items-center gap-4">
+                            <span class="font-bold text-blue-700 dark:text-blue-300">
+                                -${discount.amount.toFixed(2)} €
+                            </span>
+                            <button class="remove-discount bg-red-100 hover:bg-red-300 text-red-700 rounded px-2 py-1 ml-2"
+                                data-discount-id="${discount.id}" title="Supprimer la remise">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        cartContainer.innerHTML = cartItemsHtml + discountsHtml;
     }
 
     renderTotals() {
@@ -343,14 +381,15 @@ class RegisterManager {
 
         const itemsCount = this.totals.items_count || 0;
         const total = this.totals.total || 0;
+        // const totalDiscount = this.totals.total_discount || 0;
 
-        const totalsHtml = `
+        let totalsHtml = `
             <div class="flex justify-between items-center">
                 <span class="text-sm text-gray-500 dark:text-gray-400">Articles: ${itemsCount}</span>
                 <span class="text-lg font-bold dark:text-white">Prix: ${total.toFixed(2)} €</span>
             </div>
         `;
-
+        // Suppression de l'affichage de la remise appliquée dans le footer
         totalsContainer.innerHTML = totalsHtml;
     }
 
@@ -605,6 +644,23 @@ class RegisterManager {
         // Ouvrir modal de sélection client
         console.log('Ouverture modal sélection client');
         // TODO: Implémenter le modal de sélection client
+    }
+
+    async removeDiscount(discountId) {
+        try {
+            const response = await this.request(`/register/partials/discounts/remove/${discountId}`, {
+                method: 'DELETE'
+            });
+            const data = await response.json();
+            if (data.success) {
+                this.showNotification('Remise supprimée', 'success');
+                await this.loadCart();
+            } else {
+                this.showNotification(data.message || 'Erreur lors de la suppression', 'error');
+            }
+        } catch (error) {
+            this.showNotification('Erreur réseau', 'error');
+        }
     }
 
     // ===== UTILITIES =====

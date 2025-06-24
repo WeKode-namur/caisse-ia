@@ -30,6 +30,7 @@ Route::prefix('register')->name('register.')->group(function () {
             Route::delete('/remove/{itemId}', [CartController::class, 'removeItem'])->name('remove-item');
             Route::delete('/clear', [CartController::class, 'clear'])->name('clear');
             Route::get('/totals', [CartController::class, 'getTotals'])->name('totals');
+            Route::post('/discount/manual', [\App\Http\Controllers\Register\CartController::class, 'applyCustomDiscount'])->name('discount.manual');
         });
 
         // === REMISES ===
