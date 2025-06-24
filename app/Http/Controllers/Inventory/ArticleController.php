@@ -354,4 +354,34 @@ class ArticleController extends Controller
             }),
         ]);
     }
+
+    /**
+     * Aperçu d'impression des étiquettes pour les variants sélectionnés
+     */
+    public function printLabelsPreview(\Illuminate\Http\Request $request, \App\Models\Article $article)
+    {
+        $data = $request->validate([
+            'variants' => 'required|array',
+            'qty' => 'required|array',
+        ]);
+        $variants = \App\Models\Variant::with(['attributeValues.attribute', 'article'])
+            ->whereIn('id', $data['variants'])
+            ->get();
+        $quantities = $data['qty'];
+
+        // Générer les QR codes ici
+        $qrCodes = [];
+        foreach ($variants as $variant) {
+            $qrData = $variant->barcode ?? '';
+            if ($qrData) {
+                $qrCode = new \Endroid\QrCode\QrCode($qrData);
+                $writer = new \Endroid\QrCode\Writer\PngWriter();
+                $qrCodes[$variant->id] = $writer->write($qrCode)->getDataUri();
+            } else {
+                $qrCodes[$variant->id] = null;
+            }
+        }
+
+        return view('inventory.labels.print-preview', compact('article', 'variants', 'quantities', 'qrCodes'));
+    }
 }

@@ -281,9 +281,10 @@
 {{--                            <button class="w-full px-3 py-2 bg-green-500 dark:bg-green-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">--}}
 {{--                                <i class="fas fa-plus mr-2"></i>Ajuster le stock--}}
 {{--                            </button>--}}
-{{--                            <button class="w-full px-3 py-2 bg-blue-500 dark:bg-blue-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">--}}
-{{--                                <i class="fas fa-barcode mr-2"></i>Imprimer étiquette--}}
-{{--                            </button>--}}
+                            <button id="modal_print_etiquette"
+                                    class="w-full px-3 py-2 bg-blue-500 dark:bg-blue-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
+                                <i class="fas fa-barcode mr-2"></i>Imprimer étiquette
+                            </button>
 {{--                            <button class="w-full px-3 py-2 bg-orange-500 dark:bg-orange-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">--}}
 {{--                                <i class="fas fa-chart-bar mr-2"></i>Voir les statistiques--}}
 {{--                            </button>--}}
@@ -376,6 +377,68 @@
 
     @include('panel.inventory.partials.article.variant-detail-modal')
 
+    {{-- Modal d'impression d'étiquettes --}}
+    <x-modal name="print-labels" title="Impression d'étiquettes" icon="clipboard" :closable="true" :footer="false"
+             size="2xl">
+        <form id="print-labels-form">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                    <thead>
+                    <tr>
+                        <th colspan="2" class="text-start">Nom du variant</th>
+                        <th class="text-start">Attributs</th>
+                        <th>Stock</th>
+                        <th class="text-center w-8">Quantité</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach($article->variants->whereNotNull('barcode') as $variant)
+                        <tr class="border-b border-gray-200 dark:border-gray-700">
+                            <td class="text-center">
+                                <input type="checkbox" name="variants[]" value="{{ $variant->id }}"
+                                       class="variant-checkbox">
+                            </td>
+                            <td class="font-medium text-gray-900 dark:text-gray-100 variant-name cursor-pointer">{{ $variant->name ?? $article->name }}</td>
+                            <td class="text-gray-700 dark:text-gray-300">
+                                @php
+                                    $attrs = $variant->attributeValues->map(function($attr) {
+                                        return $attr->attribute->name . ' : ' . $attr->value;
+                                    })->take(4)->implode('<br>');
+                                @endphp
+                                <span>{!! $attrs !!}</span>
+                            </td>
+                            <td class="text-center">{{ $variant->total_stock ?? 0 }}</td>
+                            <td class="text-center">
+                                <div class="flex items-center justify-end space-x-1">
+                                    <button type="button"
+                                            class="qty-minus px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded text-lg"
+                                            disabled>-
+                                    </button>
+                                    <input type="number" name="qty[{{ $variant->id }}]" value="0" min="0"
+                                           max="{{ $variant->total_stock ?? 1 }}"
+                                           class="w-16 px-2 py-1 border rounded text-center" disabled>
+                                    <button type="button"
+                                            class="qty-plus px-2 py-1 bg-gray-200 dark:bg-gray-600 rounded text-lg">+
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+            </div>
+            <div class="flex justify-end mt-6 space-x-3">
+                <button type="button"
+                        class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500"
+                        @click="open = false">Annuler
+                </button>
+                <button type="button" id="btn-print-labels"
+                        class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Imprimer
+                </button>
+            </div>
+        </form>
+    </x-modal>
+
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -413,6 +476,135 @@
                             '<div class="text-center py-8 text-red-500">Erreur lors du chargement de l\'historique</div>';
                     });
             }
+
+            document.getElementById('modal_print_etiquette').addEventListener('click', function () {
+                window.openModal('print-labels');
+            });
+
+            // Activer/désactiver l'input number et les boutons +/- selon la checkbox
+            document.querySelectorAll('.variant-checkbox').forEach(function (checkbox) {
+                checkbox.addEventListener('change', function () {
+                    const row = this.closest('tr');
+                    const qtyInput = row.querySelector('input[type=number]');
+                    const minusBtn = row.querySelector('.qty-minus');
+                    if (this.checked) {
+                        qtyInput.value = 1;
+                        qtyInput.disabled = false;
+                        minusBtn.disabled = false;
+                    } else {
+                        qtyInput.value = 0;
+                        qtyInput.disabled = true;
+                        minusBtn.disabled = true;
+                    }
+                });
+            });
+
+            // Gestion des boutons +/-
+            document.querySelectorAll('.qty-minus').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const row = this.closest('tr');
+                    const qtyInput = row.querySelector('input[type=number]');
+                    const checkbox = row.querySelector('.variant-checkbox');
+                    let val = parseInt(qtyInput.value) || 0;
+                    if (val > 0) {
+                        val--;
+                        qtyInput.value = val;
+                        if (val === 0) {
+                            checkbox.checked = false;
+                            qtyInput.disabled = true;
+                            this.disabled = true;
+                        }
+                    }
+                });
+            });
+            document.querySelectorAll('.qty-plus').forEach(function (btn) {
+                btn.addEventListener('click', function () {
+                    const row = this.closest('tr');
+                    const qtyInput = row.querySelector('input[type=number]');
+                    const max = parseInt(qtyInput.max) || 99;
+                    let val = parseInt(qtyInput.value) || 0;
+                    const checkbox = row.querySelector('.variant-checkbox');
+                    if (!checkbox.checked) {
+                        checkbox.checked = true;
+                        checkbox.dispatchEvent(new Event('change'));
+                        qtyInput.value = 1;
+                        qtyInput.disabled = false;
+                        row.querySelector('.qty-minus').disabled = false;
+                        row.querySelector('.qty-plus').disabled = false;
+                        return;
+                    }
+                    if (val < max) {
+                        val++;
+                        qtyInput.value = val;
+                        if (val > 0) {
+                            checkbox.checked = true;
+                            qtyInput.disabled = false;
+                            row.querySelector('.qty-minus').disabled = false;
+                            row.querySelector('.qty-plus').disabled = false;
+                        }
+                    }
+                });
+            });
+
+            // Si on modifie manuellement l'input et met 0, décocher la case
+            document.querySelectorAll('input[type=number][name^="qty["]').forEach(function (input) {
+                input.addEventListener('input', function () {
+                    const row = this.closest('tr');
+                    const checkbox = row.querySelector('.variant-checkbox');
+                    const minusBtn = row.querySelector('.qty-minus');
+                    let val = parseInt(this.value) || 0;
+                    if (val === 0) {
+                        checkbox.checked = false;
+                        this.disabled = true;
+                        minusBtn.disabled = true;
+                    } else {
+                        checkbox.checked = true;
+                        this.disabled = false;
+                        minusBtn.disabled = false;
+                    }
+                });
+            });
+
+            // Cliquer sur le nom coche/décoche la case
+            document.querySelectorAll('.variant-name').forEach(function (cell) {
+                cell.addEventListener('click', function () {
+                    const row = this.closest('tr');
+                    const checkbox = row.querySelector('.variant-checkbox');
+                    checkbox.checked = !checkbox.checked;
+                    checkbox.dispatchEvent(new Event('change'));
+                });
+            });
+
+            // Gestion du bouton Imprimer (popup d'impression)
+            document.getElementById('btn-print-labels').addEventListener('click', function () {
+                const form = document.getElementById('print-labels-form');
+                const formData = new FormData(form);
+                const params = new URLSearchParams();
+
+                // On ne garde que les variants cochés et leur quantité
+                form.querySelectorAll('.variant-checkbox:checked').forEach(cb => {
+                    params.append('variants[]', cb.value);
+                    const qty = form.querySelector(`input[name="qty[${cb.value}]"]`).value;
+                    params.append(`qty[${cb.value}]`, qty);
+                });
+
+                if (params.toString() === '') {
+                    alert('Sélectionnez au moins un variant.');
+                    return;
+                }
+
+                // Ouvre la popup en POST
+                const url = "{{ route('inventory.labels.print-preview', $article) }}";
+                const popup = window.open('', '_blank', 'width=900,height=600');
+                const html = `
+                    <form id=\"popupForm\" action=\"${url}\" method=\"POST\">
+                        <input type=\"hidden\" name=\"_token\" value=\"{{ csrf_token() }}\">
+                        ${Array.from(params.entries()).map(([k, v]) => `<input type=\"hidden\" name=\"${k}\" value=\"${v}\">`).join('')}
+                    </form>
+                    <script>document.getElementById('popupForm').submit();<\/script>
+                `;
+                popup.document.write(html);
+            });
         </script>
     @endpush
 </x-app-layout>
