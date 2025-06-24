@@ -7,4 +7,4 @@
 @include('panel.register.modals.items-unknown-modal')
 @include('panel.register.modals.gift-card-modal')
 @include('panel.register.modals.return-modal')
-@include('panel.register.modals.note-modal')
+{{-- @include('panel.register.modals.note-modal') --}}
