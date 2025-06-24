@@ -1,10 +1,10 @@
 <?php
 
-use App\Http\Controllers\{Inventory\ArticleController,
+use App\Http\Controllers\{Api\InventoryApiController,
+    Inventory\ArticleController,
     Inventory\CreationController,
     Inventory\DraftController,
-    InventoryController,
-    Api\InventoryApiController};
+    InventoryController};
 
 Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::get('', [InventoryController::class, 'index'])->name('index');
@@ -55,6 +55,7 @@ Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::get('/{id}/variants', [ArticleController::class, 'getVariants'])->name('variants');
     Route::get('/variants/{id}/history', [ArticleController::class, 'getVariantHistory'])->name('variant.history');
     Route::get('/{id}/movements', [ArticleController::class, 'getMovements'])->name('movements');
+    Route::get('/variants/{id}', [ArticleController::class, 'getVariant'])->name('variant.show');
 });
 
 Route::prefix('api')->name('api.')->group(function () {

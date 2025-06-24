@@ -77,7 +77,8 @@
                 </div>
             @endif
 
-            <!-- Body -->
+
+                <!-- Body -->
             <div class="px-6 py-4 {{ $bodyClass }}">
                 {{ $slot }}
             </div>

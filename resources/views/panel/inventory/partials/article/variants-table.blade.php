@@ -4,7 +4,8 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                <th colspan="2"
+                    class="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Variant
                 </th>
                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -38,29 +39,32 @@
                             return $av->attribute->name . ': ' . $av->value;
                         })->toArray()
                     ]) }})">
+                    <td class="px-4 py-4 text-center">
+                        @php $image = $variant->medias->where('type', 'image')->first(); @endphp
+                        @if($image)
+                            <img src="{{ $image->url }}" alt="Image variant"
+                                 class="w-10 h-10 object-cover rounded-lg border border-gray-200 dark:border-gray-700 mx-auto"/>
+                        @else
+                            <div
+                                class="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-lg flex items-center justify-center mx-auto">
+                                <i class="fas fa-image text-blue-300 text-xl"></i>
+                            </div>
+                        @endif
+                    </td>
                     <td class="px-4 py-4">
-                        <div class="flex items-center gap-3">
-                            <div>
-                                <div class="w-10 h-10 bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900 dark:to-blue-800 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-tag text-blue-400 text-xl"></i>
-                                </div>
-                            </div>
-                            <div>
-                                <div class="font-medium text-gray-900 dark:text-gray-100">
-                                    {{ $variant->reference ?? 'Variant #' . $variant->id }}
-                                </div>
-                                <div class="flex flex-wrap gap-1 mt-1">
-                                    @foreach($variant->attributeValues as $attributeValue)
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                                            {{ $loop->index % 4 == 0 ? 'bg-purple-50 text-purple-800 dark:bg-purple-900 dark:text-purple-200' : '' }}
-                                            {{ $loop->index % 4 == 1 ? 'bg-pink-50 text-pink-800 dark:bg-pink-900 dark:text-pink-200' : '' }}
-                                            {{ $loop->index % 4 == 2 ? 'bg-green-50 text-green-800 dark:bg-green-900 dark:text-green-200' : '' }}
-                                            {{ $loop->index % 4 == 3 ? 'bg-orange-50 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : '' }}">
-                                            {{ $attributeValue->attribute->name }}: {{ $attributeValue->value }}
-                                        </span>
-                                    @endforeach
-                                </div>
-                            </div>
+                        <div class="font-medium text-gray-900 dark:text-gray-100">
+                            {{ $variant->reference ?? 'Variant #' . $variant->id }}
+                        </div>
+                        <div class="flex flex-wrap gap-1 mt-1">
+                            @foreach($variant->attributeValues as $attributeValue)
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                    {{ $loop->index % 4 == 0 ? 'bg-purple-50 text-purple-800 dark:bg-purple-900 dark:text-purple-200' : '' }}
+                                    {{ $loop->index % 4 == 1 ? 'bg-pink-50 text-pink-800 dark:bg-pink-900 dark:text-pink-200' : '' }}
+                                    {{ $loop->index % 4 == 2 ? 'bg-green-50 text-green-800 dark:bg-green-900 dark:text-green-200' : '' }}
+                                    {{ $loop->index % 4 == 3 ? 'bg-orange-50 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : '' }}">
+                                    {{ $attributeValue->attribute->name }}: {{ $attributeValue->value }}
+                                </span>
+                            @endforeach
                         </div>
                     </td>
                     <td class="px-4 py-4 text-center">

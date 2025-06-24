@@ -41,6 +41,12 @@
                     <i class="fas fa-boxes mr-2"></i>
                     Stock & Prix
                 </button>
+                <button @click="activeTab = 'images'"
+                        :class="{ 'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'images', 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300': activeTab !== 'images' }"
+                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">
+                    <i class="fas fa-image mr-2"></i>
+                    Images
+                </button>
 {{--                <button @click="activeTab = 'history'"--}}
 {{--                        :class="{ 'border-blue-500 text-blue-600 dark:text-blue-400': activeTab === 'history', 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300': activeTab !== 'history' }"--}}
 {{--                        class="whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm transition-colors">--}}
@@ -137,6 +143,15 @@
                 </div>
             </div>
 
+            <!-- Onglet Images -->
+            <div x-show="activeTab === 'images'" class="space-y-4" style="display: none;">
+                <div id="variant-images-grid" class="grid grid-cols-2 md:grid-cols-4 gap-4"></div>
+                <div id="variant-images-empty" class="text-center text-gray-500 dark:text-gray-400 hidden">
+                    <i class="fas fa-image text-3xl mb-2"></i>
+                    <div>Aucune image pour ce variant</div>
+                </div>
+            </div>
+
             <!-- Onglet Historique -->
             <div x-show="activeTab === 'history'" class="space-y-4" style="display: none;">
                 <div class="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
@@ -163,6 +178,17 @@
 {{--        </button>--}}
     </x-slot:actions>
 </x-modal>
+
+<!-- Modal image plein écran pour images du variant -->
+<div id="variant-image-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/90"
+     style="backdrop-filter: blur(2px);">
+    <button onclick="closeVariantImageModal()"
+            class="absolute top-6 right-8 text-white text-3xl focus:outline-none z-60" title="Fermer">
+        <i class="fas fa-times"></i>
+    </button>
+    <img id="variant-image-modal-img" src="" alt="Image variant"
+         class="max-h-[80vh] max-w-[90vw] rounded-lg shadow-2xl border-4 border-white/20"/>
+</div>
 
 <script>
     let currentVariantData = null;
@@ -232,6 +258,7 @@
             attributesDetailContainer.innerHTML = '<span class="text-sm text-gray-500 dark:text-gray-400">Aucun attribut défini pour ce variant</span>';
         }
         loadVariantHistory(variantId);
+        loadVariantImages(variantId);
         openModal('variant-detail');
     }
     function copyBarcode() {
@@ -450,4 +477,58 @@
         // TODO: Système de notifications toast
         console.log(`${type}: ${message}`);
     }
+
+    function loadVariantImages(variantId) {
+        const grid = document.getElementById('variant-images-grid');
+        const empty = document.getElementById('variant-images-empty');
+        grid.innerHTML = '';
+        empty.classList.add('hidden');
+        fetch(`/inventory/variants/${variantId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.medias && data.medias.length > 0) {
+                    data.medias.filter(m => m.type === 'image').forEach(media => {
+                        const img = document.createElement('img');
+                        img.src = media.url;
+                        img.alt = 'Image variant';
+                        img.className = 'w-full h-32 object-cover rounded-lg cursor-pointer border border-gray-200 dark:border-gray-700 hover:scale-105 transition';
+                        img.onclick = () => showVariantImageModal(media.url, media.filename || '');
+                        grid.appendChild(img);
+                    });
+                } else {
+                    empty.classList.remove('hidden');
+                }
+            })
+            .catch(() => {
+                empty.classList.remove('hidden');
+            });
+    }
+
+    function showVariantImageModal(url, caption) {
+        if (!url) return;
+        const modal = document.getElementById('variant-image-modal');
+        const img = document.getElementById('variant-image-modal-img');
+        img.src = url;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeVariantImageModal() {
+        const modal = document.getElementById('variant-image-modal');
+        const img = document.getElementById('variant-image-modal-img');
+        img.src = '';
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        const modal = document.getElementById('variant-image-modal');
+        if (modal) {
+            modal.addEventListener('click', function (e) {
+                if (e.target === modal) closeVariantImageModal();
+            });
+        }
+    });
 </script>

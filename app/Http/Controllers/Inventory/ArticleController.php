@@ -5,7 +5,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Variant;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Request;
 
 class ArticleController extends Controller
 {
@@ -334,5 +333,25 @@ class ArticleController extends Controller
     private function formatPrice($price)
     {
         return number_format($price, 2, ',', ' ') . ' €';
+    }
+
+    /**
+     * Retourner les infos d'un variant (avec médias) en JSON
+     */
+    public function getVariant($id)
+    {
+        $variant = \App\Models\Variant::with(['medias'])->findOrFail($id);
+        return response()->json([
+            'id' => $variant->id,
+            'reference' => $variant->reference,
+            'barcode' => $variant->barcode,
+            'medias' => $variant->medias->map(function ($media) {
+                return [
+                    'url' => $media->url,
+                    'type' => $media->type,
+                    'filename' => $media->filename,
+                ];
+            }),
+        ]);
     }
 }
