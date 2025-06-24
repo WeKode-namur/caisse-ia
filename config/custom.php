@@ -13,4 +13,10 @@ return [
     'email' => [
         'active' => env('MAIL_ACTIVE', false),
     ],
+    'barcode' => [
+        'prefix_one' => env('PREFIX_ONE', 'WK'),
+        'prefix_two' => env('PREFIX_TWO', 'NAM'),
+    ],
+    'referent_lot_optionnel' => env('REFERENT_LOT_OPTIONNEL', true),
+    'date_expiration_optionnel' => env('DATE_EXPIRATION_OPTIONNEL', true),
 ];

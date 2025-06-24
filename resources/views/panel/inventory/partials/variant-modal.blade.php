@@ -251,19 +251,25 @@
                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                            placeholder="0">
                                 </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Référence lot</label>
-                                    <input type="text" x-model="modalForm.stock.lot_reference"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                                           placeholder="ACHAT-2024-001">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date d'expiration</label>
-                                    <input type="date" x-model="modalForm.stock.expiry_date"
-                                           class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                                    <p class="text-xs text-gray-500 mt-1">Optionnel - Pour les produits périssables</p>
-                                </div>
-
+                                <template x-if="$store.config.referent_lot_optionnel">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Référent
+                                            lot</label>
+                                        <input type="text" x-model="modalForm.stock.lot_reference"
+                                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                               placeholder="ACHAT-2024-001">
+                                    </div>
+                                </template>
+                                <template x-if="$store.config.date_expiration_optionnel">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date
+                                            d'expiration</label>
+                                        <input type="date" x-model="modalForm.stock.expiry_date"
+                                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                        <p class="text-xs text-gray-500 mt-1">Optionnel - Pour les produits
+                                            périssables</p>
+                                    </div>
+                                </template>
                                 <!-- Valeur totale du stock -->
                                 <div class="p-3 bg-purple-50 dark:bg-purple-900/20 rounded border border-purple-200 dark:border-purple-800">
                                     <div class="flex items-center justify-between text-sm">
@@ -285,27 +291,6 @@
                                 <h4 class="font-semibold text-gray-900 dark:text-gray-100">Identification</h4>
                             </div>
                             <div class="space-y-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                        <i class="fas fa-barcode inline mr-1"></i>
-                                        Code-barres
-                                    </label>
-                                    <div class="flex space-x-2">
-                                        <input type="text" x-model="modalForm.barcode"
-                                               :class="getFieldClasses('barcode')"
-                                               class="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none font-mono text-sm"
-                                               placeholder="Ex: 5410076001256">
-                                        @if(config('custom.generator.barcode') == true)
-                                            <button type="button" @click="generateBarcode()"
-                                                    class="px-3 py-2 bg-gray-100 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
-                                                Générer
-                                            </button>
-                                        @endif
-                                    </div>
-                                    <p x-show="validationErrors.barcode.hasError"
-                                       x-text="validationErrors.barcode.message"
-                                       class="text-red-600 dark:text-red-400 text-xs mt-1"></p>
-                                </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         <i class="fas fa-tag inline mr-1"></i>

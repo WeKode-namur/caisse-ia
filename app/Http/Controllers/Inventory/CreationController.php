@@ -8,6 +8,7 @@ use App\Models\AttributeValue;
 use App\Models\Category;
 use App\Models\Stock;
 use App\Models\Variant;
+use App\Services\VariantService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -393,9 +394,15 @@ class CreationController extends Controller
     {
         // Vérifier qu'il y a au moins un variant
         if ($draft->variants()->count() === 0) {
-            throw new \Exception('L\'article doit avoir au moins un variant.');
+            throw new \Exception("L'article doit avoir au moins un variant.");
         }
-
+        // Générer le code-barres pour chaque variant sans code-barres
+        foreach ($draft->variants as $variant) {
+            if (empty($variant->barcode)) {
+                $variant->barcode = VariantService::generateCustomBarcode();
+                $variant->save();
+            }
+        }
         $draft->update(['status' => 'active']);
     }
 

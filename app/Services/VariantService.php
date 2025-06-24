@@ -166,4 +166,25 @@ class VariantService
 
         return $barcode;
     }
+
+    /**
+     * Génère un code-barres unique au format PREFIX1-PREFIX2-YYMMDD-XXXX
+     */
+    public static function generateCustomBarcode(): string
+    {
+        $prefix1 = config('custom.barcode.prefix_one', 'WK');
+        $prefix2 = config('custom.barcode.prefix_two', 'NAM');
+        $date = now()->format('ymd');
+
+        $count = Variant::whereDate('created_at', now()->toDateString())->count() + 1;
+        $compteur = str_pad($count, 4, '0', STR_PAD_LEFT);
+        $barcode = "$prefix1$prefix2$date$compteur";
+
+        while (Variant::where('barcode', $barcode)->exists()) {
+            $count++;
+            $compteur = str_pad($count, 4, '0', STR_PAD_LEFT);
+            $barcode = "$prefix1$prefix2$date$compteur";
+        }
+        return $barcode;
+    }
 }

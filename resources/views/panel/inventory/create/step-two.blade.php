@@ -116,22 +116,29 @@
                                                     </div>
                                                 </div>
 
-                                                <!-- Code-barres -->
+                                                <!-- Code-barres (lecture seule) -->
                                                 <div class="col-span-2">
-                                                    <span class="font-mono text-sm" x-text="variant.barcode || '-'"></span>
+                                                    <span class="font-mono text-sm" x-text="variant.barcode || '-'"
+                                                          style="pointer-events:none;"></span>
                                                 </div>
 
                                                 <!-- Prix -->
                                                 <div class="col-span-2">
-                                                    <span class="font-medium" x-text="variant.sell_price ? formatPrice(variant.sell_price) : '-'"></span>
+                                                    <span class="font-medium"
+                                                          x-text="variant.sell_price ? formatPrice(variant.sell_price) : '-'"
+                                                          style="pointer-events:none;"></span>
                                                 </div>
 
                                                 <!-- Stock -->
                                                 <div class="col-span-2">
                                                     <template x-if="variant.stock">
                                                         <div>
-                                                            <div class="font-medium" x-text="variant.stock.quantity + ' unités'"></div>
-                                                            <div class="text-sm text-gray-500" x-text="'Valeur: ' + formatPrice(variant.stock.total_value || 0)"></div>
+                                                            <div class="font-medium"
+                                                                 x-text="variant.stock.quantity + ' unité(s)'"
+                                                                 style="pointer-events:none;"></div>
+                                                            <div class="text-sm text-gray-500"
+                                                                 x-text="'Valeur: ' + formatPrice(variant.stock.total_value || 0)"
+                                                                 style="pointer-events:none;"></div>
                                                         </div>
                                                     </template>
                                                     <template x-if="!variant.stock">
@@ -619,19 +626,6 @@
                         hasErrors = true;
                     }
 
-                    // Vérifier le code-barres
-                    if (!this.modalForm.barcode || this.modalForm.barcode.trim() === '') {
-                        this.validationErrors.barcode = { hasError: true, message: 'Le code-barres est obligatoire' };
-                        hasErrors = true;
-                    } else {
-                        // Vérifier l'unicité
-                        const isUnique = await this.checkBarcodeUnique(this.modalForm.barcode);
-                        if (!isUnique) {
-                            this.validationErrors.barcode = { hasError: true, message: 'Ce code-barres est déjà utilisé' };
-                            hasErrors = true;
-                        }
-                    }
-
                     // Vérifier le prix de vente
                     if (!this.modalForm.sell_price || parseFloat(this.modalForm.sell_price) <= 0) {
                         this.validationErrors.sell_price = { hasError: true, message: 'Le prix de vente est obligatoire et doit être positif' };
@@ -651,23 +645,6 @@
                     return this.validationErrors[fieldName].hasError
                         ? 'border-red-500 dark:border-red-400 focus:ring-red-500'
                         : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500';
-                },
-
-                async checkBarcodeUnique(barcode) {
-                    if (!barcode || barcode.trim() === '') return true;
-
-                    try {
-                        const response = await fetch(`/api/variants/check-barcode?barcode=${encodeURIComponent(barcode)}&variant_id=${this.modalForm.id || ''}`, {
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            }
-                        });
-                        const data = await response.json();
-                        return data.available;
-                    } catch (error) {
-                        console.error('Erreur lors de la vérification du code-barres:', error);
-                        return true; // En cas d'erreur, on laisse passer
-                    }
                 },
 
                 calculatePriceHT(priceTTC) {
