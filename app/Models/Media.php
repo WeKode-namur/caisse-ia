@@ -155,10 +155,9 @@ class Media extends Model
      */
     public function deleteWithFile(): bool
     {
-        if ($this->exists()) {
-            Storage::delete($this->path);
+        if (Storage::disk('public')->exists($this->path)) {
+            Storage::disk('public')->delete($this->path);
         }
-
         return $this->delete();
     }
 
@@ -170,8 +169,8 @@ class Media extends Model
         parent::boot();
 
         static::deleting(function ($media) {
-            if ($media->exists()) {
-                Storage::delete($media->path);
+            if (Storage::disk('public')->exists($media->path)) {
+                Storage::disk('public')->delete($media->path);
             }
         });
     }

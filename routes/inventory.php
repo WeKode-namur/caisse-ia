@@ -29,6 +29,8 @@ Route::prefix('inventory')->name('inventory.')->group(function () {
                 Route::post('/', [CreationController::class, 'storeVariant'])->name('store');
                 Route::get('/{variant}', [CreationController::class, 'getVariant'])->name('show');
                 Route::delete('/{variant}', [CreationController::class, 'deleteVariant'])->name('destroy');
+                Route::post('/{variant}/image', [CreationController::class, 'uploadVariantImage'])->name('upload.image');
+                Route::delete('/{variant}/image', [CreationController::class, 'uploadVariantImage'])->name('delete.image');
             });
         });
     });

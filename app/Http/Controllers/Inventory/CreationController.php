@@ -463,4 +463,41 @@ class CreationController extends Controller
             'available' => !$query->exists()
         ]);
     }
+
+    public function uploadVariantImage(Request $request, $draftId, $variantId)
+    {
+        $variant = Variant::where('id', $variantId)->where('article_id', $draftId)->firstOrFail();
+        if ($request->isMethod('delete')) {
+            // Supprimer l'image existante
+            $media = $variant->medias()->where('type', 'image')->first();
+            if ($media) {
+                $media->deleteWithFile();
+            }
+            return response()->json(['success' => true]);
+        }
+        $request->validate([
+            'image' => 'required|image|max:2048',
+        ]);
+        // Supprimer l'ancienne image si elle existe
+        $media = $variant->medias()->where('type', 'image')->first();
+        if ($media) {
+            $media->deleteWithFile();
+        }
+        $file = $request->file('image');
+        $articleId = $variant->article_id;
+        $year = now()->format('Y');
+        $month = now()->format('m');
+        $ext = $file->getClientOriginalExtension();
+        $path = "article/{$year}/{$month}/{$articleId}/img_variant_{$variant->id}.{$ext}";
+        // Stocker sur le disque public (storage/app/public/...)
+        $file->storeAs("article/{$year}/{$month}/{$articleId}", "img_variant_{$variant->id}.{$ext}", 'public');
+        $media = $variant->medias()->create([
+            'path' => $path,
+            'type' => 'image',
+        ]);
+        return response()->json([
+            'success' => true,
+            'url' => Storage::disk('public')->url($path),
+        ]);
+    }
 }

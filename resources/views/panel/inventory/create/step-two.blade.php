@@ -471,7 +471,8 @@
                                     buy_price: '',
                                     lot_reference: '',
                                     expiry_date: ''
-                                }
+                                },
+                                images: variant.images || [] // <-- AJOUT pour la preview image
                             };
 
                             // MAINTENANT remplir les attributs

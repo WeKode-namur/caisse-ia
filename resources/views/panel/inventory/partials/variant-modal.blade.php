@@ -251,7 +251,7 @@
                                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                            placeholder="0">
                                 </div>
-                                <template x-if="$store.config.referent_lot_optionnel">
+                                <template x-if="$store.config && $store.config.referent_lot_optionnel">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Référent
                                             lot</label>
@@ -260,7 +260,7 @@
                                                placeholder="ACHAT-2024-001">
                                     </div>
                                 </template>
-                                <template x-if="$store.config.date_expiration_optionnel">
+                                <template x-if="$store.config && $store.config.date_expiration_optionnel">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date
                                             d'expiration</label>
@@ -303,59 +303,133 @@
                             </div>
                         </div>
 
-{{--                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">--}}
-{{--                            <div class="flex items-center space-x-2 mb-4">--}}
-{{--                                <i class="far fa-image text-lg text-indigo-600"></i>--}}
-{{--                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Photo du variant</h4>--}}
-{{--                            </div>--}}
-
-{{--                            <!-- Zone de drop -->--}}
-{{--                            <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center hover:border-blue-400 dark:hover:border-blue-500 transition-colors cursor-pointer bg-white dark:bg-gray-800"--}}
-{{--                                 @dragover.prevent--}}
-{{--                                 @drop.prevent="handleFileDrop($event)"--}}
-{{--                                 @click="$refs.imageInput.click()">--}}
-{{--                                <input type="file" x-ref="imageInput" class="hidden" accept="image/*" multiple--}}
-{{--                                       @change="handleFileSelect($event)">--}}
-{{--                                <i class="mx-auto fas fa-cloud-arrow-up text-4xl text-gray-400 mb-3"></i>--}}
-{{--                                <div class="text-sm text-gray-600 dark:text-gray-400 mb-1">--}}
-{{--                                    <span class="font-medium text-blue-600 hover:text-blue-500">Cliquez pour ajouter</span> ou glissez-déposez--}}
-{{--                                </div>--}}
-{{--                                <p class="text-xs text-gray-500">PNG, JPG, GIF jusqu'à 2MB par image</p>--}}
-{{--                            </div>--}}
-
-{{--                            <!-- Aperçu des images -->--}}
-{{--                            <div class="mt-4 grid grid-cols-2 gap-3" x-show="previewImages.length > 0" style="display: none;">--}}
-{{--                                <template x-for="(image, index) in previewImages" :key="index">--}}
-{{--                                    <div class="relative group">--}}
-{{--                                        <img :src="image.url" class="w-full h-20 object-cover rounded-lg border border-gray-200 dark:border-gray-600">--}}
-{{--                                        <button type="button" @click="removePreviewImage(index)"--}}
-{{--                                                class="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-red-500">--}}
-{{--                                            ×--}}
-{{--                                        </button>--}}
-{{--                                        <div class="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-1 rounded-b-lg">--}}
-{{--                                            <div x-text="image.name" class="truncate"></div>--}}
-{{--                                            <div x-text="image.size"></div>--}}
-{{--                                        </div>--}}
-{{--                                    </div>--}}
-{{--                                </template>--}}
-{{--                            </div>--}}
-
-{{--                            <!-- Conseils optimisés pour la caisse -->--}}
-{{--                            <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">--}}
-{{--                                <div class="flex items-start space-x-2">--}}
-{{--                                    <i class="far fa-lightbulb text-amber-600 mt-0.5 flex-shrink-0"></i>--}}
-{{--                                    <div class="text-xs text-amber-700 dark:text-amber-300">--}}
-{{--                                        <p class="font-medium mb-1">Photo pour la caisse :</p>--}}
-{{--                                        <ul class="space-y-1">--}}
-{{--                                            <li>• <strong>Fond neutre</strong> : blanc ou transparent</li>--}}
-{{--                                            <li>• <strong>Article centré</strong> et bien visible</li>--}}
-{{--                                            <li>• <strong>Taille optimale</strong> : 300x300px minimum</li>--}}
-{{--                                            <li>• <strong>Format carré</strong> recommandé</li>--}}
-{{--                                        </ul>--}}
-{{--                                    </div>--}}
-{{--                                </div>--}}
-{{--                            </div>--}}
-{{--                        </div>--}}
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
+                             :class="imageError ? 'ring-2 ring-red-500' : ''"
+                             x-data="{
+                                imageLoading: false,
+                                variantImageUrl: (modalForm.images && modalForm.images.length > 0) ? modalForm.images[0].url : null,
+                                imageError: '',
+                                syncImage() {
+                                    this.variantImageUrl = (modalForm.images && modalForm.images.length > 0) ? modalForm.images[0].url : null;
+                                },
+                                uploadVariantImage(event) {
+                                    this.imageError = '';
+                                    const file = event.target.files[0];
+                                    if (!file) return;
+                                    // Vérification côté client
+                                    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+                                    if (!allowedTypes.includes(file.type)) {
+                                        this.imageError = 'Format d\'image non supporté. Formats acceptés : JPG, PNG, GIF, WEBP.';
+                                        return;
+                                    }
+                                    if (file.size > 2 * 1024 * 1024) {
+                                        this.imageError = 'L\'image dépasse la taille maximale autorisée (2 Mo).';
+                                        return;
+                                    }
+                                    this.imageLoading = true;
+                                    const formData = new FormData();
+                                    formData.append('image', file);
+                                    fetch(`/inventory/create/step/2/${draftId}/variants/${modalForm.id}/image`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                                        },
+                                        body: formData
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success && data.url) {
+                                            this.variantImageUrl = data.url;
+                                            this.imageError = '';
+                                        } else if (data.errors && data.errors.image && data.errors.image[0]) {
+                                            this.imageError = data.errors.image[0];
+                                        } else {
+                                            this.imageError = 'Erreur lors de l\'upload de l\'image.';
+                                        }
+                                    })
+                                    .catch(() => { this.imageError = 'Erreur lors de l\'upload de l\'image.'; })
+                                    .finally(() => { this.imageLoading = false; });
+                                },
+                                deleteVariantImage() {
+                                    this.imageError = '';
+                                    if (!modalForm.id) return;
+                                    this.imageLoading = true;
+                                    fetch(`/inventory/create/step/2/${draftId}/variants/${modalForm.id}/image`, {
+                                        method: 'DELETE',
+                                        headers: {
+                                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                                        }
+                                    })
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            this.variantImageUrl = null;
+                                            this.imageError = '';
+                                        } else {
+                                            this.imageError = 'Erreur lors de la suppression de l\'image.';
+                                        }
+                                    })
+                                    .catch(() => { this.imageError = 'Erreur lors de la suppression de l\'image.'; })
+                                    .finally(() => { this.imageLoading = false; });
+                                }
+                             }"
+                             x-effect="syncImage()">
+                            <div class="flex items-center space-x-2 mb-4">
+                                <i class="far fa-image text-lg text-indigo-600"></i>
+                                <h4 class="font-semibold text-gray-900 dark:text-gray-100">Photo du variant</h4>
+                            </div>
+                            <div class="text-center">
+                                <template x-if="imageLoading">
+                                    <div class="flex flex-col items-center justify-center py-6">
+                                        <svg class="animate-spin h-8 w-8 text-blue-600 mb-2" fill="none"
+                                             viewBox="0 0 24 24">
+                                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                                    stroke-width="4"></circle>
+                                            <path class="opacity-75" fill="currentColor"
+                                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                        </svg>
+                                        <span class="text-blue-600">Chargement de l'image...</span>
+                                    </div>
+                                </template>
+                                <template x-if="!imageLoading && variantImageUrl">
+                                    <div class="relative inline-block">
+                                        <img :src="variantImageUrl"
+                                             class="w-32 h-32 object-cover rounded-lg border border-gray-200 dark:border-gray-600 mx-auto">
+                                        <button type="button" @click="deleteVariantImage()"
+                                                class="absolute top-1 right-1 bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center shadow hover:bg-red-700 focus:outline-none">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </template>
+                                <template x-if="!imageLoading && !variantImageUrl">
+                                    <div class="flex flex-col items-center justify-center py-6">
+                                        <input type="file" accept="image/*" @change="uploadVariantImage($event)"
+                                               class="block mx-auto text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                                        <span class="text-xs text-gray-500 mt-2">PNG, JPG, GIF jusqu'à 2MB</span>
+                                    </div>
+                                </template>
+                            </div>
+                            <template x-if="imageError">
+                                <div class="mt-2 text-red-600 text-sm font-semibold"><i
+                                        class="fas fa-exclamation-circle mr-1"></i> <span x-text="imageError"></span>
+                                </div>
+                            </template>
+                            <div
+                                class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                                <div class="flex items-start space-x-2">
+                                    <i class="far fa-lightbulb text-amber-600 mt-0.5 flex-shrink-0"></i>
+                                    <div class="text-xs text-amber-700 dark:text-amber-300">
+                                        <p class="font-medium mb-1">Photo pour la caisse :</p>
+                                        <ul class="space-y-1">
+                                            <li>• <strong>Fond neutre</strong> : blanc ou transparent</li>
+                                            <li>• <strong>Article centré</strong> et bien visible</li>
+                                            <li>• <strong>Taille optimale</strong> : 300x300px minimum</li>
+                                            <li>• <strong>Format carré</strong> recommandé</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -393,3 +467,19 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Injection de la config PHP dans le JS global pour Alpine
+    window.variantConfig = {
+        referent_lot_optionnel: @json(config('custom.referent_lot_optionnel', true)),
+        date_expiration_optionnel: @json(config('custom.date_expiration_optionnel', true)),
+    };
+    // ...
+    // Dans l'init Alpine/variantManager, s'assurer que $store.config existe :
+    document.addEventListener('alpine:init', () => {
+        if (!Alpine.store('config')) {
+            Alpine.store('config', window.variantConfig);
+        }
+    });
+    // ... existing code ...
+</script>
