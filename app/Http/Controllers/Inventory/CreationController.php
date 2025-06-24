@@ -322,17 +322,22 @@ class CreationController extends Controller
         try {
             DB::beginTransaction();
 
-            // Supprimer les relations et le variant
-            $variant->attributeValues()->detach();
+            // Supprimer tous les stocks liés
             $variant->stocks()->delete();
-            $variant->medias()->delete();
+            // Supprimer tous les médias liés et les fichiers physiques
+            foreach ($variant->medias as $media) {
+                $media->deleteWithFile();
+            }
+            // Détacher tous les attributs
+            $variant->attributeValues()->detach();
+            // Supprimer le variant
             $variant->delete();
 
             DB::commit();
 
             return response()->json([
                 'success' => true,
-                'message' => 'Variant supprimé avec succès'
+                'message' => 'Variant supprimé définitivement avec succès'
             ]);
 
         } catch (\Exception $e) {
@@ -476,7 +481,7 @@ class CreationController extends Controller
             return response()->json(['success' => true]);
         }
         $request->validate([
-            'image' => 'required|image|max:2048',
+            'image' => 'required|image|max:25600', // 25 Mo
         ]);
         // Supprimer l'ancienne image si elle existe
         $media = $variant->medias()->where('type', 'image')->first();

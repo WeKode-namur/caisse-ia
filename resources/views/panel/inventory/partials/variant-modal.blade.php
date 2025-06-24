@@ -322,33 +322,87 @@
                                         this.imageError = 'Format d\'image non supporté. Formats acceptés : JPG, PNG, GIF, WEBP.';
                                         return;
                                     }
-                                    if (file.size > 2 * 1024 * 1024) {
-                                        this.imageError = 'L\'image dépasse la taille maximale autorisée (2 Mo).';
+                                    if (file.size > 25 * 1024 * 1024) {
+                                        this.imageError = 'L\'image dépasse la taille maximale autorisée (25 Mo).';
                                         return;
                                     }
+                                    // Déterminer la limite de compression selon la taille
+                                    let compressLimit = null;
+                                    if (file.size > 1 * 1024 * 1024 && file.size <= 15 * 1024 * 1024) {
+                                        compressLimit = 2.5 * 1024 * 1024; // 2,5 Mo
+                                    } else if (file.size > 15 * 1024 * 1024 && file.size <= 25 * 1024 * 1024) {
+                                        compressLimit = 4 * 1024 * 1024; // 4 Mo
+                                    }
+                                    // Compression si nécessaire (JPEG/PNG uniquement)
+                                    const compressIfNeeded = (file) => {
+                                        return new Promise((resolve, reject) => {
+                                            if ((file.type === 'image/jpeg' || file.type === 'image/png') && compressLimit && file.size > compressLimit) {
+                                                const img = new Image();
+                                                const reader = new FileReader();
+                                                reader.onload = (e) => {
+                                                    img.onload = () => {
+                                                        const canvas = document.createElement('canvas');
+                                                        canvas.width = img.width;
+                                                        canvas.height = img.height;
+                                                        const ctx = canvas.getContext('2d');
+                                                        ctx.drawImage(img, 0, 0);
+                                                        let quality = 0.92;
+                                                        let blobFn = (cb) => canvas.toBlob(cb, file.type, quality);
+                                                        const tryCompress = () => {
+                                                            blobFn((blob) => {
+                                                                if (blob.size <= compressLimit || quality < 0.5) {
+                                                                    resolve(new File([blob], file.name, {type: file.type}));
+                                                                } else {
+                                                                    quality -= 0.07;
+                                                                    tryCompress();
+                                                                }
+                                                            });
+                                                        };
+                                                        tryCompress();
+                                                    };
+                                                    img.onerror = () => reject('Erreur lors de la lecture de l\'image.');
+                                                    img.src = e.target.result;
+                                                };
+                                                reader.onerror = () => reject('Erreur lors de la lecture du fichier.');
+                                                reader.readAsDataURL(file);
+                                            } else {
+                                                resolve(file);
+                                            }
+                                        });
+                                    };
                                     this.imageLoading = true;
-                                    const formData = new FormData();
-                                    formData.append('image', file);
-                                    fetch(`/inventory/create/step/2/${draftId}/variants/${modalForm.id}/image`, {
-                                        method: 'POST',
-                                        headers: {
-                                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
-                                        },
-                                        body: formData
-                                    })
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data.success && data.url) {
-                                            this.variantImageUrl = data.url;
-                                            this.imageError = '';
-                                        } else if (data.errors && data.errors.image && data.errors.image[0]) {
-                                            this.imageError = data.errors.image[0];
-                                        } else {
-                                            this.imageError = 'Erreur lors de l\'upload de l\'image.';
+                                    compressIfNeeded(file).then((finalFile) => {
+                                        if (compressLimit && finalFile.size > compressLimit) {
+                                            this.imageError = `Impossible de compresser l'image sous ${compressLimit / 1024 / 1024} Mo.`;
+                                            this.imageLoading = false;
+                                            return;
                                         }
-                                    })
-                                    .catch(() => { this.imageError = 'Erreur lors de l\'upload de l\'image.'; })
-                                    .finally(() => { this.imageLoading = false; });
+                                        const formData = new FormData();
+                                        formData.append('image', finalFile);
+                                        fetch(`/inventory/create/step/2/${draftId}/variants/${modalForm.id}/image`, {
+                                            method: 'POST',
+                                            headers: {
+                                                'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                                            },
+                                            body: formData
+                                        })
+                                        .then(response => response.json())
+                                        .then(data => {
+                                            if (data.success && data.url) {
+                                                this.variantImageUrl = data.url;
+                                                this.imageError = '';
+                                            } else if (data.errors && data.errors.image && data.errors.image[0]) {
+                                                this.imageError = data.errors.image[0];
+                                            } else {
+                                                this.imageError = 'Erreur lors de l\'upload de l\'image.';
+                                            }
+                                        })
+                                        .catch(() => { this.imageError = 'Erreur lors de l\'upload de l\'image.'; })
+                                        .finally(() => { this.imageLoading = false; });
+                                    }).catch((err) => {
+                                        this.imageError = typeof err === 'string' ? err : 'Erreur lors de la compression de l\'image.';
+                                        this.imageLoading = false;
+                                    });
                                 },
                                 deleteVariantImage() {
                                     this.imageError = '';

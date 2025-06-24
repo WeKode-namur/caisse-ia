@@ -212,6 +212,26 @@
 
                 <!-- Modal pour créer/modifier un variant -->
                 @include('panel.inventory.partials.variant-modal')
+
+                <!-- Modal de confirmation de suppression de variant -->
+                <x-modal name="delete-variant" title="Supprimer ce variant ?" icon="trash" iconColor="red"
+                         :footer="false">
+                    <div class="py-2">
+                        <p class="text-gray-700 dark:text-gray-200 mb-4">Cette action est <span
+                                class="font-bold text-red-600">définitive</span>.<br>Es-tu sûr de vouloir supprimer ce
+                            variant ?</p>
+                        <div class="flex justify-end space-x-3">
+                            <button @click="$dispatch('close-modal-delete-variant')"
+                                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-50 dark:hover:bg-gray-500 transition-colors">
+                                Annuler
+                            </button>
+                            <button @click="confirmDeleteVariant()"
+                                    class="px-4 py-2 text-sm font-medium text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 transition-colors">
+                                Supprimer
+                            </button>
+                        </div>
+                    </div>
+                </x-modal>
             </div>
         </div>
     </div>
@@ -232,6 +252,7 @@
                 isModalOpen: false,
                 isLoading: false,
                 editingVariant: null,
+                variantToDelete: null,
 
                 // Modal state
                 modalForm: {
@@ -415,10 +436,11 @@
                     this.isModalOpen = true;
                 },
 
-                closeModal() {
+                closeModal(modalName) {
                     this.isModalOpen = false;
                     this.editingVariant = null;
                     this.resetModalForm();
+                    this.variantToDelete = null;
                 },
 
                 resetModalForm() {
@@ -564,31 +586,36 @@
                     }
                 },
 
-                async deleteVariant(variantId) {
-                    if (!confirm('Êtes-vous sûr de vouloir supprimer ce variant ?')) {
-                        return;
-                    }
+                deleteVariant(variantId) {
+                    this.variantToDelete = variantId;
+                    openModal('delete-variant');
+                },
 
-                    try {
-                        const response = await fetch(`/inventory/create/step/2/${this.draftId}/variants/${variantId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                            }
-                        });
-
-                        const data = await response.json();
-
+                confirmDeleteVariant() {
+                    const variantId = this.variantToDelete;
+                    if (!variantId) return;
+                    this.isLoading = true;
+                    fetch(`/inventory/create/step/2/${this.draftId}/variants/${variantId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'X-CSRF-TOKEN': document.querySelector('meta[name=\'csrf-token\']').getAttribute('content')
+                        }
+                    })
+                        .then(response => response.json())
+                        .then(data => {
                         if (data.success) {
-                            await this.loadVariants();
+                            this.loadVariants();
                             this.showSuccess(data.message);
                         } else {
                             this.showError(data.message);
                         }
-                    } catch (error) {
-                        console.error('Erreur lors de la suppression:', error);
-                        this.showError('Erreur lors de la suppression du variant');
-                    }
+                        })
+                        .catch(() => this.showError('Erreur lors de la suppression du variant'))
+                        .finally(() => {
+                            this.isLoading = false;
+                            this.variantToDelete = null;
+                            closeModal('delete-variant');
+                        });
                 },
 
                 editVariant(variantId) {
