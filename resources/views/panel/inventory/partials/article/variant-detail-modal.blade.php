@@ -260,6 +260,33 @@
         loadVariantHistory(variantId);
         loadVariantImages(variantId);
         openModal('variant-detail');
+
+        // Affichage des images du variant
+        const imagesGrid = document.getElementById('variant-images-grid');
+        const imagesEmpty = document.getElementById('variant-images-empty');
+        imagesGrid.innerHTML = '';
+        let images = [];
+        if (data.medias && Array.isArray(data.medias) && data.medias.length > 0) {
+            images = data.medias.filter(m => m.type === 'image').map(m => m.url);
+        } else if (data.primary_image) {
+            images = [data.primary_image];
+        }
+        if (images.length > 0) {
+            imagesEmpty.classList.add('hidden');
+            images.forEach(url => {
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = 'Image variant';
+                img.className = 'object-contain w-full h-32 rounded shadow cursor-pointer hover:scale-105 transition-transform';
+                img.onclick = function() {
+                    document.getElementById('variant-image-modal-img').src = url;
+                    document.getElementById('variant-image-modal').classList.remove('hidden');
+                };
+                imagesGrid.appendChild(img);
+            });
+        } else {
+            imagesEmpty.classList.remove('hidden');
+        }
     }
     function copyBarcode() {
         const barcode = document.getElementById('variant-modal-barcode').textContent;

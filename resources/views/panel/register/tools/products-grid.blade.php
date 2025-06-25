@@ -32,7 +32,7 @@
 <!-- Modal pour les variants -->
 <x-modal name="product-variants"
          title="Choisir un variant"
-         size="lg"
+         size="4xl"
          icon="tags"
          iconColor="blue">
 
@@ -156,19 +156,37 @@
             <div class="product-card bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-all cursor-pointer group hover:scale-105 duration-300"
                  data-article-id="${product.id}"
                  data-has-variants="${product.has_multiple_variants}">
-                <div class="w-full h-20 bg-blue-500 rounded-t-lg flex items-center justify-center text-white relative">
-                    <i class="fas fa-tag text-xl opacity-75 group-hover:scale-110 transition-transform"></i>
+                <div class="w-full h-36 bg-gradient-to-tr from-blue-200 to-violet-200 rounded-t-lg flex items-center justify-center text-white relative overflow-hidden">
+                    <!-- IMAGE DU PRODUIT -->
+                    ${product.primary_image ? `
+                        <div class=\"w-full h-full absolute top-0 left-0 z-0\" style=\"background-image: url('${product.primary_image}'); background-size: cover; background-position: center;\"></div>
+                        <div class=\"w-full h-full absolute top-0 left-0 z-0 backdrop-blur-sm backdrop-grayscale \"></div>
+                        <img src="${product.primary_image}" alt="Image produit" class="object-contain h-full w-full absolute top-0 left-0 z-10" />
+                    ` : `
+                        <div class=\"flex items-center justify-center w-full h-full absolute top-0 left-0 z-0\">
+                            <i class=\"fas fa-image text-3xl text-gray-400\"></i>
+                        </div>
+                    `}
+
                     ${product.stock_quantity <= 5 ? `
-                        <div class="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 py-0.5 rounded">
+                        <div class="absolute top-1 right-1 bg-red-500 text-white text-xs px-1 py-0.5 rounded z-20">
                             Stock faible
                         </div>
                     ` : ''}
                     ${product.has_multiple_variants ? `
-                        <div class="absolute top-1 left-1 bg-orange-500 text-white text-xs px-1 py-0.5 rounded">
+                        <div class="absolute top-1 left-1 bg-orange-500 text-white text-xs px-1 py-0.5 rounded z-20">
                             ${product.variants_count} variants
                         </div>
                     ` : ''}
                 </div>
+                <!-- MINIATURES -->
+                ${(product.thumbnails && product.thumbnails.length > 1) ? `
+                    <div class=\"flex flex-row gap-1 px-2 py-1 bg-white/80 dark:bg-gray-900/80 rounded-b-lg justify-center\">
+                        ${product.thumbnails.map(url => `
+                            <img src=\"${url}\" alt=\"Miniature\" class=\"object-cover w-8 h-8 rounded shadow border border-gray-200 dark:border-gray-700\" />
+                        `).join('')}
+                    </div>
+                ` : ''}
                 <div class="p-3">
                     <h3 class="font-medium text-sm dark:text-white capitalize truncate">${product.name}</h3>
                     <p class="text-xs text-gray-500 dark:text-gray-400">${product.category?.name || ''}</p>
@@ -256,31 +274,49 @@
 
             // Variants à afficher
             const allVariants = variants;
+            const seuilVariant = {{ config('custom.article.seuil') }};
 
             // Remplir la liste des variants
             const variantsList = document.getElementById('variants-list');
             variantsList.innerHTML = allVariants.map(variant => `
-            <div class="variant-item p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 cursor-pointer transition-all group"
+            <div class="group hover:bg-slate-100 dark:hover:bg-slate-800 variant-item p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:border-blue-500 dark:hover:border-blue-400 cursor-pointer transition-all group flex items-center gap-4"
                  data-variant-id="${variant.id}"
                  onclick="selectVariant(${variant.id})">
-                <div class="flex items-center justify-between">
-                    <div class="flex-1">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-3 h-3 rounded-full ${variant.stock_quantity > 0 ? 'bg-green-500' : 'bg-red-500'}"></div>
-                            <div>
-                                <h5 class="font-medium dark:text-white">
-                                    ${variant.reference || 'Variant standard'}
-                                </h5>
-                                <p class="text-sm text-gray-600 dark:text-gray-400">
-                                    Stock: ${variant.stock_quantity} | Prix: ${variant.sell_price}€
-                                </p>
+                <div class="flex-shrink-0">
+                    ${variant.primary_image ? `
+                        <img src="${variant.primary_image}" alt="Miniature variant" class="object-cover w-14 h-14 rounded shadow border border-gray-200 dark:border-gray-700 group-hover:scale-125 duration-500"/>
+                    ` : `
+                        <div class=\"flex items-center justify-center w-14 h-14 bg-gray-100 dark:bg-gray-800 rounded border border-gray-200 dark:border-gray-700\">
+                            <i class=\"fas fa-image text-xl text-gray-400\"></i>
+                        </div>
+                    `}
+                </div>
+                <div class="flex-1">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-3 h-3 rounded-full ${variant.stock_quantity > 0 ? (variant.stock_quantity > seuilVariant ? 'bg-green-500' : 'bg-orange-500') : 'bg-red-500'}"></div>
+                        <div>
+                            <h5 class="font-medium dark:text-white">
+                                ${variant.reference || 'Variant standard'}
+                            </h5>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">
+                                Stock: ${variant.stock_quantity} | Prix: ${variant.sell_price}€
+                            </p>
+                            <div class="flex flex-wrap gap-1 mt-2">
+                                ${(variant.attributes || []).map((attr, idx) => `
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                                        ${idx % 4 === 0 ? 'bg-purple-50 text-purple-800 dark:bg-purple-900 dark:text-purple-200' : ''}
+                                        ${idx % 4 === 1 ? 'bg-pink-50 text-pink-800 dark:bg-pink-900 dark:text-pink-200' : ''}
+                                        ${idx % 4 === 2 ? 'bg-green-50 text-green-800 dark:bg-green-900 dark:text-green-200' : ''}
+                                        ${idx % 4 === 3 ? 'bg-orange-50 text-orange-800 dark:bg-orange-900 dark:text-orange-200' : ''}\">
+                                        ${attr.name}: ${attr.value}
+                                    </span>
+                                `).join('')}
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center space-x-2">
-                        <span class="text-lg font-bold text-blue-600 dark:text-blue-400">${variant.sell_price}€</span>
-                        <i class="fas fa-plus text-gray-400 group-hover:text-blue-500"></i>
-                    </div>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="text-lg font-bold text-blue-600 dark:text-blue-400">${variant.sell_price}€</span>
                 </div>
             </div>
         `).join('');

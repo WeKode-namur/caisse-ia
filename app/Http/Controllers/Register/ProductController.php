@@ -214,6 +214,17 @@ class ProductController extends Controller
             return $variant->stocks->sum('quantity');
         });
 
+        // Ajout de l'image principale du premier variant en stock
+        $primaryImage = null;
+        $thumbnails = [];
+        if ($variantsInStock->count() > 0) {
+            $primaryImage = $variantsInStock->first()->primary_image;
+            // Récupérer jusqu'à 4 images (toutes variants confondus)
+            $thumbnails = $variantsInStock->flatMap(function($variant) {
+                return $variant->medias->where('type', 'image')->pluck('url');
+            })->unique()->take(4)->values()->all();
+        }
+
         return [
             'id' => $article->id,
             'name' => $article->name,
@@ -228,7 +239,9 @@ class ProductController extends Controller
             'stock_quantity' => $totalStock,
             'variants_count' => $variantsInStock->count(),
             'has_multiple_variants' => $variantsInStock->count() > 1,
-            'in_stock' => $totalStock > 0
+            'in_stock' => $totalStock > 0,
+            'primary_image' => $primaryImage,
+            'thumbnails' => $thumbnails,
         ];
     }
 
@@ -250,7 +263,15 @@ class ProductController extends Controller
                 'name' => $variant->article->category->name
             ] : null,
             'stock_quantity' => $variant->stocks->sum('quantity'),
-            'in_stock' => $variant->stocks->sum('quantity') > 0
+            'in_stock' => $variant->stocks->sum('quantity') > 0,
+            'primary_image' => $variant->primary_image,
+            'attributes_display' => $variant->attributes_display,
+            'attributes' => $variant->attributeValues->map(function($av) {
+                return [
+                    'name' => $av->attribute->name,
+                    'value' => $av->value,
+                ];
+            })->values(),
         ];
 
         if ($detailed) {
