@@ -68,6 +68,17 @@
     </div>
 </div>
 
+@php
+    $user = Auth::user();
+    $currentVersion = config('custom.version.current');
+    $checkFrom = config('custom.version.check_from');
+    $showChangelog = $user && version_compare($currentVersion, $user->last_seen_version ?? '0.0.0', '>') && version_compare($currentVersion, $checkFrom, '>=');
+
+@endphp
+@if(isset($showChangelog) && $showChangelog)
+    <x-changelog-modal :version="$changelogVersion" />
+@endif
+
 @stack('modals')
 
 @stack('scripts')

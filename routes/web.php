@@ -108,4 +108,16 @@ Route::middleware([
             'overlay' => false
         ])->render();
     })->name('loading-spinner');
+
+    // Mise à jour de la version vue par l'utilisateur (changelog)
+    Route::post('/user/seen-version', function () {
+        $user = auth()->user();
+        $version = request('version');
+        if ($user && $version) {
+            $user->last_seen_version = $version;
+            $user->save();
+            return response()->json(['success' => true]);
+        }
+        return response()->json(['success' => false], 400);
+    })->name('user.seen-version');
 });

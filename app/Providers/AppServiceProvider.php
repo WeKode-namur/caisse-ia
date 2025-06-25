@@ -6,6 +6,8 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use App\Helpers\TransactionHelper;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\View;
+use Illuminate\Support\Facades\Auth;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -27,6 +29,18 @@ class AppServiceProvider extends ServiceProvider
         // Rendre la fonction translateStatus disponible globalement dans les vues
         Blade::directive('translateStatus', function ($expression) {
             return "<?php echo App\\Helpers\\TransactionHelper::translateStatus($expression); ?>";
+        });
+
+        // Injection du flag de changelog dans le layout principal du panel
+        View::composer('layouts.app', function ($view) {
+            $user = Auth::user();
+            $currentVersion = config('custom.version.current');
+            $checkFrom = config('custom.version.check_from');
+            $showChangelog = $user
+                && version_compare($currentVersion, $user->last_seen_version ?? '0.0.0', '>')
+                && version_compare($currentVersion, $checkFrom, '>=');
+            $view->with('showChangelog', $showChangelog);
+            $view->with('changelogVersion', $currentVersion);
         });
     }
 }

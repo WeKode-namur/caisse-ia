@@ -19,4 +19,8 @@ return [
     ],
     'referent_lot_optionnel' => env('REFERENT_LOT_OPTIONNEL', true),
     'date_expiration_optionnel' => env('DATE_EXPIRATION_OPTIONNEL', true),
+    'version' => [
+        'current' => env('APP_VERSION', 'v0.0.1'),
+        'check_from' => env('APP_VERSION_CHECK_FROM', 'v0.0.1'),
+    ],
 ];
