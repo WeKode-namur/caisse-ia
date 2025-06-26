@@ -21,7 +21,7 @@ class ProductController extends Controller
         $query = Article::with(['category', 'variants.stocks'])
             ->where('name', '!=', '')
             ->whereHas('variants.stocks', function($q) {
-                $q->where('quantity', '>', 0);
+                $q->where('quantity', '>=', 0);
             });
 
         // Filtrage par recherche
@@ -225,6 +225,11 @@ class ProductController extends Controller
             })->unique()->take(4)->values()->all();
         }
 
+        // Compter les variants en rupture de stock
+        $variantsOutOfStockCount = $article->variants->filter(function($variant) {
+            return $variant->stocks->sum('quantity') == 0;
+        })->count();
+
         return [
             'id' => $article->id,
             'name' => $article->name,
@@ -237,8 +242,9 @@ class ProductController extends Controller
             'min_price' => $minPrice,
             'max_price' => $maxPrice,
             'stock_quantity' => $totalStock,
-            'variants_count' => $variantsInStock->count(),
-            'has_multiple_variants' => $variantsInStock->count() > 1,
+            'variants_count' => $article->variants->count(),
+            'variants_out_of_stock_count' => $variantsOutOfStockCount,
+            'has_multiple_variants' => $article->variants->count() > 1,
             'in_stock' => $totalStock > 0,
             'primary_image' => $primaryImage,
             'thumbnails' => $thumbnails,

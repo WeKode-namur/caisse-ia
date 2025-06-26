@@ -15,7 +15,7 @@
             <div class="border rounded flex items-center mt-3 text-base dark:border-gray-700">
                 <i class="fas fa-barcode px-3 dark:text-gray-300"></i>
                 <input type="text" name="barcode" id="barcode" class="border-0 px-3 py-1.5 flex-1 outline-0 focus:text-black dark:bg-gray-800 dark:focus:text-white dark:text-gray-300">
-                <button id="search_barcode" class="rounded-r bg-blue-500 h-full px-3 py-1.5 text-white hover:px-4 hover:opacity-75 duration-300"><i class="fas fa-search"></i></button>
+                <button id="search_barcode" class="rounded-r bg-blue-500 dark:bg-blue-700 h-full px-3 py-1.5 text-white hover:px-4 hover:opacity-75 duration-300"><i class="fas fa-search"></i></button>
             </div>
         </div>
     </div>

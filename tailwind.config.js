@@ -26,6 +26,11 @@ export default {
     darkMode: 'class',
     theme: {
         extend: {
+            boxShadow: {
+                // Votre ombre inset personnalisée
+                'inset-custom': 'inset 0 0 10px #999',
+                'inset-custom-dark': 'inset 0 0 10px #333',
+            },
             fontFamily: {
                 sans: ['Figtree', 'ui-sans-serif', 'system-ui'],
             },

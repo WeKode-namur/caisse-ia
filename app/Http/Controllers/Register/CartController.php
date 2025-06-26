@@ -433,8 +433,10 @@ class CartController extends Controller
             'variant_reference' => $item['variant_reference'],
             'barcode' => $item['barcode'],
             'quantity' => $item['quantity'],
-            'unit_price' => number_format($item['unit_price'], 0),
-            'total_price' => number_format($item['total_price'], 0),
+            'unit_price' => number_format($item['unit_price'], 2, '.', ''),
+            'total_price' => number_format($item['total_price'], 2, '.', ''),
+            'cost_price' => isset($item['cost_price']) ? number_format($item['cost_price'], 2, '.', '') : null,
+            'tax_rate' => isset($item['tax_rate']) ? $item['tax_rate'] : null,
             'attributes' => $item['variant_attributes'] ?? null
         ];
     }

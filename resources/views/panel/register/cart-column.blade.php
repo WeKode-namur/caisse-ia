@@ -22,7 +22,7 @@
                 <!-- Totaux du panier générés dynamiquement -->
             </div>
             <div class="text-right">
-                <button id="pay-button" class="bg-green-500 text-white rounded px-4 py-2 hover:bg-green-600 duration-300 hover:scale-105 hover:shadow-lg">
+                <button id="pay-button" class="bg-green-500 dark:bg-green-700 text-white rounded px-4 py-2 hover:bg-green-600 duration-300 hover:scale-105 hover:shadow-lg">
                     <i class="fas fa-cash-register mr-3"></i>
                     Payer
                 </button>

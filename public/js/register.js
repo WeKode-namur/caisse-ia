@@ -307,12 +307,21 @@ class RegisterManager {
             return;
         }
 
-        const cartItemsHtml = this.cart.map(item => `
-            <div class="border-b dark:border-gray-700 hover:scale-105 duration-300 bg-white dark:bg-gray-800 hover:border hover:shadow-lg p-3 flex gap-6 group z-20">
-                <div class="">
+        const cartItemsHtml = this.cart.map(item => {
+            // Calcul du prix TTC unitaire
+            const unitPriceTTC = parseFloat(item.unit_price) * (1 + (parseFloat(item.tax_rate || 0) / 100));
+            const costPrice = parseFloat(item.cost_price || 0);
+            const isLoss = unitPriceTTC < costPrice && costPrice > 0;
+            const priceClass = isLoss ? 'text-orange-500 font-bold animate-pulse' : '';
+            const warningIcon = isLoss ? `<span title="Prix en dessous du coût !" class="me-1 text-sm text-orange-500"><i class="fas fa-exclamation-triangle"></i></span>` : '';
+            return `
+            <div class="border-b dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-900 duration-300 bg-white dark:bg-gray-800 hover:shadow p-3 flex gap-6 group z-20" data-item-id="${item.id}">
+                <div class="w-1/3">
                     <div class="flex items-center gap-3">
-                        <p>${item.article_name}</p>
-                        ${item.variant_reference ? `<p class="text-gray-600 dark:text-gray-400 text-sm">- ${item.variant_reference}</p>` : ''}
+                        <p class="truncate">
+                            <span class="${priceClass}">${warningIcon}</span>
+                            ${item.article_name}
+                        </p>
                     </div>
                     <div class="flex items-center gap-3 text-gray-500 text-xs">
                         <i class="fas fa-barcode"></i>
@@ -320,8 +329,8 @@ class RegisterManager {
                     </div>
                 </div>
                 <div class="flex flex-1 gap-6 items-center">
-                    <div class="w-full flex gap-6 items-center justify-end">
-                        <p>${item.unit_price}€</p>
+                    <div class="w-full grid grid-cols-3 gap-6 items-center justify-end">
+                        <p class="editable-unit-price text-end ${priceClass}" data-item-id="${item.id}" tabindex="0" style="cursor:pointer;">${item.unit_price}€</p>
                         <div class="flex w-24">
                             <button type="button"
                                     class="qty-decrease border-y border-l dark:border-gray-700 py-1 px-2 rounded-l group-hover:bg-red-50 dark:group-hover:bg-green-950 group-hover:hover:bg-red-400 dark:group-hover:hover:bg-green-600 duration-300"
@@ -331,7 +340,7 @@ class RegisterManager {
                                     class="qty-increase border-y border-r dark:border-gray-700 py-1 px-2 rounded-r group-hover:bg-green-50 dark:group-hover:bg-red-950 group-hover:hover:bg-green-400 dark:group-hover:hover:bg-red-600 duration-300"
                                     data-item-id="${item.id}">+</button>
                         </div>
-                        <p>${item.total_price}€</p>
+                        <p class="editable-total-price text-end ${priceClass}" data-item-id="${item.id}" tabindex="0" style="cursor:pointer;">${item.total_price}€</p>
                     </div>
                     <button class="remove-item bg-red-300 dark:bg-red-800/50 group-hover:bg-red-500 text-white rounded w-8 h-8 text-sm text-center hover:bg-red-700 duration-300 hover:scale-105 hover:shadow-lg"
                             data-item-id="${item.id}">
@@ -339,7 +348,7 @@ class RegisterManager {
                     </button>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
 
         // Ajout des remises en bas du panier
         let discountsHtml = '';
@@ -373,6 +382,81 @@ class RegisterManager {
         }
 
         cartContainer.innerHTML = cartItemsHtml + discountsHtml;
+
+        // Ajout de l'édition inline après le rendu
+        this.setupInlinePriceEdit();
+    }
+
+    setupInlinePriceEdit() {
+        // Double-clic sur prix unitaire
+        document.querySelectorAll('.editable-unit-price').forEach(el => {
+            el.ondblclick = (e) => {
+                this.makePriceEditable(el, 'unit');
+            };
+        });
+        // Double-clic sur prix total
+        document.querySelectorAll('.editable-total-price').forEach(el => {
+            el.ondblclick = (e) => {
+                this.makePriceEditable(el, 'total');
+            };
+        });
+    }
+
+    makePriceEditable(el, type) {
+        const itemId = el.dataset.itemId;
+        const oldValue = parseFloat(el.textContent);
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.step = '0.01';
+        input.min = '0';
+        input.value = oldValue;
+        input.className = 'border rounded px-1 py-0.5 w-20';
+        input.style.fontWeight = 'bold';
+        input.style.color = el.style.color;
+        el.replaceWith(input);
+        input.focus();
+        input.select();
+        const save = async () => {
+            let newValue = parseFloat(input.value);
+            if (isNaN(newValue) || newValue <= 0) {
+                this.showNotification('Prix invalide', 'warning');
+                input.replaceWith(el);
+                return;
+            }
+            if (newValue === oldValue) {
+                input.replaceWith(el);
+                return;
+            }
+            // Si édition du total, recalculer le prix unitaire
+            let priceToSend = newValue;
+            const item = this.cart.find(i => i.id === itemId);
+            if (!item) return;
+            if (type === 'total') {
+                priceToSend = newValue / parseFloat(item.quantity);
+            }
+            // Appel API pour mettre à jour le prix ET la quantité actuelle
+            try {
+                const response = await this.request(`/register/partials/cart/update/${itemId}`, {
+                    method: 'PUT',
+                    body: JSON.stringify({ price: priceToSend, quantity: item.quantity })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    await this.loadCart();
+                } else {
+                    this.showNotification(data.message || 'Erreur lors de la mise à jour', 'error');
+                    input.replaceWith(el);
+                }
+            } catch (error) {
+                this.showNotification('Erreur réseau', 'error');
+                input.replaceWith(el);
+            }
+        };
+        input.onblur = save;
+        input.onkeydown = (e) => {
+            if (e.key === 'Enter') save();
+            if (e.key === 'Escape') input.replaceWith(el);
+        };
     }
 
     renderTotals() {
