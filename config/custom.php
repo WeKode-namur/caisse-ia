@@ -9,6 +9,7 @@ return [
     ],
     'register' => [
         'customer_management' => env('REGISTER_CUSTOMER_MANAGEMENT', false),
+        'arrondissementMethod' => env('REGISTER_ARRONDISSEMENT_METHOD', false),
     ],
     'email' => [
         'active' => env('MAIL_ACTIVE', false),
@@ -23,4 +24,11 @@ return [
         'current' => env('APP_VERSION', 'v0.0.1'),
         'check_from' => env('APP_VERSION_CHECK_FROM', 'v0.0.1'),
     ],
+    'address' => [
+        'street' => env('CUSTOM_ADDRESS_STREET'),
+        'postal' => env('CUSTOM_ADDRESS_POSTAL'),
+        'city' => env('CUSTOM_ADDRESS_CITY'),
+        'country' => env('CUSTOM_ADDRESS_COUNTRY'),
+    ],
+    'tva' => env('CUSTOM_TVA')
 ];

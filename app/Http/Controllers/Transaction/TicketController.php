@@ -47,7 +47,23 @@ class TicketController extends Controller
             'final_total' => $transaction->total_amount ?? 0
         ];
 
-        return view('panel.tickets.show', compact('transaction', 'totals'));
+        // Préparer les remises pour l'affichage
+        $discounts = [];
+        if (!empty($transaction->discounts_data)) {
+            $discounts = $transaction->discounts_data;
+        } elseif ($transaction->relationLoaded('discounts')) {
+            $discounts = $transaction->discounts->map(function($discount) {
+                return [
+                    'name' => $discount->discount_name,
+                    'type' => $discount->discount_type,
+                    'value' => $discount->discount_value,
+                    'amount' => $discount->discount_amount,
+                ];
+            })->values()->toArray();
+        }
+        $note = $transaction->notes;
+
+        return view('panel.tickets.show', compact('transaction', 'totals', 'discounts', 'note'));
     }
 
     /**

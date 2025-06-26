@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Register;
 
 use App\Http\Controllers\Controller;
+use App\Services\RegisterSessionService;
+use Illuminate\Support\Facades\Log;
 use App\Models\{PaymentMethod, Transaction, Payment, Stock, TransactionItem};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -228,40 +230,44 @@ class PaymentController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        $sessionData = \App\Services\RegisterSessionService::exportSessionData();
+        $sessionData = RegisterSessionService::exportSessionData();
         if (empty($sessionData['cart'])) {
             return back()->with('error', 'Le panier est vide.');
         }
 
         // Vérifier si le montant payé correspond au total
+        $arrondissementEnabled = config('custom.register.arrondissementMethod');
+        $totalToCheck = $sessionData['totals']['total'];
+        if ($arrondissementEnabled) {
+            $totalToCheck = round($totalToCheck * 20) / 20;
+        }
         $totalPaid = collect($request->payments)->sum('amount');
-        if ($totalPaid < $sessionData['totals']['total']) {
+        if ($totalPaid < $totalToCheck) {
             return back()->with('error', 'Le montant payé est insuffisant.');
         }
 
         try {
             DB::beginTransaction();
 
-            // 1. Créer la transaction
             // Calculer les totaux depuis les items du panier
             $subtotalHT = 0;
             $subtotalTTC = 0;
             $totalTaxAmount = 0;
             $totalDiscountAmount = 0;
-            $totalCost = 0; // Sera recalculé après les mouvements de stock
-            $totalMargin = 0; // Sera recalculé après les mouvements de stock
+            $totalCost = 0;
+            $totalMargin = 0;
 
             foreach ($sessionData['cart'] as $item) {
                 $unitPriceHT = $item['unit_price'] ?? 0;
                 $taxRate = $item['tax_rate'] ?? 0;
                 $unitPriceTTC = $unitPriceHT * (1 + $taxRate / 100);
                 $quantity = $item['quantity'] ?? 1;
-                
+
                 $itemSubtotalHT = $unitPriceHT * $quantity;
                 $itemSubtotalTTC = $unitPriceTTC * $quantity;
                 $itemTaxAmount = $itemSubtotalTTC - $itemSubtotalHT;
                 $itemDiscountAmount = $item['discount_amount'] ?? 0;
-                
+
                 $subtotalHT += $itemSubtotalHT;
                 $subtotalTTC += $itemSubtotalTTC;
                 $totalTaxAmount += $itemTaxAmount;
@@ -271,7 +277,7 @@ class PaymentController extends Controller
             // Préparer les données de la transaction
             $transactionData = [
                 'cashier_id' => auth()->id(),
-                'cash_register_id' => \App\Services\RegisterSessionService::getCurrentCashRegister(),
+                'cash_register_id' => RegisterSessionService::getCurrentCashRegister(),
                 'transaction_type' => 'ticket',
                 'total_amount' => $sessionData['totals']['total'],
                 'items_count' => $sessionData['totals']['items_count'],
@@ -281,13 +287,14 @@ class PaymentController extends Controller
                 'subtotal_ttc' => $subtotalTTC,
                 'tax_amount' => $totalTaxAmount,
                 'discount_amount' => $totalDiscountAmount,
-                'total_cost' => 0, // Sera mis à jour après les mouvements de stock
-                'total_margin' => 0, // Sera mis à jour après les mouvements de stock
-                'margin_percentage' => 0, // Sera mis à jour après les mouvements de stock
+                'total_cost' => 0,
+                'total_margin' => 0,
+                'margin_percentage' => 0,
                 'currency' => 'EUR',
                 'exchange_rate' => 1.000000,
                 'status' => 'completed',
                 'is_wix_release' => false,
+                'discounts_data' => !empty($sessionData['discounts']) ? $sessionData['discounts'] : null,
             ];
 
             // Ajouter les champs client seulement si activé
@@ -307,22 +314,22 @@ class PaymentController extends Controller
                 $unitPriceHT = $item['unit_price'] ?? 0;
                 $taxRate = $item['tax_rate'] ?? 0;
                 $unitPriceTTC = $unitPriceHT * (1 + $taxRate / 100);
-                
+
                 // Calculer les totaux
                 $quantity = $item['quantity'] ?? 1;
                 $totalPriceHT = $unitPriceHT * $quantity;
                 $totalPriceTTC = $unitPriceTTC * $quantity;
                 $taxAmount = $totalPriceTTC - $totalPriceHT;
-                
+
                 // Calculer les remises
                 $discountRate = $item['discount_rate'] ?? 0;
                 $discountAmount = $item['discount_amount'] ?? 0;
-                
+
                 // Calculer le coût et la marge
                 $costPrice = $item['cost_price'] ?? 0;
                 $totalCost = $costPrice * $quantity;
                 $margin = $totalPriceTTC - $discountAmount - $totalCost;
-                
+
                 $transactionItem = $transaction->items()->create([
                     'variant_id' => $item['variant_id'],
                     'stock_id' => $item['stock_id'],
@@ -346,7 +353,7 @@ class PaymentController extends Controller
                 // 3. Décompter le stock en FIFO
                 $this->decrementStockFIFO($transactionItem, $item['variant_id'], $quantity);
             }
-            
+
             // 3. Créer les paiements
             foreach ($request->payments as $paymentData) {
                 $transaction->payments()->create([
@@ -374,16 +381,16 @@ class PaymentController extends Controller
             ]);
 
             // 5. Vider la session
-            \App\Services\RegisterSessionService::clearSession();
+            RegisterSessionService::clearSession();
 
             DB::commit();
-            
+
             return redirect()->route('tickets.index', $transaction->id)
                              ->with('success', 'Vente finalisée avec succès.');
 
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Erreur lors de la finalisation de la vente: ' . $e->getMessage());
+            Log::error('Erreur lors de la finalisation de la vente: ' . $e->getMessage());
             return back()->with('error', 'Une erreur est survenue lors de la finalisation de la vente.');
         }
     }
@@ -526,7 +533,7 @@ class PaymentController extends Controller
     private function decrementStockFIFO(TransactionItem $transactionItem, $variantId, $quantity)
     {
         $remainingQuantity = $quantity;
-        
+
         // Récupérer tous les stocks disponibles pour ce variant, triés par date de création (plus ancien en premier)
         $availableStocks = Stock::where('variant_id', $variantId)
             ->where('quantity', '>', 0)
@@ -540,7 +547,7 @@ class PaymentController extends Controller
 
             // Calculer combien on peut prendre de ce stock
             $quantityToTake = min($remainingQuantity, $stock->quantity);
-            
+
             // Créer le mouvement de stock
             $transactionItem->stockMovements()->create([
                 'stock_id' => $stock->id,
@@ -552,7 +559,7 @@ class PaymentController extends Controller
 
             // Décompter du stock
             $stock->decrement('quantity', $quantityToTake);
-            
+
             // Mettre à jour la quantité restante à décompter
             $remainingQuantity -= $quantityToTake;
         }

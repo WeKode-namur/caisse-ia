@@ -4,6 +4,11 @@
         function formatNumber($number, $decimals = 2, $dec_point = ',', $thousands_sep = ' ') {
             return rtrim(rtrim(number_format($number, $decimals, $dec_point, $thousands_sep), '0'), $dec_point);
         }
+        // Helper function d'arrondi belge (0,05€)
+        function belgianRound($amount) {
+            return round($amount * 20) / 20;
+        }
+        $arrondissementEnabled = config('custom.register.arrondissementMethod');
 
         // Helper function pour traduire les statuts
         function translateStatus($status) {
@@ -44,6 +49,9 @@
                     <div class="flex space-x-3">
                         <button onclick="printTicketDirect()" class="bg-blue-500 dark:bg-blue-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-lg px-4 py-2">
                             <i class="fas fa-print mr-2"></i>Imprimer
+                        </button>
+                        <button onclick="printTicketNoPrice()" class="bg-gray-500 dark:bg-gray-700 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-lg px-4 py-2">
+                            <i class="fas fa-print mr-2"></i>Imprimer sans prix
                         </button>
                         @if(config('custom.email.active'))
                         <button onclick="openEmailModal()" class="bg-green-500 dark:bg-green-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-lg px-4 py-2">
@@ -159,6 +167,27 @@
                                             <td class="py-3 px-2 text-right font-mono font-medium">€ {{ formatNumber($item->total_price_ttc) }}</td>
                                         </tr>
                                     @endforeach
+
+                                    {{-- Affichage des remises --}}
+                                    @if(isset($discounts) && count($discounts))
+                                        @foreach($discounts as $discount)
+                                            <tr class="bg-blue-50 dark:bg-blue-900/30">
+                                                <td class="py-3 px-2 font-semibold text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                                                    <i class="fas fa-percent"></i>
+                                                    {{ $discount['name'] ?? 'Remise' }}
+                                                    @if(($discount['type'] ?? null) === 'percentage')
+                                                        <span class="ml-2">-{{ $discount['value'] }}%</span>
+                                                    @elseif(($discount['type'] ?? null) === 'fixed')
+                                                        <span class="ml-2">-{{ number_format($discount['amount'], 2, ',', ' ') }} €</span>
+                                                    @endif
+                                                </td>
+                                                <td colspan="4"></td>
+                                                <td class="py-3 px-2 text-right font-mono font-bold text-blue-700 dark:text-blue-300">
+                                                    -€ {{ number_format($discount['amount'], 2, ',', ' ') }}
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    @endif
                                     </tbody>
                                 </table>
                             </div>
@@ -191,26 +220,33 @@
                         <div class="p-4 space-y-3">
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600 dark:text-gray-400">Sous-total HT</span>
-                                <span class="font-mono">€ {{ formatNumber($totals['subtotal_ht']) }}</span>
+                                <span class="font-mono">€ {{ formatNumber($arrondissementEnabled ? belgianRound($totals['subtotal_ht']) : $totals['subtotal_ht']) }}</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600 dark:text-gray-400">TVA</span>
-                                <span class="font-mono">€ {{ formatNumber($totals['total_tva']) }}</span>
+                                <span class="font-mono">€ {{ formatNumber($arrondissementEnabled ? belgianRound($totals['total_tva']) : $totals['total_tva']) }}</span>
                             </div>
                             <div class="flex justify-between items-center">
                                 <span class="text-gray-600 dark:text-gray-400">Sous-total TTC</span>
-                                <span class="font-mono">€ {{ formatNumber($totals['subtotal_ttc']) }}</span>
+                                <span class="font-mono">€ {{ formatNumber($arrondissementEnabled ? belgianRound($totals['subtotal_ttc']) : $totals['subtotal_ttc']) }}</span>
                             </div>
-                            @if($totals['total_discount'] > 0)
-                                <div class="flex justify-between items-center text-red-600 dark:text-red-400">
-                                    <span>Remise</span>
-                                    <span class="font-mono">- € {{ formatNumber($totals['total_discount']) }}</span>
-                                </div>
+                            @if(isset($discounts) && count($discounts))
+                                @foreach($discounts as $discount)
+                                    <div class="flex justify-between items-center text-blue-700 dark:text-blue-300">
+                                        <span>
+                                            {{ $discount['name'] ?? 'Remise' }}
+                                            @if(($discount['type'] ?? null) === 'percentage')
+                                                ({{ $discount['value'] }}%)
+                                            @endif
+                                        </span>
+                                        <span class="font-mono">-€ {{ number_format($discount['amount'], 2, ',', ' ') }}</span>
+                                    </div>
+                                @endforeach
                             @endif
                             <hr class="border-gray-300 dark:border-gray-600">
                             <div class="flex justify-between items-center text-lg font-bold">
                                 <span>Total final</span>
-                                <span class="font-mono text-green-600 dark:text-green-400">€ {{ formatNumber($totals['final_total']) }}</span>
+                                <span class="font-mono text-green-600 dark:text-green-400">€ {{ formatNumber($arrondissementEnabled ? belgianRound($totals['final_total']) : $totals['final_total']) }}</span>
                             </div>
                         </div>
                     </div>
@@ -232,7 +268,7 @@
                                             <p class="text-sm text-green-600 dark:text-green-400">{{ translateStatus($payment->status) }}</p>
                                         </div>
                                     </div>
-                                    <span class="font-mono font-bold text-green-800 dark:text-green-300">€ {{ formatNumber($payment->amount) }}</span>
+                                    <span class="font-mono font-bold text-green-800 dark:text-green-300">€ {{ formatNumber($arrondissementEnabled ? belgianRound($payment->amount) : $payment->amount) }}</span>
                                 </div>
                             @endforeach
                         </div>
@@ -241,7 +277,16 @@
                     {{-- Monnaie rendue --}}
                     @php
                         $totalPaid = $transaction->payments->sum('amount');
-                        $changeAmount = $totalPaid - $totals['final_total'];
+                        $montantArrondi = $totals['final_total'];
+                        if ($arrondissementEnabled) {
+                            $montantArrondi = round($totals['final_total'] * 20) / 20;
+                        }
+                        $changeAmount = $totalPaid - $montantArrondi;
+                        $arrondiValue = 0;
+                        if ($arrondissementEnabled) {
+                            $arrondiTotal = round($totals['final_total'] * 20) / 20;
+                            $arrondiValue = $arrondiTotal - $totals['final_total'];
+                        }
                     @endphp
                     @if($changeAmount > 0)
                         <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg">
@@ -259,8 +304,14 @@
                                             <p class="text-sm text-blue-600 dark:text-blue-400">Montant total</p>
                                         </div>
                                     </div>
-                                    <span class="font-mono font-bold text-blue-800 dark:text-blue-300">€ {{ formatNumber($changeAmount) }}</span>
+                                    <span class="font-mono font-bold text-blue-800 dark:text-blue-300">€ {{ formatNumber($arrondissementEnabled ? belgianRound($changeAmount) : $changeAmount) }}</span>
                                 </div>
+                                @if(abs($arrondiValue) >= 0.009)
+                                    <div class="payment">
+                                        <span>Arrondi :</span>
+                                        <span>{{ $arrondiValue > 0 ? '+' : '' }}{{ number_format($arrondiValue, 2, ',', ' ') }} EUR</span>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @endif
@@ -308,117 +359,9 @@
         </div>
     </div>
 
-    {{-- Modal Impression --}}
-    <div id="printModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                <div class="flex items-center justify-between p-4 border-b border-gray-300 dark:border-gray-600">
-                    <h3 class="text-lg font-semibold">Aperçu d'impression - Ticket #{{ $transaction->transaction_number }}</h3>
-                    <div class="flex space-x-2">
-                        <button onclick="printTicket()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                            <i class="fas fa-print mr-2"></i>Imprimer
-                        </button>
-                        <button onclick="closePrintModal()" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200">
-                            <i class="fas fa-times mr-2"></i>Fermer
-                        </button>
-                    </div>
-                </div>
-                <div class="p-4 overflow-auto max-h-[calc(90vh-80px)]">
-                    <div id="printContent" class="bg-white border border-gray-300 rounded-lg p-6 max-w-sm mx-auto">
-                        <div class="text-center border-b border-dashed border-gray-400 pb-4 mb-4">
-                            <div class="text-lg font-bold mb-2">{{ config('app.name') }}</div>
-                            <div class="text-xs text-gray-600">
-                                Ticket #{{ $transaction->transaction_number }}<br>
-                                {{ $transaction->created_at->format('d/m/Y H:i') }}<br>
-                                {{ $transaction->user->name ?? 'Vendeur' }}
-                            </div>
-                        </div>
-
-                        <div class="mb-4">
-                            @foreach($transaction->items as $item)
-                                <div class="flex justify-between items-start mb-2">
-                                    <div class="flex-1">
-                                        <div class="text-sm">{{ $item->quantity }}x {{ $item->article_name }}</div>
-                                        @if($item->variant_name)
-                                            <div class="text-xs text-gray-600">{{ $item->variant_name }}</div>
-                                        @endif
-                                    </div>
-                                    <div class="text-right ml-4">
-                                        <div class="text-sm">€{{ number_format($item->unit_price_ttc, 2, ',', ' ') }}</div>
-                                        <div class="text-sm font-semibold">€{{ number_format($item->total_price_ttc, 2, ',', ' ') }}</div>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <div class="border-t border-dashed border-gray-400 pt-4 mb-4">
-                            <div class="flex justify-between text-sm mb-1">
-                                <span>Sous-total HT:</span>
-                                <span>€{{ number_format($totals['subtotal_ht'], 2, ',', ' ') }}</span>
-                            </div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span>TVA:</span>
-                                <span>€{{ number_format($totals['total_tva'], 2, ',', ' ') }}</span>
-                            </div>
-                            <div class="flex justify-between text-sm mb-1">
-                                <span>Sous-total TTC:</span>
-                                <span>€{{ number_format($totals['subtotal_ttc'], 2, ',', ' ') }}</span>
-                            </div>
-                            @if($totals['total_discount'] > 0)
-                                <div class="flex justify-between text-sm mb-1 text-red-600">
-                                    <span>Remise:</span>
-                                    <span>-€{{ number_format($totals['total_discount'], 2, ',', ' ') }}</span>
-                                </div>
-                            @endif
-                            <div class="flex justify-between text-base font-bold border-t border-gray-400 pt-2 mt-2">
-                                <span>TOTAL:</span>
-                                <span>€{{ number_format($totals['final_total'], 2, ',', ' ') }}</span>
-                            </div>
-                        </div>
-
-                        <div class="border-t border-dashed border-gray-400 pt-4 mb-4">
-                            @foreach($transaction->payments as $payment)
-                                <div class="flex justify-between text-sm mb-1">
-                                    <span>{{ $payment->paymentMethod->name }}:</span>
-                                    <span>€{{ number_format($payment->amount, 2, ',', ' ') }}</span>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        @php
-                            $totalPaid = $transaction->payments->sum('amount');
-                            $changeAmount = $totalPaid - $totals['final_total'];
-                        @endphp
-
-                        @if($changeAmount > 0)
-                            <div class="border-t border-dashed border-gray-400 pt-4 mb-4">
-                                <div class="flex justify-between text-sm">
-                                    <span>Monnaie rendue:</span>
-                                    <span>€{{ number_format($changeAmount, 2, ',', ' ') }}</span>
-                                </div>
-                            </div>
-                        @endif
-
-                        @if($transaction->notes)
-                            <div class="border-t border-dashed border-gray-400 pt-4 mb-4">
-                                <div class="text-sm">
-                                    <strong>Note:</strong><br>
-                                    {{ $transaction->notes }}
-                                </div>
-                            </div>
-                        @endif
-
-                        <div class="text-center border-t border-dashed border-gray-400 pt-4 text-xs text-gray-600">
-                            Merci de votre visite !<br>
-                            {{ config('app.name') }} - {{ date('Y') }}
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
+        const ARRONDISSEMENT_ENABLED = @json(config('custom.register.arrondissementMethod'));
+
         function openEmailModal() {
             document.getElementById('emailModal').classList.remove('hidden');
         }
@@ -434,123 +377,23 @@
             }
         });
 
-        function openPrintModal() {
-            document.getElementById('printModal').classList.remove('hidden');
-        }
-
-        function closePrintModal() {
-            document.getElementById('printModal').classList.add('hidden');
-        }
-
-        function printTicket() {
-            // Créer une nouvelle fenêtre pour l'impression
-            const printWindow = window.open('', '_blank');
-            const printContent = document.getElementById('printContent').innerHTML;
-
-            printWindow.document.write(`
-                <html>
-                <head>
-                    <title>Ticket #${{ $transaction->transaction_number }}</title>
-                    <style>
-                        @media print {
-                            @page {
-                                size: 80mm auto;
-                                margin: 0;
-                            }
-                            body {
-                                margin: 0;
-                            }
-                        }
-                        body {
-                            font-family: 'Courier New', monospace;
-                            font-size: 12px;
-                            line-height: 1.3;
-                            margin: 0;
-                            padding: 0;
-                            background: white;
-                            color: black;
-                            -webkit-font-smoothing: antialiased;
-                            -moz-osx-font-smoothing: grayscale;
-                        }
-                        .ticket {
-                            width: 80mm;
-                            padding: 3mm;
-                            box-sizing: border-box;
-                        }
-                        .header { text-align: center; padding-bottom: 5px; margin-bottom: 5px; }
-                        .company-name { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
-                        .ticket-info { font-size: 11px; margin-bottom: 5px; }
-                        .items, .totals, .payments, .change, .footer { margin-top: 8px; border-top: 1px dashed #000; padding-top: 8px; }
-                        .item, .total-line, .payment { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-                        .item-name { flex: 1; word-break: break-word; }
-                        .item-price { text-align: right; min-width: 60px; }
-                        .final-total { font-weight: bold; font-size: 15px; border-top: 1px solid #000; padding-top: 5px; margin-top: 5px; }
-                        .footer { text-align: center; margin-top: 10px; font-size: 10px; border-top: 1px dashed #000; padding-top: 10px; }
-                    </style>
-                </head>
-                <body>
-                    <div class="ticket">
-                        <div class="header">
-                            <div class="company-name">${{ config('app.name') }}</div>
-                            <div class="ticket-info">
-                                Ticket #${{ $transaction->transaction_number }}<br>
-                                ${{ $transaction->created_at->format('d/m/Y H:i') }}<br>
-                                ${{ $transaction->user->name ?? 'Vendeur' }}
-                            </div>
-                        </div>
-                        <div class="items">${printContent}</div>
-                        <div class="totals">
-                            <div class="total-line"><span>Sous-total HT:</span><span>€${{ number_format($totals['subtotal_ht'], 2, ',', ' ') }}</span></div>
-                            <div class="total-line"><span>TVA:</span><span>€${{ number_format($totals['total_tva'], 2, ',', ' ') }}</span></div>
-                            <div class="total-line"><span>Sous-total TTC:</span><span>€${{ number_format($totals['subtotal_ttc'], 2, ',', ' ') }}</span></div>
-                            @if($totals['total_discount'] > 0)
-                                <div class="total-line"><span>Remise:</span><span>-€${{ number_format($totals['total_discount'], 2, ',', ' ') }}</span></div>
-                            @endif
-                            <div class="total-line final-total"><span>TOTAL:</span><span>€${{ number_format($totals['final_total'], 2, ',', ' ') }}</span></div>
-                        </div>
-                        <div class="payments">
-                            @foreach($transaction->payments as $payment)
-                                <div class="payment">
-                                    <span>${{ $payment->paymentMethod->name }}:</span>
-                                    <span>€${{ number_format($payment->amount, 2, ',', ' ') }}</span>
-                                </div>
-                            @endforeach
-                        </div>
-                        @php
-                            $totalPaid = $transaction->payments->sum('amount');
-                            $changeAmount = $totalPaid - $totals['final_total'];
-                        @endphp
-                        @if($changeAmount > 0)
-                            <div class="change">
-                                <div class="payment">
-                                    <span>Monnaie rendue:</span>
-                                    <span>€${{ number_format($changeAmount, 2, ',', ' ') }}</span>
-                                </div>
-                            </div>
-                        @endif
-                        @if($transaction->notes)
-                            <div class="note">
-                                <div class="text-sm">
-                                    <strong>Note:</strong><br>
-                                    {{ $transaction->notes }}
-                                </div>
-                            </div>
-                        @endif
-                        <div class="footer">Merci de votre visite !<br>${{ config('app.name') }} - {{ date('Y') }}</div>
-                    </div>
-                </body>
-                </html>
-            `);
-
-            printWindow.document.close();
-        }
-
-        function printTicketDirect() {
+        window.printTicketDirect = function() {
             // Rassembler les données nécessaires depuis le PHP
             const transaction = @json($transaction);
             const totals = @json($totals);
             const appName = @json(config('app.name'));
-            const changeAmount = {{ $transaction->payments->sum('amount') - $totals['final_total'] }};
+            let totalPaid = transaction.payments.reduce((sum, p) => sum + parseFloat(p.amount), 0);
+            let montantArrondi = totals.final_total;
+            if (ARRONDISSEMENT_ENABLED) {
+                montantArrondi = Math.round(totals.final_total * 20) / 20;
+            }
+
+            // Fonction d'arrondi à 2 décimales
+            const arrondi2 = v => Math.round((parseFloat(v) + Number.EPSILON) * 100) / 100;
+
+            const client = [
+                name = null
+            ];
 
             // Construire les lignes d'articles
             let itemsHtml = '';
@@ -574,23 +417,15 @@
 
                 itemsHtml += `
                     <div class="item">
-                        <div class="item-name">
-                            <span>${formattedQuantity}x ${item.article_name}</span>
+                        <div class="item-name" style="width: 40%;">
+                            <span><b style="margin-right: 1mm;">${formattedQuantity}</b> ${item.article_name}</span>
                             ${attributesHtml}
                             ${barcodeHtml}
                         </div>
-                        <div class="item-price">€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(item.total_price_ttc)}</div>
+                        <div style="font-size: 10px; color: #555; width: 20%; text-align: right;">${new Intl.NumberFormat('fr-FR', {minimumFractionDigits: 2 }).format(arrondi2(item.unit_price_ttc))}</div>
+                        <div class="item-price" style="width: 20%;">${new Intl.NumberFormat('fr-FR', {minimumFractionDigits: 2 }).format(arrondi2(item.total_price_ttc))}</div>
                     </div>
                 `;
-
-                if (quantity > 1) {
-                    itemsHtml += `
-                        <div class="item" style="font-size: 10px; color: #555;">
-                            <div class="item-name" style="padding-left: 10px;">Prix unitaire</div>
-                            <div class="item-price">€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(item.unit_price_ttc)}</div>
-                        </div>
-                    `;
-                }
             });
 
             // Construire les lignes de paiement
@@ -599,23 +434,55 @@
                 paymentsHtml += `
                     <div class="payment">
                         <span>${payment.payment_method.name}:</span>
-                        <span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(payment.amount)}</span>
+                        <span>${new Intl.NumberFormat('fr-FR', {minimumFractionDigits: 2 }).format(arrondi2(payment.amount))} EUR</span>
                     </div>
                 `;
             });
 
-            // Construire la section "Monnaie rendue"
-            let changeHtml = '';
-            if (changeAmount > 0) {
-                changeHtml = `
-                    <div class="change">
-                        <div class="payment">
-                            <span>Monnaie rendue:</span>
-                            <span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(changeAmount)}</span>
-                        </div>
-                    </div>
-                `;
+            // Calcul des montants pour l'affichage
+            let arrondiValue = 0;
+            if (ARRONDISSEMENT_ENABLED) {
+                montantArrondi = Math.round(totals.final_total * 20) / 20;
+                arrondiValue = montantArrondi - totals.final_total;
             }
+            const changeAmount = totalPaid - montantArrondi; // monnaie rendue réelle
+            const changeAmountDiff = totalPaid - totals.final_total; // monnaie rendue sans arrondi
+
+            // Construire la section "Monnaie rendue" et "Arrondi"
+            let changeHtml = '';
+            if (Math.abs(changeAmount) > 0.009 || Math.abs(arrondiValue) > 0.009) {
+                changeHtml = `<div class="">
+                    ${Math.abs(changeAmount) > 0.009 ? `<div class="payment">
+                        <span>Monnaie rendue :</span>
+                        <span>${new Intl.NumberFormat('fr-FR', {minimumFractionDigits: 2 }).format(arrondi2(changeAmount))} EUR</span>
+                    </div>` : ''}
+                    ${Math.abs(arrondiValue) > 0.009 ? `<div class="payment">
+                        <span>Arrondi :</span>
+                        <span>${arrondiValue > 0 ? '+' : ''}${arrondiValue.toFixed(2)} EUR</span>
+                    </div>` : ''}
+                </div>`;
+            }
+
+            // Construction au visuel des notes
+            let notesHtml = '';
+            if (transaction.notes) {
+                notesHtml = `
+                        <div class="footer">
+                            <div style="font-weight: bold; font-style: italic; margin-bottom: 1mm;">
+                                Notes<br />
+                                - - - - -
+                            </div>
+                            ${transaction.notes}
+                        </div>
+                        <hr />
+                    `;
+            }
+
+            const date = new Date(transaction.created_at);
+            const formatted =
+                date.toLocaleDateString('fr-FR') + ' ' +
+                date.getHours().toString().padStart(2, '0') + ':' +
+                date.getMinutes().toString().padStart(2, '0');
 
             // Template HTML complet du ticket
             const ticketContent = `
@@ -633,7 +500,7 @@
                             }
                         }
                         body {
-                            font-family: 'Courier New', monospace;
+                            font-family: monospace;
                             font-size: 12px;
                             line-height: 1.3;
                             margin: 0;
@@ -651,35 +518,81 @@
                         .header { text-align: center; padding-bottom: 5px; margin-bottom: 5px; }
                         .company-name { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
                         .ticket-info { font-size: 11px; margin-bottom: 5px; }
-                        .items, .totals, .payments, .change, .footer { margin-top: 8px; border-top: 1px dashed #000; padding-top: 8px; }
+                        .items, .totals, .payments, .change, .footer { margin-top: 8px; padding-top: 8px; }
                         .item, .total-line, .payment { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; }
-                        .item-name { flex: 1; word-break: break-word; }
+                        .item-name { word-break: break-word; }
                         .item-price { text-align: right; min-width: 60px; }
                         .final-total { font-weight: bold; font-size: 15px; border-top: 1px solid #000; padding-top: 5px; margin-top: 5px; }
-                        .footer { text-align: center; margin-top: 10px; font-size: 10px; border-top: 1px dashed #000; padding-top: 10px; }
+                        .footer { text-align: center; margin-top: 10px; font-size: 10px; padding-top: 10px; }
+                        hr { border: 0; border-top: 1px dashed #000; margin: 2mm 6mm; }
                     </style>
                 </head>
                 <body>
                     <div class="ticket">
                         <div class="header">
                             <div class="company-name">${appName}</div>
+                            <div>- - - - - - - -</div>
                             <div class="ticket-info">
                                 Ticket #${transaction.transaction_number}<br>
-                                ${new Date(transaction.created_at).toLocaleString('fr-FR')}<br>
-                                ${transaction.cashier ? transaction.cashier.name : 'Vendeur'}
+                                ${formatted}<br>
+                                Vendeur : ${transaction.cashier ? transaction.cashier.name : 'Vendeur'}<br />
+                                Client : ${ client.name ? client.name : 'Client comptoir' }
                             </div>
+                            <hr />
                         </div>
+                        <div class="item" style="font-style: italic;">
+                            <div style="width: 40%;">Qte Description</div>
+                            <div style="width: 20%; text-align: right;">PU</div>
+                            <div style="width: 20%; text-align: right;">Total</div>
+                        </div>
+                        <hr />
                         <div class="items">${itemsHtml}</div>
+                        @if(isset($discounts) && count($discounts))
+                            @foreach($discounts as $discount)
+                                <div class="item">
+                                    <div style="width: 40%;">{{ $discount['name'] ?? 'Remise' }}</div>
+                                    <div style="width: 20%; text-align: right;">
+                                    @if(($discount['type'] ?? null) === 'percentage')
+                                        {{ $discount['value'] }} %
+                                    @endif
+                                    </div>
+                                    <div style="width: 20%; text-align: right;">-{{ number_format($discount['amount'], 2, ',', ' ') }} EUR</div>
+                                </div>
+                            @endforeach
+                        @endif
+                        <hr />
                         <div class="totals">
-                            <div class="total-line"><span>Sous-total HT:</span><span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(totals.subtotal_ht)}</span></div>
-                            <div class="total-line"><span>TVA:</span><span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(totals.total_tva)}</span></div>
-                            <div class="total-line"><span>Sous-total TTC:</span><span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(totals.subtotal_ttc)}</span></div>
-                            ${totals.total_discount > 0 ? `<div class="total-line"><span>Remise:</span><span>-€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(totals.total_discount)}</span></div>` : ''}
-                            <div class="total-line final-total"><span>TOTAL:</span><span>€${new Intl.NumberFormat('fr-FR', { style: 'decimal', minimumFractionDigits: 2 }).format(totals.final_total)}</span></div>
+                            <div class="total-line"><span>Sous-total HT:</span><span>${new Intl.NumberFormat('fr-FR', {minimumFractionDigits: 2 }).format(arrondi2(totals.subtotal_ht))} EUR</span></div>
+                            <div class="total-line"><span>TVA:</span><span>${new Intl.NumberFormat('fr-FR', {minimumFractionDigits: 2 }).format(arrondi2(totals.total_tva))} EUR</span></div>
+                            <div class="total-line"><span>Sous-total TTC:</span><span>${new Intl.NumberFormat('fr-FR', {minimumFractionDigits: 2 }).format(arrondi2(totals.subtotal_ttc))} EUR</span></div>
+                            @if(isset($discounts) && count($discounts))
+                                @php
+                                    $totalRemise = 0;
+                                    if (isset($discounts) && is_array($discounts)) {
+                                        foreach ($discounts as $discount) {
+                                            $totalRemise += $discount['amount'] ?? 0;
+                                        }
+                                    }
+                                @endphp
+                                <div class="total-line"><span>Total remise:</span><span>{{ number_format($totalRemise, 2, ',', ' ') }}  EUR</span></div>
+                            @endif
+                            <div class="total-line final-total"><span>TOTAL:</span><span>${new Intl.NumberFormat('fr-FR', {minimumFractionDigits: 2 }).format(arrondi2(totals.final_total))} EUR</span></div>
                         </div>
+                        <hr />
                         <div class="payments">${paymentsHtml}</div>
                         ${changeHtml}
-                        <div class="footer">Merci de votre visite !<br>${appName} - ${new Date().getFullYear()}</div>
+                        <hr />
+                        ${notesHtml}
+                        <div class="footer">
+                            <p>Merci de votre visite !</p>
+                            <p>Échange possible endéans 8 jours sur présentation du ticket de caisse.</p>
+                            <p>Pas d'échanges sur les articles soldes</p>
+                            <p>
+                                {{ config('custom.address.street') }}<br />
+                                {{ config('custom.address.postal') . ' ' . config('custom.address.city') }}<br />
+                                {{ config('custom.tva') }}
+                            </p>
+                        </div>
                     </div>
                 </body>
                 </html>
@@ -695,11 +608,141 @@
             }, 250);
         }
 
-        // Fermer le modal en cliquant à l'extérieur
-        document.getElementById('printModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closePrintModal();
+        function printTicketNoPrice() {
+            const transaction = @json($transaction);
+            const appName = @json(config('app.name'));
+            const client = [
+                name = null
+            ];
+            // Construire les lignes d'articles sans prix
+            let itemsHtml = '';
+            transaction.items.forEach(item => {
+                const quantity = parseFloat(item.quantity);
+                const formattedQuantity = new Intl.NumberFormat('fr-FR', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 3
+                }).format(quantity);
+                let attributesHtml = '';
+                if (item.variant && item.variant.attributeValues && item.variant.attributeValues.length > 0) {
+                    const values = item.variant.attributeValues.map(attr => attr.value).join(' - ');
+                    attributesHtml = `<div style="font-size: 10px; color: #555; padding-left: 10px;">${values}</div>`;
+                }
+                let barcodeHtml = '';
+                if (item.barcode) {
+                    barcodeHtml = `<div style="font-size: 10px; color: #555; padding-left: 10px;">EAN: ${item.barcode}</div>`;
+                }
+                itemsHtml += `
+                    <div class="item">
+                        <div class="item-name" style="width: 100%;">
+                            <span><b style="margin-right: 1mm;">${formattedQuantity}</b> ${item.article_name}</span>
+                            ${attributesHtml}
+                            ${barcodeHtml}
+                        </div>
+                    </div>
+                `;
+            });
+
+            let notesHtml = '';
+            if (transaction.notes) {
+                notesHtml = `
+                        <div class="footer">
+                            <div style="font-weight: bold; font-style: italic; margin-bottom: 1mm;">
+                                Notes<br />
+                                - - - - -
+                            </div>
+                            ${transaction.notes}
+                        </div>
+                        <hr />
+                    `;
             }
-        });
+
+            const date = new Date(transaction.created_at);
+            const formatted =
+                date.toLocaleDateString('fr-FR') + ' ' +
+                date.getHours().toString().padStart(2, '0') + ':' +
+                date.getMinutes().toString().padStart(2, '0');
+            const ticketContent = `
+                <html>
+                <head>
+                    <title>Ticket #${transaction.transaction_number}</title>
+                    <style>
+                        @media print {
+                            @page {
+                                size: auto auto;
+                                margin: 0;
+                            }
+                            body {
+                                margin: 0;
+                            }
+                        }
+                        body {
+                            font-family: monospace;
+                            font-size: 12px;
+                            line-height: 1.3;
+                            margin: 0;
+                            padding: 0;
+                            background: white;
+                            color: black;
+                            -webkit-font-smoothing: antialiased;
+                            -moz-osx-font-smoothing: grayscale;
+                        }
+                        .ticket {
+                            width: 100%;
+                            padding: 3mm;
+                            box-sizing: border-box;
+                        }
+                        .header { text-align: center; padding-bottom: 5px; margin-bottom: 5px; }
+                        .company-name { font-size: 16px; font-weight: bold; margin-bottom: 5px; }
+                        .ticket-info { font-size: 11px; margin-bottom: 5px; }
+                        .items, .footer { margin-top: 8px; padding-top: 8px; }
+                        .item { display: flex; justify-content: flex-start; margin-bottom: 4px; font-size: 12px; }
+                        .item-name { word-break: break-word; width: 100%; }
+                        .footer { text-align: center; margin-top: 10px; font-size: 10px; padding-top: 10px; }
+                        hr { border: 0; border-top: 1px dashed #000; margin: 2mm 6mm; }
+                    </style>
+                </head>
+                <body>
+                    <div class="ticket">
+                        <div class="header">
+                            <div class="company-name">${appName}</div>
+                            <div>- - - - - - - -</div>
+                            <div class="ticket-info">
+                                Ticket #${transaction.transaction_number}<br>
+                                ${formatted}<br>
+                                Vendeur : ${transaction.cashier ? transaction.cashier.name : 'Vendeur'}<br />
+                                Client : ${ client.name ? client.name : 'Client comptoir' }
+                            </div>
+                            <hr />
+                        </div>
+                        <div class="item" style="font-style: italic;">
+                            <div style="width: 100%;">Qte Description</div>
+                        </div>
+                        <hr />
+                        <div class="items">${itemsHtml}</div>
+                        <hr />
+                        ${notesHtml}
+                        <div class="footer">
+                            <p>Merci de votre visite !</p>
+                            <p>Échange possible endéans 8 jours sur présentation du ticket de caisse.</p>
+                            <p>Pas d'échanges sur les articles soldes</p>
+                            <p>
+                                {{ config('custom.address.street') }}<br />
+                                {{ config('custom.address.postal') . ' ' . config('custom.address.city') }}<br />
+                                {{ config('custom.tva') }}
+                            </p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+            `;
+            const printWindow = window.open('', '_blank', 'width=320,height=480,scrollbars=yes,resizable=yes');
+            printWindow.document.write(ticketContent);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
+        }
     </script>
 </x-app-layout>

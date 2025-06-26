@@ -37,7 +37,8 @@ class Transaction extends Model
         'pos_terminal',
         'voided_by',
         'voided_at',
-        'void_reason'
+        'void_reason',
+        'discounts_data'
     ];
 
     protected $casts = [
@@ -51,7 +52,8 @@ class Transaction extends Model
         'total_margin' => 'decimal:4',
         'margin_percentage' => 'decimal:2',
         'exchange_rate' => 'decimal:6',
-        'voided_at' => 'datetime'
+        'voided_at' => 'datetime',
+        'discounts_data' => 'array'
     ];
 
     protected static function boot()

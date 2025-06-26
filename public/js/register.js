@@ -475,48 +475,154 @@ class RegisterManager {
         this.updatePaymentRecap();
     }
 
+    // Nouvelle logique d'arrondi belge pour paiement mixte ou tout espèces
+    belgianRound(amount) {
+        return Math.round(amount * 20) / 20;
+    }
+
     updatePaymentRecap() {
         const total = this.totals.total || 0;
+        const arrondissementEnabled = window.registerConfig?.arrondissementMethod;
+        const paymentMethods = window.registerConfig?.paymentMethods || [];
+        const cashMethod = paymentMethods.find(m => m.code === 'cash');
+        const paidExceptCash = this.pendingPayments
+            .filter(p => !(cashMethod && p.payment_method_id == cashMethod.id))
+            .reduce((sum, p) => sum + p.amount, 0);
+        let cashInput = null;
+        let cashPending = 0;
+        if (cashMethod) {
+            cashInput = document.getElementById(`payment-method-${cashMethod.id}`);
+            const cashPayment = this.pendingPayments.find(p => p.payment_method_id == cashMethod.id);
+            cashPending = cashPayment ? cashPayment.amount : 0;
+        }
+        // Montant à payer restant après autres moyens de paiement
+        let remainingForCash = total - paidExceptCash;
+        let arrondiCash = remainingForCash;
+        if (arrondissementEnabled && cashMethod) {
+            arrondiCash = this.belgianRound(remainingForCash);
+        }
+        // Calcul du total payé (tous moyens)
         const paid = this.pendingPayments.reduce((sum, p) => sum + p.amount, 0);
+        // Calcul du reste à payer (pour le bouton)
         let remaining = total - paid;
         let change = 0;
-
-        if (remaining < 0) {
+        // Calcul de la monnaie à rendre (spécifique espèces)
+        let cashChange = 0;
+        if (arrondissementEnabled && cashMethod && cashPending > 0) {
+            // On arrondit la partie espèces
+            const cashToPay = arrondiCash;
+            const otherPaid = paidExceptCash;
+            const totalPaid = otherPaid + cashPending;
+            const totalToPay = otherPaid + cashToPay;
+            if (totalPaid > totalToPay) {
+                cashChange = totalPaid - totalToPay;
+            }
+        } else if (remaining < 0) {
             change = -remaining;
             remaining = 0;
         }
-
+        // Nouvelle logique d'arrondi belge pour paiement mixte ou tout espèces
+        let allCash = false;
+        if (
+            arrondissementEnabled && cashMethod &&
+            this.pendingPayments.length === 1 &&
+            this.pendingPayments[0].payment_method_id === cashMethod.id
+        ) {
+            allCash = true;
+        }
+        let displayTotal = total;
+        let displayRemaining = 0;
+        let displayChange = 0;
+        let paidCash = cashPending;
+        let arrondiCashToPay = arrondiCash;
+        if (allCash) {
+            // Tout espèces : arrondi sur le total
+            displayTotal = this.belgianRound(total);
+            displayRemaining = displayTotal - paidCash;
+            if (displayRemaining < 0) {
+                displayChange = -displayRemaining;
+                displayRemaining = 0;
+            }
+        } else if (arrondissementEnabled && cashMethod && paidCash > 0) {
+            // Paiement mixte avec espèces : arrondi sur la partie espèces
+            arrondiCashToPay = this.belgianRound(remainingForCash);
+            displayTotal = total;
+            displayRemaining = arrondiCashToPay - paidCash;
+            if (displayRemaining < 0) {
+                displayChange = -displayRemaining;
+                displayRemaining = 0;
+            }
+        } else {
+            // Aucun arrondi
+            displayTotal = total;
+            displayRemaining = total - paid;
+            if (displayRemaining < 0) {
+                displayChange = -displayRemaining;
+                displayRemaining = 0;
+            }
+        }
+        // Affichage du récapitulatif
         const breakdownContainer = document.getElementById('payments-breakdown-list');
         breakdownContainer.innerHTML = `
             <div class="flex justify-between">
                 <span class="text-gray-600 dark:text-gray-400">À Payer :</span>
-                <span class="font-semibold dark:text-white">${total.toFixed(2)} €</span>
+                <span class="font-semibold dark:text-white">${displayTotal.toFixed(2)} €</span>
             </div>
-            ${this.pendingPayments.map(p => `
-                <div class="flex justify-between pl-4">
+            ${this.pendingPayments.map(p => {
+                const method = paymentMethods.find(m => m.id == p.payment_method_id);
+                return `<div class="flex justify-between pl-4">
                     <span class="text-gray-500 dark:text-gray-400">${p.methodName} :</span>
                     <span class="font-semibold dark:text-white">${p.amount.toFixed(2)} €</span>
-                </div>
-            `).join('')}
+                </div>`;
+            }).join('')}
         `;
-
-        const finalRecapContainer = document.getElementById('recap-final');
         const remainingLabel = document.getElementById('recap-remaining-label');
         const remainingAmountEl = document.getElementById('recap-remaining');
-
-        if (change > 0) {
+        // Affichage du reste à payer ou monnaie à rendre
+        if (displayChange > 0) {
             remainingLabel.textContent = 'Monnaie à rendre :';
-            remainingAmountEl.textContent = `${change.toFixed(2)} €`;
+            remainingAmountEl.textContent = `${displayChange.toFixed(2)} €`;
             remainingAmountEl.className = 'font-bold text-green-500';
         } else {
             remainingLabel.textContent = 'Reste à payer :';
-            remainingAmountEl.textContent = `${remaining.toFixed(2)} €`;
-            remainingAmountEl.className = 'font-bold text-red-600';
+            remainingAmountEl.textContent = `${displayRemaining.toFixed(2)} €`;
+            remainingAmountEl.className = displayRemaining > 0 ? 'font-bold text-red-600' : 'font-bold';
         }
-
+        // Affichage du message 'Tout est payé' si le restant à payer ET la monnaie à rendre sont 0.00 €
+        if (Math.abs(displayRemaining) < 0.009 && Math.abs(displayChange) < 0.009) {
+            remainingLabel.style.display = 'none';
+            remainingAmountEl.style.display = 'none';
+            let paidMsg = document.getElementById('recap-paid-msg');
+            if (!paidMsg) {
+                paidMsg = document.createElement('div');
+                paidMsg.id = 'recap-paid-msg';
+                paidMsg.className = 'flex items-center justify-center text-green-600 font-bold py-2';
+                remainingLabel.parentElement.appendChild(paidMsg);
+            }
+            paidMsg.innerHTML = "<i class='fas fa-check-circle text-green-500 me-2'></i> Tout est payé";
+        } else {
+            remainingLabel.style.display = '';
+            remainingAmountEl.style.display = '';
+            const paidMsg = document.getElementById('recap-paid-msg');
+            if (paidMsg) paidMsg.remove();
+        }
+        // Mettre à jour le placeholder de tous les champs de paiement
+        paymentMethods.forEach(method => {
+            const input = document.getElementById(`payment-method-${method.id}`);
+            if (!input) return;
+            if (arrondissementEnabled && cashMethod && method.code === 'cash') {
+                input.placeholder = arrondiCashToPay.toFixed(2);
+            } else {
+                let paidExceptCurrent = this.pendingPayments
+                    .filter(p => p.payment_method_id != method.id)
+                    .reduce((sum, p) => sum + p.amount, 0);
+                let remainingForThis = total - paidExceptCurrent;
+                input.placeholder = remainingForThis > 0 ? remainingForThis.toFixed(2) : '0.00';
+            }
+        });
         const finalizeBtn = document.getElementById('finalize-payment-btn');
         if (finalizeBtn) {
-            finalizeBtn.disabled = remaining > 0;
+            finalizeBtn.disabled = displayRemaining > 0;
         }
     }
 

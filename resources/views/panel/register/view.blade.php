@@ -20,7 +20,8 @@
                 cashRegister: @json(session('current_cash_register_id')),
                 categories: @json($categories ?? []),
                 paymentMethods: @json($paymentMethods ?? []),
-                customerManagement: @json($customerManagementEnabled ?? false)
+                customerManagement: @json($customerManagementEnabled ?? false),
+                arrondissementMethod: @json(config('custom.register.arrondissementMethod'))
             };
         </script>
     @endpush
