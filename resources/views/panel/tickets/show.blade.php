@@ -162,7 +162,7 @@
                                             <td class="py-3 px-2 text-right font-mono">€ {{ formatNumber($item->unit_price_ht) }}</td>
                                             <td class="py-3 px-2 text-right font-mono">€ {{ formatNumber($item->unit_price_ttc) }}</td>
                                             <td class="py-3 px-2 text-center">
-                                                <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">{{ $item->tax_rate }}%</span>
+                                                <span class="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-sm">{{ formatNumber($item->tax_rate)}}%</span>
                                             </td>
                                             <td class="py-3 px-2 text-right font-mono font-medium">€ {{ formatNumber($item->total_price_ttc) }}</td>
                                         </tr>
@@ -289,7 +289,7 @@
                         }
                     @endphp
                     @if($changeAmount > 0)
-                        <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg">
+                        <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg group">
                             <div class="text-gray-900 dark:text-gray-50 px-4 py-3 border-b border-gray-300 dark:border-gray-700">
                                 <h2 class="font-semibold text-lg">Monnaie rendue</h2>
                             </div>
@@ -307,7 +307,7 @@
                                     <span class="font-mono font-bold text-blue-800 dark:text-blue-300">€ {{ formatNumber($arrondissementEnabled ? belgianRound($changeAmount) : $changeAmount) }}</span>
                                 </div>
                                 @if(abs($arrondiValue) >= 0.009)
-                                    <div class="payment">
+                                    <div class="text-gray-300 group-hover:text-gray-500 dark:text-gray-700 dark:group-hover:text-gray-500">
                                         <span>Arrondi :</span>
                                         <span>{{ $arrondiValue > 0 ? '+' : '' }}{{ number_format($arrondiValue, 2, ',', ' ') }} EUR</span>
                                     </div>
