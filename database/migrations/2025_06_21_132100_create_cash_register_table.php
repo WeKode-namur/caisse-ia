@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string('icon', 100)->nullable();
             $table->integer('sort_order')->default(0);
             $table->boolean('is_active')->default(true);
+            $table->integer('order_column')->default(0);
             $table->boolean('requires_reference')->default(false);
             $table->boolean('allows_partial_payment')->default(true);
             $table->decimal('processing_fee_percentage', 5, 2)->default(0);
@@ -108,12 +109,14 @@ return new class extends Migration
             $table->decimal('subtotal_ttc', 15, 4)->default(0);
             $table->decimal('tax_amount', 15, 4)->default(0);
             $table->decimal('discount_amount', 15, 4)->default(0);
+            $table->json('discounts_data')->nullable();
             $table->decimal('total_amount', 15, 4);
+            $table->integer('items_count')->default(0);
 
             // Coûts et marges
             $table->decimal('total_cost', 15, 4)->default(0);
             $table->decimal('total_margin', 15, 4)->default(0);
-            $table->decimal('margin_percentage', 5, 2)->default(0);
+            $table->decimal('margin_percentage', 8, 2)->default(0);
 
             // Métadonnées
             $table->string('currency', 3)->default('EUR');
@@ -144,8 +147,8 @@ return new class extends Migration
             $table->unsignedBigInteger('transaction_id');
 
             // Produit (snapshot au moment de la vente)
-            $table->unsignedBigInteger('variant_id');
-            $table->unsignedBigInteger('stock_id');
+            $table->uuid('variant_id')->nullable();
+            $table->uuid('stock_id')->nullable();
             $table->string('article_name');
             $table->string('variant_reference', 100)->nullable();
             $table->json('variant_attributes')->nullable(); // {"couleur": "Rouge", "taille": "L"}
@@ -153,20 +156,18 @@ return new class extends Migration
 
             // Prix et quantités
             $table->decimal('quantity', 8, 3);
-            $table->decimal('unit_price_ht', 15, 4);
-            $table->decimal('unit_price_ttc', 15, 4);
-            $table->decimal('total_price_ht', 15, 4);
-            $table->decimal('total_price_ttc', 15, 4);
 
-            // Taxes et remises
+            $table->decimal('unit_price_ht', 15, 4)->default(0);
+            $table->decimal('unit_price_ttc', 15, 4)->default(0);
+            $table->decimal('total_price_ht', 15, 4)->default(0);
+            $table->decimal('total_price_ttc', 15, 4)->default(0);
+            $table->decimal('tax_amount', 15, 4)->default(0);
             $table->decimal('tax_rate', 5, 2);
-            $table->decimal('tax_amount', 15, 4);
             $table->decimal('discount_rate', 5, 2)->default(0);
             $table->decimal('discount_amount', 15, 4)->default(0);
-
-            // Coût (pour calcul marge)
             $table->decimal('total_cost', 15, 4)->default(0);
             $table->decimal('margin', 15, 4)->default(0);
+
 
             $table->timestamps();
         });
@@ -263,8 +264,8 @@ return new class extends Migration
 
         Schema::table('transaction_items', function (Blueprint $table) {
             $table->foreign('transaction_id')->references('id')->on('transactions')->onDelete('cascade');
-            $table->foreign('variant_id')->references('id')->on('variants')->onDelete('restrict');
-            $table->foreign('stock_id')->references('id')->on('stocks')->onDelete('restrict');
+//            $table->foreign('variant_id')->references('id')->on('variants')->onDelete('restrict');
+//            $table->foreign('stock_id')->references('id')->on('stocks')->onDelete('restrict');
         });
 
         Schema::table('transaction_stock_movements', function (Blueprint $table) {

@@ -620,7 +620,7 @@ class RegisterManager {
         let paidCash = cashPending;
         let arrondiCashToPay = arrondiCash;
         if (allCash) {
-            // Tout espèces : arrondi sur le total
+            // Toutes espèces : arrondi sur le total
             displayTotal = this.belgianRound(total);
             displayRemaining = displayTotal - paidCash;
             if (displayRemaining < 0) {
@@ -731,9 +731,11 @@ class RegisterManager {
             } else {
                  const result = await response.json();
                  throw new Error(result.message || 'Une erreur est survenue.');
+                 console.error(result);
             }
 
         } catch (error) {
+            console.error(error.message);
             this.showNotification(error.message, 'error');
         } finally {
             this.isProcessing = false;

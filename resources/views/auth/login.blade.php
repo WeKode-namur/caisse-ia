@@ -38,4 +38,10 @@
             </div>
         </form>
     </x-authentication-card>
+
+    <div class="absolute bottom-0 text-center w-full">
+        <div class="m-3 text-gray-500">
+            <p>Logiciel crée par <a href="https://www.wekode.be/" target="_black" class="hover:text-gray-700 hover:dark:text-gray-300 underline hover:no-underline">WeKode</a></p>
+        </div>
+    </div>
 </x-guest-layout>

@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Register;
 use App\Http\Controllers\Controller;
 use App\Services\RegisterSessionService;
 use Illuminate\Support\Facades\Log;
-use App\Models\{PaymentMethod, Transaction, Payment, Stock, TransactionItem};
+use App\Models\{PaymentMethod, Transaction, Payment, Stock, TransactionItem, ItemsUnknown};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -258,20 +258,30 @@ class PaymentController extends Controller
             $totalMargin = 0;
 
             foreach ($sessionData['cart'] as $item) {
-                $unitPriceHT = $item['unit_price'] ?? 0;
+                // Correction : le prix de vente est TTC dans la caisse
+                $unitPriceTTC = $item['unit_price'] ?? 0; // Prix de vente TVAC
                 $taxRate = $item['tax_rate'] ?? 0;
-                $unitPriceTTC = $unitPriceHT * (1 + $taxRate / 100);
+                $unitPriceHT = $taxRate > 0 ? $unitPriceTTC / (1 + $taxRate / 100) : $unitPriceTTC;
+
+                // Calculer les totaux
                 $quantity = $item['quantity'] ?? 1;
+                $totalPriceHT = $unitPriceHT * $quantity;
+                $totalPriceTTC = $unitPriceTTC * $quantity;
+                $taxAmount = $totalPriceTTC - $totalPriceHT;
 
-                $itemSubtotalHT = $unitPriceHT * $quantity;
-                $itemSubtotalTTC = $unitPriceTTC * $quantity;
-                $itemTaxAmount = $itemSubtotalTTC - $itemSubtotalHT;
-                $itemDiscountAmount = $item['discount_amount'] ?? 0;
+                // Calculer les remises
+                $discountRate = $item['discount_rate'] ?? 0;
+                $discountAmount = $item['discount_amount'] ?? 0;
 
-                $subtotalHT += $itemSubtotalHT;
-                $subtotalTTC += $itemSubtotalTTC;
-                $totalTaxAmount += $itemTaxAmount;
-                $totalDiscountAmount += $itemDiscountAmount;
+                // Calculer le coût et la marge
+                $costPrice = $item['cost_price'] ?? 0;
+                $totalCost = $costPrice * $quantity;
+                $margin = $totalPriceTTC - $discountAmount - $totalCost;
+
+                $subtotalHT += $totalPriceHT;
+                $subtotalTTC += $totalPriceTTC;
+                $totalTaxAmount += $taxAmount;
+                $totalDiscountAmount += $discountAmount;
             }
 
             // Préparer les données de la transaction
@@ -310,10 +320,10 @@ class PaymentController extends Controller
 
             // 2. Ajouter les items
             foreach ($sessionData['cart'] as $item) {
-                // Calculer les prix unitaires
-                $unitPriceHT = $item['unit_price'] ?? 0;
+                // Correction : le prix de vente est TTC dans la caisse
+                $unitPriceTTC = $item['unit_price'] ?? 0; // Prix de vente TVAC
                 $taxRate = $item['tax_rate'] ?? 0;
-                $unitPriceTTC = $unitPriceHT * (1 + $taxRate / 100);
+                $unitPriceHT = $taxRate > 0 ? $unitPriceTTC / (1 + $taxRate / 100) : $unitPriceTTC;
 
                 // Calculer les totaux
                 $quantity = $item['quantity'] ?? 1;
@@ -329,6 +339,21 @@ class PaymentController extends Controller
                 $costPrice = $item['cost_price'] ?? 0;
                 $totalCost = $costPrice * $quantity;
                 $margin = $totalPriceTTC - $discountAmount - $totalCost;
+
+                // Déterminer la source
+                $isArticleZ = empty($item['variant_id']) || empty($item['stock_id']);
+                $source = $isArticleZ ? 'article_z' : 'stock';
+                // Si article Z, on l'insère dans items_unknown
+                if ($isArticleZ) {
+                    ItemsUnknown::create([
+                        'article_name' => $item['article_name'] ?? 'Inconnu',
+                        'description' => isset($item['variant_attributes']) ? json_encode($item['variant_attributes']) : null,
+                        'price' => $unitPriceTTC,
+                        'quantity' => $quantity,
+                        'status' => 'new',
+                        'id_variant' => $item['variant_id'] ?? null,
+                    ]);
+                }
 
                 $transactionItem = $transaction->items()->create([
                     'variant_id' => $item['variant_id'],
@@ -348,10 +373,13 @@ class PaymentController extends Controller
                     'discount_amount' => $discountAmount,
                     'total_cost' => $totalCost,
                     'margin' => $margin,
+                    'source' => $source,
                 ]);
 
-                // 3. Décompter le stock en FIFO
-                $this->decrementStockFIFO($transactionItem, $item['variant_id'], $quantity);
+                // 3. Décompter le stock en FIFO uniquement si ce n'est pas un article Z
+                if (!$isArticleZ) {
+                    $this->decrementStockFIFO($transactionItem, $item['variant_id'], $quantity, $item['article_name'] ?? null);
+                }
             }
 
             // 3. Créer les paiements
@@ -391,7 +419,7 @@ class PaymentController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             Log::error('Erreur lors de la finalisation de la vente: ' . $e->getMessage());
-            return back()->with('error', 'Une erreur est survenue lors de la finalisation de la vente.');
+            return back()->with('error', $e->getMessage());
         }
     }
 
@@ -530,7 +558,7 @@ class PaymentController extends Controller
     /**
      * Décompte le stock en FIFO (First In, First Out)
      */
-    private function decrementStockFIFO(TransactionItem $transactionItem, $variantId, $quantity)
+    private function decrementStockFIFO(TransactionItem $transactionItem, $variantId, $quantity, $articleName = null)
     {
         $remainingQuantity = $quantity;
 
@@ -566,7 +594,8 @@ class PaymentController extends Controller
 
         // Si on n'a pas pu décompter toute la quantité, c'est un problème
         if ($remainingQuantity > 0) {
-            throw new \Exception("Stock insuffisant pour le variant {$variantId}. Manquant: {$remainingQuantity}");
+            $nom = $articleName ?? $variantId ?? 'Inconnu';
+            throw new \Exception("Stock insuffisant pour l'article '{$nom}'. Manquant: {$remainingQuantity}");
         }
     }
 }

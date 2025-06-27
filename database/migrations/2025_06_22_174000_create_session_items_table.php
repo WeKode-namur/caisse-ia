@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('session_items', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('session_id')->index();
-            $table->unsignedBigInteger('variant_id');
-            $table->unsignedBigInteger('stock_id');
+            $table->uuid('variant_id')->nullable();
+            $table->uuid('stock_id')->nullable();
             $table->string('article_name');
             $table->string('variant_reference')->nullable();
             $table->string('barcode')->nullable();

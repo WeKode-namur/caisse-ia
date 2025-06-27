@@ -11,8 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            $table->decimal('margin_percentage', 8, 2)->default(0)->change();
+        Schema::table('transaction_items', function (Blueprint $table) {
+            $table->string('source')->nullable()->after('margin');
         });
     }
 
@@ -21,8 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('transactions', function (Blueprint $table) {
-            $table->decimal('margin_percentage', 5, 2)->default(0)->change();
+        Schema::table('transaction_items', function (Blueprint $table) {
+            $table->dropColumn('source');
         });
     }
 };

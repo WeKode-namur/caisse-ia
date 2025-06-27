@@ -124,6 +124,36 @@ class CartController extends Controller
         }
 
         $item = $cart[$itemId];
+
+        // Si c'est un article temporaire (Article Z), on ne vérifie pas le stock ni le variant
+        if (isset($item['attributes']['is_temporary']) && $item['attributes']['is_temporary']) {
+            $updates = [
+                'quantity' => $request->quantity
+            ];
+            if ($request->has('price')) {
+                $updates['unit_price'] = $request->price;
+                $updates['total_price'] = $request->price * $request->quantity;
+            }
+            $success = RegisterSessionService::updateCartItem($itemId, $updates);
+
+            if (!$success) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur lors de la mise à jour'
+                ], 500);
+            }
+
+            $updatedCart = RegisterSessionService::getCart();
+            $updatedItem = $updatedCart[$itemId] ?? null;
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Article Z mis à jour',
+                'item' => $updatedItem ? $this->formatCartItem($updatedItem) : null,
+                'cart_totals' => RegisterSessionService::calculateTotals()
+            ]);
+        }
+
         $variant = Variant::with('stocks')->find($item['variant_id']);
 
         // Vérifier le stock
@@ -407,6 +437,45 @@ class CartController extends Controller
             'message' => 'Remise appliquée',
             'discount' => array_merge($discountData, ['id' => $discountId]),
             'cart_totals' => RegisterSessionService::calculateTotals()
+        ]);
+    }
+
+    /**
+     * Ajoute un article temporaire (Article Z) au panier
+     */
+    public function addTemporaryItem(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'nullable|string|max:1000',
+            'price' => 'required|numeric|min:0.01',
+        ]);
+
+        $itemData = [
+            'variant_id' => null,
+            'stock_id' => null,
+            'article_name' => $request->name,
+            'variant_reference' => null,
+            'barcode' => null,
+            'quantity' => 1,
+            'unit_price' => $request->price,
+            'total_price' => $request->price,
+            'tax_rate' => 21, // TVA par défaut
+            'cost_price' => 0,
+            'attributes' => [
+                'is_temporary' => true,
+                'description' => $request->description,
+            ],
+        ];
+
+        $itemId = \App\Services\RegisterSessionService::addCartItem($itemData);
+        $itemData['id'] = $itemId;
+
+        return response()->json([
+            'success' => true,
+            'message' => "Article Z ajouté au panier",
+            'item' => $this->formatCartItem($itemData),
+            'cart_totals' => \App\Services\RegisterSessionService::calculateTotals(),
         ]);
     }
 

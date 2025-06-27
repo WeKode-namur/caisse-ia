@@ -161,7 +161,7 @@
                     ? `window.showArticleVariants(${product.id})`
                     : `window.addSingleVariantToCart(${product.id})`;
                 return `
-            <div class="product-card bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-all group hover:scale-105 duration-300 cursor-pointer"
+            <div class="product-card bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-all group hover:scale-105 duration-300 cursor-pointer max-h-[235px]"
                  data-article-id="${product.id}"
                  data-variants-count="${product.variants_count}"
                  onclick="${openModalOnClick}">

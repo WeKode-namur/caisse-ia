@@ -27,7 +27,8 @@ class TransactionItem extends Model
         'discount_rate',
         'discount_amount',
         'total_cost',
-        'margin'
+        'margin',
+        'source'
     ];
 
     protected $casts = [

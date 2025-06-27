@@ -8,7 +8,7 @@
     <i class="fas fa-percent"></i>
 </button>
 
-<button @click="openUnknownItemModal()" disabled class="disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 dark:bg-blue-800 text-white text-sm px-3 py-1.5 flex items-center justify-center w-12 h-8 rounded shadow hover:shadow-lg hover:scale-105 hover:bg-opacity-75 hover:dark:bg-opacity-50 transition duration-300 ease-in-out">
+<button id="btn-items-unknown-modal" class="disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 dark:bg-blue-800 text-white text-sm px-3 py-1.5 flex items-center justify-center w-12 h-8 rounded shadow hover:shadow-lg hover:scale-105 hover:bg-opacity-75 hover:dark:bg-opacity-50 transition duration-300 ease-in-out">
     <div class="w-6 h-6 border border-dotted rounded-full flex items-center justify-center">
         <i class="fas fa-question"></i>
     </div>
@@ -92,6 +92,10 @@
         document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('btn-discount-modal').addEventListener('click', function () {
                 window.openModal('discount-modal');
+            });
+
+            document.getElementById('btn-items-unknown-modal').addEventListener('click', function () {
+                window.openModal('items-unknown-modal');
             });
         });
     </script>
