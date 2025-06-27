@@ -25,21 +25,8 @@ Route::middleware([
     require __DIR__ . '/inventory.php';
 
     // 👥 Clients
-    Route::get('/clients', function () {
-        return '';
-    })->name('clients.index');
+    require __DIR__ . '/clients.php';
 
-    Route::get('/clients/create', function () {
-        return '';
-    })->name('clients.create');
-
-    Route::get('/clients/{id}', function ($id) {
-        return '';
-    })->name('clients.show');
-
-    Route::get('/clients/{id}/edit', function ($id) {
-        return '';
-    })->name('clients.edit');
 
     // 📈 Statistiques
     Route::get('/statistics', function () {
