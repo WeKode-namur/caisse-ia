@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             ModuleSeeder::class,
             InventorySeeder::class,
             PaymentMethodSeeder::class,
+            ClientSeeder::class,
         ]);
     }
 }
