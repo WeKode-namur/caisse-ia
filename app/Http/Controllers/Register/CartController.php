@@ -519,7 +519,7 @@ class CartController extends Controller
      */
     public function removeCustomer()
     {
-        \App\Services\RegisterSessionService::removeCustomer();
+        RegisterSessionService::removeCustomer();
         return response()->json(['success' => true]);
     }
 
@@ -528,7 +528,7 @@ class CartController extends Controller
      */
     public function showCustomer()
     {
-        $customer = \App\Services\RegisterSessionService::getCustomer();
+        $customer = RegisterSessionService::getCustomer();
         return response()->json([
             'customer' => $customer
         ]);

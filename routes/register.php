@@ -43,13 +43,11 @@ Route::prefix('register')->name('register.')->group(function () {
         });
 
         // === CLIENTS ===
-        if (config('app.register_customer_management', false)) {
             Route::prefix('customers')->name('customers.')->group(function () {
                 Route::post('/select', [CartController::class, 'selectCustomer'])->name('select');
                 Route::delete('/remove', [CartController::class, 'removeCustomer'])->name('remove');
                 Route::get('/show', [CartController::class, 'showCustomer'])->name('show');
             });
-        }
 
         // === CARTES CADEAUX ===
         Route::prefix('gift-cards')->name('gift-cards.')->group(function () {
