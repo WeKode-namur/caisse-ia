@@ -41,4 +41,6 @@ Route::prefix('clients')->name('clients.')->group(function () {
         Route::delete('/{id}', [AddressController::class, 'destroy'])->name('addresses.destroy');
         Route::patch('/{id}/primary', [AddressController::class, 'setPrimary'])->name('addresses.primary');
     });
+
+    Route::get('/search', [ClientController::class, 'search'])->name('search');
 });

@@ -276,4 +276,69 @@ class ClientController extends Controller
             ->route('clients.companies.show', $company)
             ->with('success', 'Entreprise créée avec succès.');
     }
+
+    /**
+     * Recherche AJAX de clients (particuliers et entreprises)
+     */
+    public function search(Request $request)
+    {
+        $q = $request->get('q');
+        if (!$q || strlen($q) < 2) {
+            return response()->json([]);
+        }
+        $customers = collect(Customer::query()
+            ->where(function ($query) use ($q) {
+                $query->where('first_name', 'like', "%$q%")
+                    ->orWhere('last_name', 'like', "%$q%")
+                    ->orWhereRaw("CONCAT(first_name, ' ', last_name) like ?", ["%$q%"])
+                    ->orWhere('email', 'like', "%$q%")
+                    ->orWhere('phone', 'like', "%$q%");
+            })
+            ->limit(10)
+            ->get()
+            ->map(function ($c) {
+                return [
+                    'id' => $c->id,
+                    'type' => 'customer',
+                    'name' => $c->first_name . ' ' . $c->last_name,
+                    'display_name' => $c->first_name . ' ' . $c->last_name,
+                    'number' => $c->customer_number,
+                    'email' => $c->email,
+                    'phone' => $c->phone,
+                    'loyalty_points' => $c->loyalty_points ?? 0,
+                    'is_active' => $c->is_active,
+                    'first_name' => $c->first_name,
+                    'last_name' => $c->last_name,
+                ];
+            }));
+
+        $companies = collect(Company::query()
+            ->where(function ($query) use ($q) {
+                $query->where('name', 'like', "%$q%")
+                    ->orWhere('legal_name', 'like', "%$q%")
+                    ->orWhere('email', 'like', "%$q%")
+                    ->orWhere('phone', 'like', "%$q%")
+                    ->orWhere('company_number_be', 'like', "%$q%")
+                    ->orWhere('vat_number', 'like', "%$q%");
+            })
+            ->limit(10)
+            ->get()
+            ->map(function ($c) {
+                return [
+                    'id' => $c->id,
+                    'type' => 'company',
+                    'name' => $c->name,
+                    'display_name' => $c->name,
+                    'number' => $c->company_number_be,
+                    'email' => $c->email,
+                    'phone' => $c->phone,
+                    'loyalty_points' => $c->loyalty_points ?? 0,
+                    'is_active' => $c->is_active,
+                    'company_number_be' => $c->company_number_be,
+                ];
+            }));
+
+        $results = $customers->merge($companies)->values();
+        return response()->json($results);
+    }
 }

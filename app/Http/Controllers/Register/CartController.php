@@ -479,6 +479,61 @@ class CartController extends Controller
         ]);
     }
 
+    /**
+     * Lie un client (particulier ou entreprise) à la session de caisse
+     */
+    public function selectCustomer(Request $request)
+    {
+        $request->validate([
+            'client_id' => 'required|integer',
+            'client_type' => 'required|in:customer,company',
+        ]);
+
+        $client = $request->client_type === 'customer'
+            ? Customer::find($request->client_id)
+            : Company::find($request->client_id);
+
+        if (!$client) {
+            return response()->json(['success' => false, 'message' => 'Client introuvable.'], 404);
+        }
+
+        $customerData = [
+            'id' => $client->id,
+            'type' => $request->client_type,
+            'name' => $request->client_type === 'customer' ? ($client->first_name . ' ' . $client->last_name) : $client->name,
+            'email' => $client->email,
+            'phone' => $client->phone,
+            'loyalty_points' => $client->loyalty_points ?? 0,
+        ];
+        if ($request->client_type === 'company') {
+            $customerData['company_number_be'] = $client->company_number_be;
+        }
+
+        \App\Services\RegisterSessionService::setCustomer($customerData);
+
+        return response()->json(['success' => true, 'customer' => $customerData]);
+    }
+
+    /**
+     * Dissocie le client de la session de caisse
+     */
+    public function removeCustomer()
+    {
+        \App\Services\RegisterSessionService::removeCustomer();
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * Retourne le client lié à la session de caisse (pour affichage panier)
+     */
+    public function showCustomer()
+    {
+        $customer = \App\Services\RegisterSessionService::getCustomer();
+        return response()->json([
+            'customer' => $customer
+        ]);
+    }
+
     // ===== MÉTHODES PRIVÉES =====
 
     /**

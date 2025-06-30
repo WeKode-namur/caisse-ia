@@ -30,7 +30,7 @@ Route::prefix('register')->name('register.')->group(function () {
             Route::delete('/remove/{itemId}', [CartController::class, 'removeItem'])->name('remove-item');
             Route::delete('/clear', [CartController::class, 'clear'])->name('clear');
             Route::get('/totals', [CartController::class, 'getTotals'])->name('totals');
-            Route::post('/discount/manual', [\App\Http\Controllers\Register\CartController::class, 'applyCustomDiscount'])->name('discount.manual');
+            Route::post('/discount/manual', [CartController::class, 'applyCustomDiscount'])->name('discount.manual');
             Route::post('/add-temporary', [CartController::class, 'addTemporaryItem'])->name('add-temporary-item');
         });
 
@@ -45,10 +45,9 @@ Route::prefix('register')->name('register.')->group(function () {
         // === CLIENTS ===
         if (config('app.register_customer_management', false)) {
             Route::prefix('customers')->name('customers.')->group(function () {
-                Route::get('/search', [CartController::class, 'searchCustomers'])->name('search');
                 Route::post('/select', [CartController::class, 'selectCustomer'])->name('select');
                 Route::delete('/remove', [CartController::class, 'removeCustomer'])->name('remove');
-                Route::post('/create-quick', [CartController::class, 'createQuickCustomer'])->name('create-quick');
+                Route::get('/show', [CartController::class, 'showCustomer'])->name('show');
             });
         }
 

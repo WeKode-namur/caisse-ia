@@ -1,5 +1,5 @@
 
-<button @click="openClientModal()" disabled class="disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 dark:bg-blue-800 text-white text-sm px-3 py-1.5 flex items-center justify-center w-12 h-8 rounded shadow hover:shadow-lg hover:scale-105 hover:bg-opacity-75 hover:dark:bg-opacity-50 transition duration-300 ease-in-out">
+<button id="btn-clients-list-modal" class="disabled:opacity-50 disabled:cursor-not-allowed bg-blue-500 dark:bg-blue-800 text-white text-sm px-3 py-1.5 flex items-center justify-center w-12 h-8 rounded shadow hover:shadow-lg hover:scale-105 hover:bg-opacity-75 hover:dark:bg-opacity-50 transition duration-300 ease-in-out">
     <i class="fas fa-user-plus"></i>
 </button>
 
@@ -90,6 +90,12 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+
+            @if(config('app.register_customer_management', false))
+                document.getElementById('btn-clients-list-modal').addEventListener('click', function () {
+                    window.openModal('clients-list-modal');
+                });
+            @endif
             document.getElementById('btn-discount-modal').addEventListener('click', function () {
                 window.openModal('discount-modal');
             });

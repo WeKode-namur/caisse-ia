@@ -246,6 +246,9 @@ class PaymentController extends Controller
             return back()->with('error', 'Le montant payé est insuffisant.');
         }
 
+        $customer = $sessionData['customer'] ?? null;
+        $company = $sessionData['company'] ?? null;
+
         try {
             DB::beginTransaction();
 
@@ -309,11 +312,11 @@ class PaymentController extends Controller
 
             // Ajouter les champs client seulement si activé
             if (config('app.register_customer_management')) {
-                $transactionData['customer_id'] = $sessionData['customer']['id'] ?? null;
-                $transactionData['company_id'] = $sessionData['company']['id'] ?? null;
+                $transactionData['customer_id'] = $customer['type'] === 'customer' ? ($customer['id'] ?? null) : null;
+                $transactionData['company_id'] = $customer['type'] === 'company' ? ($customer['id'] ?? null) : null;
             } else {
-                $transactionData['customer_id'] = $sessionData['customer']['id'] ?? null;
-                $transactionData['company_id'] = null;
+                $transactionData['customer_id'] = $customer['type'] === 'customer' ? ($customer['id'] ?? null) : null;
+                $transactionData['company_id'] = $customer['type'] === 'company' ? ($customer['id'] ?? null) : null;
             }
 
             $transaction = Transaction::create($transactionData);
