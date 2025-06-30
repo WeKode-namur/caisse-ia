@@ -11,6 +11,9 @@ Route::prefix('clients')->name('clients.')->group(function () {
     Route::get('create', [ClientController::class, 'create'])->name('create');
     Route::post('', [ClientController::class, 'store'])->name('store');
 
+    // Routes API pour AJAX
+    Route::get('stats', [ClientController::class, 'getStats'])->name('stats');
+
     // Routes pour les clients particuliers (détails, édition, suppression)
     Route::prefix('customers')->name('customers.')->group(function () {
         Route::get('/{customer}', [CustomerController::class, 'show'])->name('show');
@@ -30,13 +33,12 @@ Route::prefix('clients')->name('clients.')->group(function () {
     });
 
     // Routes pour les adresses
-    Route::prefix('addresses')->name('addresses.')->group(function () {
-        Route::get('/customers/{customer}/create', [AddressController::class, 'createForCustomer'])->name('create.customer');
-        Route::get('/companies/{company}/create', [AddressController::class, 'createForCompany'])->name('create.company');
-        Route::post('', [AddressController::class, 'store'])->name('store');
-        Route::get('/{address}/edit', [AddressController::class, 'edit'])->name('edit');
-        Route::put('/{address}', [AddressController::class, 'update'])->name('update');
-        Route::delete('/{address}', [AddressController::class, 'destroy'])->name('destroy');
-        Route::patch('/{address}/primary', [AddressController::class, 'setPrimary'])->name('primary');
+    Route::prefix('addresses')->group(function () {
+        Route::get('/{id}/edit', [AddressController::class, 'edit'])->name('addresses.edit');
+        Route::get('/{type}/{id}', [AddressController::class, 'index'])->name('addresses.index');
+        Route::post('/', [AddressController::class, 'store'])->name('addresses.store');
+        Route::put('/{id}', [AddressController::class, 'update'])->name('addresses.update');
+        Route::delete('/{id}', [AddressController::class, 'destroy'])->name('addresses.destroy');
+        Route::patch('/{id}/primary', [AddressController::class, 'setPrimary'])->name('addresses.primary');
     });
 });

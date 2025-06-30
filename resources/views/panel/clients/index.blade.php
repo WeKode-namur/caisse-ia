@@ -5,225 +5,328 @@
         </h2>
     </x-slot>
 
-    <div class="py-12">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <!-- Première ligne : Filtres -->
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 mb-6">
-                <form method="GET" action="{{ route('clients.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <!-- Recherche -->
-                    <div>
-                        <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Recherche</label>
-                        <input type="text" 
-                               name="search" 
-                               id="search" 
-                               value="{{ $search }}"
-                               placeholder="Nom, email, téléphone..."
-                               class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                    </div>
-
-                    <!-- Statut -->
-                    <div>
-                        <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-                        <select name="status" id="status" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="all" {{ $status === 'all' ? 'selected' : '' }}>Tous</option>
-                            <option value="active" {{ $status === 'active' ? 'selected' : '' }}>Actifs</option>
-                            <option value="inactive" {{ $status === 'inactive' ? 'selected' : '' }}>Inactifs</option>
-                        </select>
-                    </div>
-
-                    <!-- Type -->
-                    <div>
-                        <label for="type" class="block text-sm font-medium text-gray-700 mb-1">Type</label>
-                        <select name="type" id="type" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="all" {{ $type === 'all' ? 'selected' : '' }}>Tous</option>
-                            <option value="customer" {{ $type === 'customer' ? 'selected' : '' }}>Clients particuliers</option>
-                            <option value="company" {{ $type === 'company' ? 'selected' : '' }}>Entreprises</option>
-                        </select>
-                    </div>
-
-                    <!-- Tri -->
-                    <div>
-                        <label for="sort" class="block text-sm font-medium text-gray-700 mb-1">Tri</label>
-                        <select name="sort" id="sort" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            <option value="name" {{ $sort === 'name' ? 'selected' : '' }}>Nom</option>
-                            <option value="created_at" {{ $sort === 'created_at' ? 'selected' : '' }}>Date de création</option>
-                            <option value="loyalty_points" {{ $sort === 'loyalty_points' ? 'selected' : '' }}>Points fidélité</option>
-                        </select>
-                    </div>
-
-                    <!-- Boutons -->
-                    <div class="md:col-span-4 flex gap-2">
-                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                            Filtrer
-                        </button>
-                        <a href="{{ route('clients.index') }}" class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2">
-                            Réinitialiser
-                        </a>
-                        <a href="{{ route('clients.create') }}" class="ml-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
-                            Nouveau Client
-                        </a>
-                    </div>
-                </form>
-            </div>
-
-            <!-- Deuxième ligne : Statistiques -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                            </svg>
-                        </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Clients Particuliers</p>
-                            <p class="text-2xl font-semibold text-gray-900">{{ $stats['total_customers'] }}</p>
-                        </div>
-                    </div>
+    <div class="lg:py-12">
+        <div class="max-w-7xl mx-auto px-0 lg:px-8">
+            <!-- En-tête avec filtres -->
+            <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg mb-6">
+                <div class="text-gray-900 dark:text-gray-50 px-3 py-2 border-b border-gray-300 dark:border-gray-700 flex items-center justify-between">
+                    <h1 class="font-bold lg:text-2xl text-xl">Clients</h1>
+                    <a href="{{ route('clients.create') }}" class="bg-green-500 text-white rounded py-1 px-3 hover:opacity-75 hover:scale-105">
+                        <i class="fas fa-plus"></i>
+                    </a>
                 </div>
 
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-green-100 text-green-600">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-                            </svg>
+                <!-- Filtres -->
+                <div class="p-4">
+                    <form id="filters-form" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div>
+                            <input type="text"
+                                   name="search"
+                                   id="search-input"
+                                   placeholder="Rechercher un client..."
+                                   class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
                         </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Entreprises</p>
-                            <p class="text-2xl font-semibold text-gray-900">{{ $stats['total_companies'] }}</p>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-yellow-100 text-yellow-600">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
+                        <div>
+                            <select name="status"
+                                    id="status-select"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="all">Tous les statuts</option>
+                                <option value="active" selected>Actifs</option>
+                                <option value="inactive">Inactifs</option>
+                            </select>
                         </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Nouveaux cette semaine</p>
-                            <p class="text-2xl font-semibold text-gray-900">{{ $stats['new_this_week'] }}</p>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                    <div class="flex items-center">
-                        <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
+                        <div>
+                            <select name="type"
+                                    id="type-select"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="all">Tous les types</option>
+                                <option value="customer">Clients particuliers</option>
+                                <option value="company">Entreprises</option>
+                            </select>
                         </div>
-                        <div class="ml-4">
-                            <p class="text-sm font-medium text-gray-600">Points Fidélité</p>
-                            <p class="text-2xl font-semibold text-gray-900">{{ number_format($stats['total_loyalty_points']) }}</p>
+
+                        <div>
+                            <select name="sort"
+                                    id="sort-select"
+                                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="name">Nom A-Z</option>
+                                <option value="created_at">Plus récent</option>
+                                <option value="loyalty_points">Points fidélité</option>
+                            </select>
                         </div>
-                    </div>
+
+                        <div class="hidden">
+                            <button type="button" id="filter-btn">Filtrer</button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
-            <!-- Troisième ligne : Liste des clients -->
-            <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h3 class="text-lg font-medium text-gray-900">
-                        Liste des Clients ({{ $paginator->total() }} résultats)
-                    </h3>
-                </div>
-                
-                <div class="p-6">
-                    @if($paginator->count() > 0)
-                        <div class="space-y-4">
-                            @foreach($paginator as $client)
-                                <div class="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                                    <div class="flex items-center">
-                                        <!-- Avatar -->
-                                        <div class="w-12 h-12 rounded-full flex items-center justify-center mr-4
-                                            {{ $client->type === 'customer' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600' }}">
-                                            @if($client->type === 'customer')
-                                                <span class="font-medium text-sm">
-                                                    {{ substr($client->first_name, 0, 1) }}{{ substr($client->last_name, 0, 1) }}
-                                                </span>
-                                            @else
-                                                <span class="font-medium text-sm">
-                                                    {{ substr($client->name, 0, 2) }}
-                                                </span>
-                                            @endif
-                                        </div>
+            <!-- Statistiques -->
+            <div id="stats-container" class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                <x-loading-spinner message="Chargement des statistiques..." />
+            </div>
 
-                                        <!-- Informations -->
-                                        <div class="flex-1">
-                                            <div class="flex items-center gap-2">
-                                                <h4 class="font-medium text-gray-900">{{ $client->display_name }}</h4>
-                                                <span class="px-2 py-1 text-xs rounded-full 
-                                                    {{ $client->type === 'customer' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800' }}">
-                                                    {{ $client->type === 'customer' ? 'Particulier' : 'Entreprise' }}
-                                                </span>
-                                                @if(!$client->is_active)
-                                                    <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
-                                                        Inactif
-                                                    </span>
-                                                @endif
-                                            </div>
-                                            <p class="text-sm text-gray-600">{{ $client->number }}</p>
-                                            @if($client->email)
-                                                <p class="text-sm text-gray-500">{{ $client->email }}</p>
-                                            @endif
-                                            @if($client->phone)
-                                                <p class="text-sm text-gray-500">{{ $client->phone }}</p>
-                                            @endif
-                                        </div>
-
-                                        <!-- Points fidélité -->
-                                        <div class="text-right mr-4">
-                                            <p class="text-sm font-medium text-gray-900">{{ number_format($client->loyalty_points) }}</p>
-                                            <p class="text-xs text-gray-500">points</p>
-                                        </div>
-                                    </div>
-
-                                    <!-- Actions -->
-                                    <div class="flex items-center gap-2">
-                                        <a href="{{ $client->type === 'customer' ? route('clients.customers.show', $client) : route('clients.companies.show', $client) }}" 
-                                           class="text-blue-600 hover:text-blue-800 text-sm font-medium">
-                                            Voir
-                                        </a>
-                                        <a href="{{ $client->type === 'customer' ? route('clients.customers.edit', $client) : route('clients.companies.edit', $client) }}" 
-                                           class="text-gray-600 hover:text-gray-800 text-sm font-medium">
-                                            Modifier
-                                        </a>
-                                    </div>
-                                </div>
-                            @endforeach
-                        </div>
-
-                        <!-- Pagination -->
-                        <div class="mt-6">
-                            {{ $paginator->appends(request()->query())->links() }}
-                        </div>
-                    @else
-                        <div class="text-center py-12">
-                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            <h3 class="mt-2 text-sm font-medium text-gray-900">Aucun client trouvé</h3>
-                            <p class="mt-1 text-sm text-gray-500">
-                                @if($search || $status !== 'all' || $type !== 'all')
-                                    Essayez de modifier vos critères de recherche.
-                                @else
-                                    Commencez par créer votre premier client.
-                                @endif
-                            </p>
-                            <div class="mt-6">
-                                <a href="{{ route('clients.create') }}" class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                    Nouveau Client
-                                </a>
-                            </div>
-                        </div>
-                    @endif
+            <!-- Tableau des clients -->
+            <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg mb-6">
+                <div class="p-4">
+                    <!-- Container pour le tableau -->
+                    <div id="clients-container">
+                        <!-- Le tableau sera chargé ici via AJAX -->
+                        <x-loading-spinner message="Chargement des clients..." />
+                    </div>
                 </div>
             </div>
         </div>
     </div>
+
+    @push('scripts')
+        <script>
+            class ClientManager {
+                constructor() {
+                    this.currentPage = 1;
+                    this.isLoading = false;
+                    this.searchTimeout = null;
+
+                    // Par défaut, statut = actif si rien n'est sélectionné
+                    const statusSelect = document.getElementById('status-select');
+                    if (!statusSelect.value || statusSelect.value === 'all') {
+                        statusSelect.value = 'active';
+                    }
+
+                    this.bindEvents();
+                    this.loadClients(); // Chargement initial
+                    this.loadStats(); // Chargement initial des stats
+                }
+
+                bindEvents() {
+                    // Recherche avec debounce
+                    document.getElementById('search-input').addEventListener('input', (e) => {
+                        clearTimeout(this.searchTimeout);
+                        this.searchTimeout = setTimeout(() => {
+                            this.currentPage = 1;
+                            this.loadClients();
+                            this.loadStats();
+                        }, 500);
+                    });
+
+                    // Changement des filtres
+                    ['status-select', 'type-select', 'sort-select'].forEach(id => {
+                        document.getElementById(id).addEventListener('change', () => {
+                            this.currentPage = 1;
+                            this.loadClients();
+                            this.loadStats();
+                        });
+                    });
+
+                    // Bouton filtrer
+                    document.getElementById('filter-btn').addEventListener('click', () => {
+                        this.currentPage = 1;
+                        this.loadClients();
+                        this.loadStats();
+                    });
+
+                    // Gérer les clics sur la pagination (délégation d'événements)
+                    document.addEventListener('click', (e) => {
+                        if (e.target.classList.contains('pagination-btn')) {
+                            e.preventDefault();
+                            this.currentPage = parseInt(e.target.dataset.page);
+                            this.loadClients();
+                        }
+                    });
+
+                    // Gérer les clics sur les clients (délégation d'événements)
+                    document.addEventListener('click', (e) => {
+                        const clientRow = e.target.closest('.article-row');
+                        if (clientRow) {
+                            const clientId = clientRow.dataset.articleId;
+                            // Redirection vers la page de détails du client
+                            // Note: Cette logique devra être adaptée selon le type de client
+                            window.location.href = "{{ route('clients.customers.show', ':id') }}".replace(':id', clientId);
+                        }
+                    });
+                }
+
+                async loadClients() {
+                    if (this.isLoading) return;
+
+                    this.isLoading = true;
+                    const container = document.getElementById('clients-container');
+
+                    // Afficher le spinner
+                    container.innerHTML = await LoadingUtils.getLoadingHtml('Chargement des clients...');
+
+                    try {
+                        const formData = new FormData(document.getElementById('filters-form'));
+                        formData.append('page', this.currentPage);
+
+                        const params = new URLSearchParams();
+                        for (let [key, value] of formData.entries()) {
+                            if (value) params.append(key, value);
+                        }
+
+                        const response = await fetch(`{{ route('clients.index') }}?${params}`, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'text/html'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Erreur lors du chargement des clients');
+                        }
+
+                        const html = await response.text();
+                        container.innerHTML = html;
+
+                    } catch (error) {
+                        console.error('Erreur:', error);
+                        container.innerHTML = `
+                        <div class="text-center py-8">
+                            <div class="text-red-500 mb-2">
+                                <i class="fas fa-exclamation-triangle text-4xl"></i>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-1">Erreur de chargement</h3>
+                            <p class="text-gray-500 dark:text-gray-400 mb-4">
+                                Impossible de charger les clients. Veuillez réessayer.
+                            </p>
+                            <button onclick="clientManager.loadClients()"
+                                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-refresh mr-2"></i>
+                                Réessayer
+                            </button>
+                        </div>
+                    `;
+                    } finally {
+                        this.isLoading = false;
+                    }
+                }
+
+                async loadStats() {
+                    try {
+                        const formData = new FormData(document.getElementById('filters-form'));
+                        const params = new URLSearchParams();
+                        for (let [key, value] of formData.entries()) {
+                            if (value) params.append(key, value);
+                        }
+
+                        const response = await fetch(`{{ route('clients.stats') }}?${params}`, {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            }
+                        });
+
+                        if (response.ok) {
+                            const stats = await response.json();
+                            this.renderStats(stats);
+                        }
+                    } catch (error) {
+                        console.error('Erreur lors de la mise à jour des stats:', error);
+                    }
+                }
+
+                renderStats(stats) {
+                    const statsContainer = document.getElementById('stats-container');
+
+                    statsContainer.innerHTML = `
+                        <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg">
+                            <div class="p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                                            ${stats.total_customers}
+                                        </div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">Clients Particuliers</div>
+                                    </div>
+                                    <div class="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-user text-blue-600 dark:text-blue-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg">
+                            <div class="p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-2xl font-bold text-green-600 dark:text-green-400">
+                                            ${stats.total_companies}
+                                        </div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">Entreprises</div>
+                                    </div>
+                                    <div class="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-building text-green-600 dark:text-green-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg">
+                            <div class="p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                                            ${stats.new_this_week}
+                                        </div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">Nouveaux cette semaine</div>
+                                    </div>
+                                    <div class="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-clock text-yellow-600 dark:text-yellow-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg">
+                            <div class="p-4">
+                                <div class="flex items-center justify-between">
+                                    <div>
+                                        <div class="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                                            ${new Intl.NumberFormat().format(stats.total_loyalty_points)}
+                                        </div>
+                                        <div class="text-sm text-gray-600 dark:text-gray-400">Points Fidélité</div>
+                                    </div>
+                                    <div class="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                                        <i class="fas fa-star text-purple-600 dark:text-purple-400"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                // Méthode pour rafraîchir les données
+                refresh() {
+                    this.currentPage = 1;
+                    this.loadClients();
+                    this.loadStats();
+                }
+
+                // Méthode pour réinitialiser les filtres
+                resetFilters() {
+                    document.getElementById('filters-form').reset();
+                    this.currentPage = 1;
+                    this.loadClients();
+                    this.loadStats();
+                }
+            }
+
+            // Initialiser le gestionnaire de clients
+            let clientManager;
+            document.addEventListener('DOMContentLoaded', function() {
+                clientManager = new ClientManager();
+            });
+
+            // Rafraîchir automatiquement toutes les 5 minutes
+            setInterval(() => {
+                if (clientManager && !clientManager.isLoading) {
+                    clientManager.loadClients();
+                    clientManager.loadStats();
+                }
+            }, 5 * 60 * 1000);
+        </script>
+    @endpush
 </x-app-layout>

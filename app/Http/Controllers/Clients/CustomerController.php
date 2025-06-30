@@ -111,6 +111,10 @@ class CustomerController extends Controller
             'is_active' => ['boolean'],
         ]);
 
+        // Gérer les checkboxes qui peuvent ne pas être envoyées si non cochées
+        $validated['marketing_consent'] = $request->has('marketing_consent');
+        $validated['is_active'] = $request->has('is_active');
+
         $customer->update($validated);
 
         return redirect()

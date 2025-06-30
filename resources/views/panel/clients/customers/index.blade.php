@@ -17,7 +17,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <!-- Filtres et recherche -->
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6 mb-6">
-                <form method="GET" action="{{ route('clients.customers.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <form method="GET" action="{{ route('clients.index') }}" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                         <label for="search" class="block text-sm font-medium text-gray-700 mb-1">Recherche</label>
                         <input type="text" name="search" id="search" value="{{ $search }}" 
@@ -36,7 +36,7 @@
                         <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
                             Filtrer
                         </button>
-                        <a href="{{ route('clients.customers.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
+                        <a href="{{ route('clients.index') }}" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
                             Réinitialiser
                         </a>
                     </div>

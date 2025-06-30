@@ -41,10 +41,15 @@ class Company extends Model
 
     // Constantes pour les types d'entreprise
     const COMPANY_TYPES = [
-        'SRL' => 'SRL',
-        'SA' => 'SA',
-        'SPRL' => 'SPRL',
+        'SRL' => 'SRL (Société à Responsabilité Limitée)',
+        'SA' => 'SA (Société Anonyme)',
+        'SC' => 'SC (Société Coopérative)',
+        'SNC' => 'SNC (Société en Nom Collectif)',
+        'SCS' => 'SCS (Société en Commandite Simple)',
+        'SCA' => 'SCA (Société en Commandite par Actions)',
+        'ASBL' => 'ASBL (Association Sans But Lucratif)',
         'Indépendant' => 'Indépendant',
+        'Autre' => 'Autre',
     ];
 
     const LOYALTY_TIERS = [
@@ -206,4 +211,4 @@ class Company extends Model
               ->orWhere('vat_number', 'like', "%{$search}%");
         });
     }
-} 
+}
