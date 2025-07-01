@@ -233,12 +233,12 @@
                             <h3 class="font-semibold text-gray-900 dark:text-gray-100">Actions rapides</h3>
                         </div>
                         <div class="p-6 space-y-3">
-{{--                            @if($variants->isNotEmpty())--}}
-{{--                                <button class="w-full px-3 py-2 bg-purple-500 dark:bg-purple-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">--}}
-{{--                                    <i class="fas fa-layer-group mr-2"></i>Gérer les variants--}}
-{{--                                </button>--}}
-{{--                            @endif--}}
-                            <button class="w-full px-3 py-2 bg-green-500 dark:bg-green-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
+                            @if($variants->isNotEmpty())
+                                <button class="w-full px-3 py-2 bg-amber-500 dark:bg-amber-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
+                                    <i class="fas fa-layer-group mr-2"></i>Gérer les variants
+                                </button>
+                            @endif
+                            <button id="btn-ajuster-stock" class="w-full px-3 py-2 bg-green-500 dark:bg-green-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
                                 <i class="fas fa-plus mr-2"></i>Ajuster le stock
                             </button>
                             <button id="modal_print_etiquette"
@@ -401,6 +401,51 @@
         </form>
     </x-modal>
 
+    <!-- Modal d'ajout de stock avec x-modal -->
+    <x-modal name="ajust-stock" title="Ajouter du stock" icon="plus" :closable="true" :footer="false" size="md">
+        <form id="form-ajust-stock">
+            <div class="mb-4">
+                <x-label for="ajust-variant-id" value="Variant" />
+                <select name="variant_id" id="ajust-variant-id" class="form-select w-full" required>
+                    @foreach($article->variants as $variant)
+                        <option value="{{ $variant->id }}">
+                            {{ $variant->reference ? $variant->reference : 'Variant #'.$variant->id }}
+                        </option>
+                    @endforeach
+                </select>
+                <div class="text-red-500 text-xs mt-1 hidden" id="error-variant_id"></div>
+            </div>
+            <div class="mb-4">
+                <x-label for="ajust-quantity" value="Quantité à ajouter" />
+                <x-input id="ajust-quantity" name="quantity" type="number" min="0.001" step="0.001" class="w-full" required />
+                <div class="text-red-500 text-xs mt-1 hidden" id="error-quantity"></div>
+            </div>
+            <div class="mb-4">
+                <x-label for="ajust-buy-price" value="Prix d'achat (€)" />
+                <x-input id="ajust-buy-price" name="buy_price" type="number" min="0" step="0.01" class="w-full" required />
+                <div class="text-red-500 text-xs mt-1 hidden" id="error-buy_price"></div>
+            </div>
+            @if(config('custom.referent_lot_optionnel'))
+            <div class="mb-4">
+                <x-label for="ajust-lot-reference" value="Référence de lot" />
+                <x-input id="ajust-lot-reference" name="lot_reference" type="text" maxlength="100" class="w-full" />
+                <div class="text-red-500 text-xs mt-1 hidden" id="error-lot_reference"></div>
+            </div>
+            @endif
+            @if(config('custom.date_expiration_optionnel'))
+            <div class="mb-4">
+                <x-label for="ajust-expiry-date" value="Date d'expiration" />
+                <x-input id="ajust-expiry-date" name="expiry_date" type="date" class="w-full" />
+                <div class="text-red-500 text-xs mt-1 hidden" id="error-expiry_date"></div>
+            </div>
+            @endif
+            <div class="flex justify-end space-x-2 mt-6">
+                <button type="button" onclick="window.closeModal('ajust-stock')" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500">Annuler</button>
+                <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Ajouter</button>
+            </div>
+        </form>
+    </x-modal>
+
     @push('scripts')
         <script>
             document.addEventListener('DOMContentLoaded', function() {
@@ -551,6 +596,90 @@
                     <script>document.getElementById('popupForm').submit();<\/script>
                 `;
                 popup.document.write(html);
+            });
+
+            function clearAjustStockErrors() {
+                ['variant_id','quantity','buy_price','lot_reference','expiry_date'].forEach(function(field) {
+                    const el = document.getElementById('error-' + field);
+                    if (el) {
+                        el.classList.add('hidden');
+                        el.textContent = '';
+                    }
+                });
+            }
+            document.getElementById('btn-ajuster-stock').addEventListener('click', function() {
+                window.openModal('ajust-stock');
+                setTimeout(() => {
+                    const select = document.getElementById('ajust-variant-id');
+                    if (select) {
+                        setAjustBuyPrice(select.value);
+                    }
+                }, 100);
+                clearAjustStockErrors();
+            });
+            document.getElementById('ajust-variant-id').addEventListener('change', function() {
+                setAjustBuyPrice(this.value);
+            });
+            function setAjustBuyPrice(variantId) {
+                let price = 0;
+                @foreach($article->variants as $variant)
+                    if (variantId == '{{ $variant->id }}') {
+                        price = {{ $variant->stocks->last()?->buy_price ?? 0 }};
+                    }
+                @endforeach
+                document.getElementById('ajust-buy-price').value = price;
+            }
+            document.getElementById('form-ajust-stock').addEventListener('submit', function(e) {
+                e.preventDefault();
+                clearAjustStockErrors();
+                let hasError = false;
+                // Vérification côté client
+                const quantity = parseFloat(document.getElementById('ajust-quantity').value);
+                const buyPrice = parseFloat(document.getElementById('ajust-buy-price').value);
+                if (isNaN(quantity) || quantity <= 0) {
+                    document.getElementById('error-quantity').textContent = 'Merci de mettre une valeur supérieure à 0';
+                    document.getElementById('error-quantity').classList.remove('hidden');
+                    hasError = true;
+                }
+                if (isNaN(buyPrice) || buyPrice < 0) {
+                    document.getElementById('error-buy_price').textContent = 'Merci de mettre un prix d\'achat valide';
+                    document.getElementById('error-buy_price').classList.remove('hidden');
+                    hasError = true;
+                }
+                // Ajoute d'autres vérifications si besoin
+                if (hasError) return;
+                const form = e.target;
+                const data = new FormData(form);
+                fetch(`{{ route('inventory.stock.adjust', $article) }}`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: data
+                })
+                .then(async r => {
+                    let res;
+                    try { res = await r.json(); } catch { res = {success: false, message: 'Erreur inconnue'}; }
+                    if (res.success) {
+                        window.closeModal('ajust-stock');
+                        window.location.reload();
+                    } else {
+                        // Affichage des erreurs backend si possible
+                        if (res.errors) {
+                            Object.entries(res.errors).forEach(function([field, messages]) {
+                                const el = document.getElementById('error-' + field);
+                                if (el) {
+                                    el.textContent = messages[0];
+                                    el.classList.remove('hidden');
+                                }
+                            });
+                        } else {
+                            alert(res.message || 'Erreur lors de l\'ajout du stock');
+                        }
+                    }
+                })
+                .catch(() => alert('Erreur lors de l\'ajout du stock'));
             });
         </script>
     @endpush

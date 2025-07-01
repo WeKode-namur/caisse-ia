@@ -28,8 +28,8 @@ class TransactionController extends Controller
         $stats = $this->calculateStats(clone $query);
 
         // Pagination
-        $transactions = $query->with(['cashier', 'items', 'payments'])->orderBy('created_at', 'desc')->paginate(20);
-        
+        $transactions = $query->with(['cashier', 'items', 'payments'])->where('transaction_type', ['ticket', 'facture'])->orderBy('created_at', 'desc')->paginate(20);
+
         if ($request->ajax()) {
             if ($request->has('stats_only')) {
                 return view('panel.transactions._stats', compact('stats'))->render();
@@ -121,7 +121,7 @@ class TransactionController extends Controller
         $totalTransactions = $query->count();
         $totalRevenue = $query->sum('total_amount');
         $averageTicket = $totalTransactions > 0 ? $totalRevenue / $totalTransactions : 0;
-        
+
         // Compter les clients uniques seulement si la colonne customer_id existe
         $uniqueCustomers = 0;
         if (class_exists('App\Models\Customer')) {
@@ -155,4 +155,4 @@ class TransactionController extends Controller
             ]
         ];
     }
-} 
+}

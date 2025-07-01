@@ -19,7 +19,11 @@
                             {{ $mouvement->quantity_used < 0 ? 'Entrée' : ($mouvement->quantity_used > 0 ? 'Sortie' : 'Autre') }}
                         </div>
                         <div class="text-xs text-gray-500 dark:text-gray-400">
-                            {{ $mouvement->transactionItem->variant->name ?? $mouvement->transactionItem->article_name ?? 'N/A' }}
+                            @php
+                                $ref = $mouvement->transactionItem->variant->reference ?? null;
+                                $id = $mouvement->transactionItem->variant->id ?? null;
+                            @endphp
+                            {{ $ref ? $ref : ($id ? 'Variant #'.$id : 'N/A') }}
                         </div>
                         <div class="text-xs text-gray-400 dark:text-gray-500">
                             @if($mouvement->transactionItem->transaction->is_wix_release)
