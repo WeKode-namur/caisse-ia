@@ -312,8 +312,8 @@ class PaymentController extends Controller
 
             // Ajouter les champs client seulement si activé
             if (config('app.register_customer_management')) {
-                $transactionData['customer_id'] = $customer['type'] === 'customer' ? ($customer['id'] ?? null) : null;
-                $transactionData['company_id'] = $customer['type'] === 'company' ? ($customer['id'] ?? null) : null;
+                $transactionData['customer_id'] = (isset($customer) && isset($customer['type']) && $customer['type'] === 'customer') ? ($customer['id'] ?? null) : null;
+                $transactionData['company_id'] = (isset($customer) && isset($customer['type']) && $customer['type'] === 'company') ? ($customer['id'] ?? null) : null;
             }
 
             $transaction = Transaction::create($transactionData);

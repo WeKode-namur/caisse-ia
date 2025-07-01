@@ -2,8 +2,9 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
-use App\Models\Article;
-use App\Models\Variant;
+use App\Models\{Article, Variant};
+use Endroid\QrCode\{QrCode, Writer\PngWriter};
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class ArticleController extends Controller
@@ -340,7 +341,7 @@ class ArticleController extends Controller
      */
     public function getVariant($id)
     {
-        $variant = \App\Models\Variant::with(['medias'])->findOrFail($id);
+        $variant = Variant::with(['medias'])->findOrFail($id);
         return response()->json([
             'id' => $variant->id,
             'reference' => $variant->reference,
@@ -358,13 +359,13 @@ class ArticleController extends Controller
     /**
      * Aperçu d'impression des étiquettes pour les variants sélectionnés
      */
-    public function printLabelsPreview(\Illuminate\Http\Request $request, \App\Models\Article $article)
+    public function printLabelsPreview(Request $request, Article $article)
     {
         $data = $request->validate([
             'variants' => 'required|array',
             'qty' => 'required|array',
         ]);
-        $variants = \App\Models\Variant::with(['attributeValues.attribute', 'article'])
+        $variants = Variant::with(['attributeValues.attribute', 'article'])
             ->whereIn('id', $data['variants'])
             ->get();
         $quantities = $data['qty'];
@@ -374,8 +375,8 @@ class ArticleController extends Controller
         foreach ($variants as $variant) {
             $qrData = $variant->barcode ?? '';
             if ($qrData) {
-                $qrCode = new \Endroid\QrCode\QrCode($qrData);
-                $writer = new \Endroid\QrCode\Writer\PngWriter();
+                $qrCode = new QrCode($qrData);
+                $writer = new PngWriter();
                 $qrCodes[$variant->id] = $writer->write($qrCode)->getDataUri();
             } else {
                 $qrCodes[$variant->id] = null;

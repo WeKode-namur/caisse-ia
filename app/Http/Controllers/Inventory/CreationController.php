@@ -13,6 +13,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class CreationController extends Controller
 {
@@ -181,6 +182,11 @@ class CreationController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
+            \Log::error('[storeStepTwo] Erreur lors de la sauvegarde', [
+                'exception' => $e,
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return back()->withErrors(['error' => 'Erreur lors de la sauvegarde : ' . $e->getMessage()]);
         }
     }
@@ -397,18 +403,75 @@ class CreationController extends Controller
      */
     private function finalizeArticle(Article $draft)
     {
+        Log::info('[finalizeArticle] Début', ['article_id' => $draft->id]);
         // Vérifier qu'il y a au moins un variant
         if ($draft->variants()->count() === 0) {
+            Log::warning('[finalizeArticle] Aucun variant trouvé', ['article_id' => $draft->id]);
             throw new \Exception("L'article doit avoir au moins un variant.");
         }
+        // Créer une transaction technique pour l'initialisation du stock
+        $transaction = new \App\Models\Transaction();
+        $transaction->transaction_number = 'INIT-' . now()->format('YmdHis') . '-' . $draft->id;
+        $transaction->transaction_type = 'init_stock';
+        $transaction->status = 'completed';
+        $transaction->payment_status = 'paid';
+        $transaction->cashier_id = auth()->id() ?? 1;
+        $transaction->cash_register_id = null;
+        $transaction->currency = 'EUR';
+        $transaction->notes = 'Initialisation du stock à l\'activation de l\'article';
+        $transaction->total_amount = 0;
+        $transaction->save();
+        Log::info('[finalizeArticle] Transaction technique créée', ['transaction_id' => $transaction->id]);
         // Générer le code-barres pour chaque variant sans code-barres
         foreach ($draft->variants as $variant) {
+            Log::info('[finalizeArticle] Traitement variant', ['variant_id' => $variant->id]);
             if (empty($variant->barcode)) {
                 $variant->barcode = VariantService::generateCustomBarcode();
                 $variant->save();
+                Log::info('[finalizeArticle] Code-barres généré', ['variant_id' => $variant->id, 'barcode' => $variant->barcode]);
+            }
+            // === Mouvement de stock initial ===
+            $stock = $variant->stocks->first();
+            if ($stock && $stock->quantity > 0) {
+                Log::info('[finalizeArticle] Stock initial détecté', ['variant_id' => $variant->id, 'stock_id' => $stock->id, 'quantity' => $stock->quantity]);
+                // Créer un TransactionItem technique pour l'initialisation
+                $transactionItem = new \App\Models\TransactionItem();
+                $transactionItem->transaction_id = $transaction->id;
+                $transactionItem->variant_id = $variant->id;
+                $transactionItem->stock_id = $stock->id;
+                $transactionItem->article_name = $draft->name;
+                $transactionItem->variant_reference = $variant->reference;
+                $transactionItem->quantity = $stock->quantity;
+                $transactionItem->unit_price_ht = $stock->buy_price;
+                $transactionItem->unit_price_ttc = $stock->buy_price;
+                $transactionItem->total_price_ht = $stock->quantity * $stock->buy_price;
+                $transactionItem->total_price_ttc = $stock->quantity * $stock->buy_price;
+                $transactionItem->tax_rate = 0;
+                $transactionItem->tax_amount = 0;
+                $transactionItem->discount_rate = 0;
+                $transactionItem->discount_amount = 0;
+                $transactionItem->total_cost = $stock->quantity * $stock->buy_price;
+                $transactionItem->margin = 0;
+                $transactionItem->source = 'init_stock';
+                $transactionItem->save();
+                Log::info('[finalizeArticle] TransactionItem créé', ['transaction_item_id' => $transactionItem->id]);
+
+                // Mouvement de stock (entrée)
+                $movement = \App\Models\TransactionStockMovement::create([
+                    'transaction_item_id' => $transactionItem->id,
+                    'stock_id' => $stock->id,
+                    'quantity_used' => -$stock->quantity, // Entrée
+                    'cost_price' => $stock->buy_price,
+                    'total_cost' => $stock->quantity * $stock->buy_price,
+                    'lot_reference' => $stock->lot_reference,
+                ]);
+                Log::info('[finalizeArticle] Mouvement de stock créé', ['movement_id' => $movement->id]);
+            } else {
+                Log::info('[finalizeArticle] Pas de stock initial pour ce variant', ['variant_id' => $variant->id]);
             }
         }
         $draft->update(['status' => 'active']);
+        Log::info('[finalizeArticle] Article activé', ['article_id' => $draft->id]);
     }
 
     /**

@@ -184,7 +184,7 @@
                     ${product.primary_image ? `
                         <div class=\"w-full h-full absolute top-0 left-0 z-0\" style=\"background-image: url('${product.primary_image}'); background-size: cover; background-position: center;\"></div>
                         <div class=\"w-full h-full absolute top-0 left-0 z-0 backdrop-blur-sm backdrop-grayscale \" ></div>
-                        <img src="${product.primary_image}" alt="Image produit" class="object-contain h-full w-full absolute top-0 left-0 z-10" />
+                        <img src="${product.primary_image}" alt="Image produit" class="object-contain h-full w-full absolute top-0 left-0 z-10 group-hover:scale-125 duration-500 ease-in-out" />
                     ` : `
                         <div class=\"flex items-center justify-center w-full h-full absolute top-0 left-0 z-0\">
                             <i class=\"fas fa-image text-3xl text-gray-400\"></i>
@@ -195,15 +195,19 @@
                             Stock faible
                         </div>
                     ` : ''}
+
+                    <!-- MINIATURES -->
+                    ${(product.thumbnails && product.thumbnails.length > 1) ? `
+                        <div class=\"flex flex-row gap-1 px-2 py-1 bg-gradient-to-t from-white dark:from-gray-800 rounded-t-lg justify-center absolute z-20 bottom-0\"
+                               style="width: calc(100% + 5px);" >
+                            ${product.thumbnails.map(url => `
+                                <img src=\"${url}\" alt=\"Miniature\" class=\"object-cover w-8 h-8 rounded shadow border border-gray-200 dark:border-gray-700\" />
+                            `).join('')}
+                        </div>
+                    ` : ''}
+
+
                 </div>
-                <!-- MINIATURES -->
-                ${(product.thumbnails && product.thumbnails.length > 1) ? `
-                    <div class=\"flex flex-row gap-1 px-2 py-1 bg-white/80 dark:bg-gray-900/80 rounded-b-lg justify-center\">
-                        ${product.thumbnails.map(url => `
-                            <img src=\"${url}\" alt=\"Miniature\" class=\"object-cover w-8 h-8 rounded shadow border border-gray-200 dark:border-gray-700\" />
-                        `).join('')}
-                    </div>
-                ` : ''}
                 <div class=\"p-3\">
                     <h3 class=\"font-medium text-sm dark:text-white capitalize truncate\">${product.name}</h3>
                     <p class=\"text-xs text-gray-500 dark:text-gray-400\">${product.category?.name || ''}</p>

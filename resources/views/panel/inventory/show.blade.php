@@ -223,26 +223,6 @@
                             </div>
                         </div>
                     @endif
-
-                    <!-- Historique des mouvements -->
-                    <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg">
-                        <div class="px-4 py-3 border-b border-gray-300 dark:border-gray-700 flex items-center justify-between">
-                            <h2 class="font-semibold text-lg text-gray-900 dark:text-gray-100">Historique des mouvements</h2>
-{{--                            <button class="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-200 hover:scale-105 duration-500">--}}
-{{--                                <i class="far fa-file-lines mr-1"></i>--}}
-{{--                                Voir tout--}}
-{{--                            </button>--}}
-                        </div>
-                        <div class="p-6">
-                            <!-- Container pour l'historique AJAX -->
-                            <div id="movements-container">
-                                <div class="flex items-center justify-center py-8">
-                                    <i class="fas fa-spinner fa-spin text-2xl text-gray-400 mr-3"></i>
-                                    <span class="text-gray-500 dark:text-gray-400">Chargement de l'historique...</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- Sidebar -->
@@ -258,16 +238,17 @@
 {{--                                    <i class="fas fa-layer-group mr-2"></i>Gérer les variants--}}
 {{--                                </button>--}}
 {{--                            @endif--}}
-{{--                            <button class="w-full px-3 py-2 bg-green-500 dark:bg-green-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">--}}
-{{--                                <i class="fas fa-plus mr-2"></i>Ajuster le stock--}}
-{{--                            </button>--}}
+                            <button class="w-full px-3 py-2 bg-green-500 dark:bg-green-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
+                                <i class="fas fa-plus mr-2"></i>Ajuster le stock
+                            </button>
                             <button id="modal_print_etiquette"
                                     class="w-full px-3 py-2 bg-blue-500 dark:bg-blue-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
                                 <i class="fas fa-barcode mr-2"></i>Imprimer étiquette
                             </button>
-                            <button class="w-full px-3 py-2 bg-violet-500 dark:bg-violet-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
+                            <a href="{{ route('inventory.movements.history', $article) }}"
+                               class="w-full px-3 py-2 bg-violet-500 dark:bg-violet-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm flex items-center justify-center">
                                 <i class="fas fa-clock mr-2"></i>Historique
-                            </button>
+                            </a>
                         </div>
                     </div>
 
@@ -428,8 +409,6 @@
                     loadVariantsTable();
                 @endif
 
-                // Charger l'historique des mouvements
-                loadMovementsHistory();
             });
 
             function loadVariantsTable() {
@@ -442,19 +421,6 @@
                         console.error('Erreur lors du chargement des variants:', error);
                         document.getElementById('variants-table-container').innerHTML =
                             '<div class="text-center py-8 text-red-500">Erreur lors du chargement des variants</div>';
-                    });
-            }
-
-            function loadMovementsHistory() {
-                fetch(`/inventory/{{ $article->id }}/movements`)
-                    .then(response => response.text())
-                    .then(html => {
-                        document.getElementById('movements-container').innerHTML = html;
-                    })
-                    .catch(error => {
-                        console.error('Erreur lors du chargement de l\'historique:', error);
-                        document.getElementById('movements-container').innerHTML =
-                            '<div class="text-center py-8 text-red-500">Erreur lors du chargement de l\'historique</div>';
                     });
             }
 

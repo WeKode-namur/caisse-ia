@@ -5,27 +5,11 @@
     <title>Impression des étiquettes</title>
     <style>
         @media print {
-            body {
-                margin: 0;
-            }
-
-            .label {
-                page-break-inside: avoid;
-            }
+            body {margin: 0;}
+            .label {page-break-inside: avoid;}
         }
-
-        body {
-            background: #fff;
-            margin: 0;
-            padding: 0;
-        }
-
-        .labels-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0;
-        }
-
+        body {background: #fff; margin: 0; padding: 0;}
+        .labels-container {display: flex;flex-wrap: wrap;gap: 0;}
         .label {
             width: 56mm;
             height: 22mm;
@@ -64,32 +48,10 @@
             justify-content: center;
             height: 100%;
         }
-
-        .name {
-            font-size: 4mm;
-            font-weight: bold;
-            margin-bottom: 1mm;
-        }
-
-        .attrs {
-            font-size: 3mm;
-            margin-bottom: 1mm;
-        }
-
-        .ref {
-            font-size: 2.8mm;
-            color: #333;
-            font-style: italic;
-            margin-bottom: 1mm;
-        }
-
-        .price {
-            font-size: 3.6mm;
-            font-weight: bold;
-            position: absolute;
-            right: 4mm;
-            bottom: 2mm;
-        }
+        .name {font-size: 4mm; font-weight: bold; margin-bottom: 1mm;}
+        .attrs {font-size: 3mm; margin-bottom: 1mm;}
+        .ref {font-size: 2.8mm; color: #333; font-style: italic; margin-bottom: 1mm;}
+        .price {font-size: 3.6mm; font-weight: bold; position: absolute; right: 4mm; bottom: 2mm;}
     </style>
 </head>
 <body>

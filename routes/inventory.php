@@ -57,6 +57,8 @@ Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::get('/{id}/movements', [ArticleController::class, 'getMovements'])->name('movements');
     Route::get('/variants/{id}', [ArticleController::class, 'getVariant'])->name('variant.show');
     Route::post('{article}/labels/print-preview', [ArticleController::class, 'printLabelsPreview'])->name('labels.print-preview');
+    Route::get('/{article}/movements/history', [\App\Http\Controllers\Inventory\MovementHistoryController::class, 'index'])->name('movements.history');
+    Route::get('/{article}/movements/history/table', [\App\Http\Controllers\Inventory\MovementHistoryController::class, 'table'])->name('movements.history.table');
 });
 
 Route::prefix('api')->name('api.')->group(function () {
