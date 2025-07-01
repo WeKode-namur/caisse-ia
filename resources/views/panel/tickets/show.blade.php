@@ -89,22 +89,25 @@
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Caissier</label>
                                     <p class="text-lg bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded flex items-center">
-                                        <i class="fas fa-user mr-2 text-gray-500"></i>{{ $transaction->user->name ?? 'Non défini' }}
+                                        <i class="fas fa-user mr-2 text-gray-500"></i>
+                                        {{ $transaction->cashier->name  ?? 'Non défini' }}
                                     </p>
                                 </div>
                                 @if(config('custom.register.customer_management'))
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Client</label>
-                                    <p class="text-lg bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded flex items-center">
-                                        @if($transaction->customer)
-                                            <i class="fas fa-user mr-2 text-gray-500"></i>{{ $transaction->customer->name ?? 'Client non défini' }}
-                                        @elseif($transaction->company)
-                                            <i class="fas fa-briefcase mr-2 text-gray-500"></i>{{ $transaction->company->name ?? 'Entreprise non définie' }}
-                                        @else
-                                            <span class="text-gray-400 dark:text-gray-500">Non défini</span>
-                                        @endif
-                                    </p>
-                                </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Client</label>
+                                        <p class="text-lg bg-gray-100 dark:bg-gray-700 px-3 py-2 rounded flex items-center">
+                                            @if($transaction->customer)
+                                                <i class="fas fa-user mr-2 text-gray-500"></i>
+                                                    {{ $transaction->customer->last_name . ', ' ?? '' }}
+                                                    {{ $transaction->customer->first_name ?? '' }}
+                                            @elseif($transaction->company)
+                                                <i class="fas fa-briefcase mr-2 text-gray-500"></i>{{ $transaction->company->name ?? 'Entreprise non définie' }}
+                                            @else
+                                                <span class="text-gray-400 dark:text-gray-500">Non défini</span>
+                                            @endif
+                                        </p>
+                                    </div>
                                 @endif
                             </div>
                         </div>
@@ -391,9 +394,8 @@
             // Fonction d'arrondi à 2 décimales
             const arrondi2 = v => Math.round((parseFloat(v) + Number.EPSILON) * 100) / 100;
 
-            const client = [
-                name = null
-            ];
+            const client = @json($transaction->customer ?? $transaction->company);
+            console.table(client);
 
             // Construire les lignes d'articles
             let itemsHtml = '';
@@ -536,7 +538,14 @@
                                 Ticket #${transaction.transaction_number}<br>
                                 ${formatted}<br>
                                 Vendeur : ${transaction.cashier ? transaction.cashier.name : 'Vendeur'}<br />
-                                Client : ${ client.name ? client.name : 'Client comptoir' }
+                                Client : ${
+                                    client
+                                        ? (client.name
+                                            ? client.name + (client.vat_number ? ' (TVA: ' + client.vat_number + ')' : '')
+                                            : client.name + (client.email ? ' (' + client.email + ')' : '')
+                                          )
+                                        : 'Client comptoir'
+                                }
                             </div>
                             <hr />
                         </div>
@@ -611,9 +620,7 @@
         function printTicketNoPrice() {
             const transaction = @json($transaction);
             const appName = @json(config('app.name'));
-            const client = [
-                name = null
-            ];
+            const client = @json($transaction->customer ?? $transaction->company);
             // Construire les lignes d'articles sans prix
             let itemsHtml = '';
             transaction.items.forEach(item => {

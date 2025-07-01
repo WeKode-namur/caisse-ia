@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Register;
 use App\Http\Controllers\Controller;
 use App\Services\RegisterSessionService;
 use Illuminate\Support\Facades\Log;
-use App\Models\{PaymentMethod, Transaction, Payment, Stock, TransactionItem, ItemsUnknown};
+use App\Models\{PaymentMethod, Transaction, Payment, Stock, TransactionItem, ItemsUnknown, LoyaltyPoint};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -314,9 +314,6 @@ class PaymentController extends Controller
             if (config('app.register_customer_management')) {
                 $transactionData['customer_id'] = $customer['type'] === 'customer' ? ($customer['id'] ?? null) : null;
                 $transactionData['company_id'] = $customer['type'] === 'company' ? ($customer['id'] ?? null) : null;
-            } else {
-                $transactionData['customer_id'] = $customer['type'] === 'customer' ? ($customer['id'] ?? null) : null;
-                $transactionData['company_id'] = $customer['type'] === 'company' ? ($customer['id'] ?? null) : null;
             }
 
             $transaction = Transaction::create($transactionData);
@@ -410,6 +407,29 @@ class PaymentController extends Controller
                 'total_margin' => $totalMargin,
                 'margin_percentage' => $marginPercentage,
             ]);
+
+            // Attribution des points de fidélité
+            $loyaltyStep = config('custom.loyalty_point_step', 1);
+            $totalPaid = $transaction->total_amount;
+            $points = 0;
+            if ($loyaltyStep > 0) {
+                $points = floor($totalPaid / $loyaltyStep);
+            }
+            if ($points > 0) {
+                $loyaltyData = [
+                    'transaction_id' => $transaction->id,
+                    'points' => $points,
+                    'type' => 'earned',
+                    'description' => 'Points fidélité pour la transaction #' . $transaction->id,
+                ];
+                if ($transaction->customer_id) {
+                    $loyaltyData['customer_id'] = $transaction->customer_id;
+                }
+                if ($transaction->company_id) {
+                    $loyaltyData['company_id'] = $transaction->company_id;
+                }
+                LoyaltyPoint::create($loyaltyData);
+            }
 
             // 5. Vider la session
             RegisterSessionService::clearSession();

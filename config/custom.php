@@ -30,5 +30,6 @@ return [
         'city' => env('CUSTOM_ADDRESS_CITY'),
         'country' => env('CUSTOM_ADDRESS_COUNTRY'),
     ],
-    'tva' => env('CUSTOM_TVA')
+    'tva' => env('CUSTOM_TVA'),
+    'loyalty_point_step' => env('LOYALTY_POINT_STEP', 1),
 ];

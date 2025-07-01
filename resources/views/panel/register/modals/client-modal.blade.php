@@ -78,7 +78,7 @@
                                         <p class="text-xs text-slate-400 mt-1">${client.type === 'company' ? 'Entreprise' : 'Particulier'}</p>
                                     </div>
                                     <div class="text-right ml-4">
-                                        <p class="text-sm font-medium text-green-600">${client.points ?? 0}</p>
+                                        <p class="text-sm font-medium text-green-600">${client.loyalty_points ?? 0}</p>
                                         <p class="text-xs text-slate-400">Points</p>
                                     </div>
                                 </div>
