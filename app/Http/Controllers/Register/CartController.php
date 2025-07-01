@@ -75,6 +75,33 @@ class CartController extends Controller
             ], 422);
         }
 
+        // Vérifier si l'article existe déjà dans le panier (même variant_id et stock_id)
+        $cart = RegisterSessionService::getCart();
+        $existingItemId = null;
+        foreach ($cart as $id => $item) {
+            if (
+                isset($item['variant_id'], $item['stock_id']) &&
+                $item['variant_id'] == $variant->id &&
+                $item['stock_id'] == $stockToUse->id
+            ) {
+                $existingItemId = $id;
+                break;
+            }
+        }
+        if ($existingItemId !== null) {
+            // Incrémenter la quantité de l'item existant
+            $newQuantity = $cart[$existingItemId]['quantity'] + $quantity;
+            RegisterSessionService::updateCartItem($existingItemId, ['quantity' => $newQuantity]);
+            $updatedCart = RegisterSessionService::getCart();
+            $updatedItem = $updatedCart[$existingItemId] ?? null;
+            return response()->json([
+                'success' => true,
+                'message' => 'Quantité augmentée pour l\'article déjà présent',
+                'item' => $updatedItem ? $this->formatCartItem($updatedItem) : null,
+                'cart_totals' => RegisterSessionService::calculateTotals()
+            ]);
+        }
+
         // Préparer l'item
         $itemData = [
             'variant_id' => $variant->id,

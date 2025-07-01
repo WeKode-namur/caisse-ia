@@ -48,8 +48,8 @@
         }
 
         .qr {
-            width: 20mm;
-            height: 20mm;
+            width: 16mm;
+            height: 16mm;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -66,25 +66,25 @@
         }
 
         .name {
-            font-size: 5mm;
+            font-size: 4mm;
             font-weight: bold;
             margin-bottom: 1mm;
         }
 
         .attrs {
-            font-size: 3.2mm;
+            font-size: 3mm;
             margin-bottom: 1mm;
         }
 
         .ref {
-            font-size: 3mm;
+            font-size: 2.8mm;
             color: #333;
             font-style: italic;
             margin-bottom: 1mm;
         }
 
         .price {
-            font-size: 6mm;
+            font-size: 3.6mm;
             font-weight: bold;
             position: absolute;
             right: 4mm;
