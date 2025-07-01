@@ -27,7 +27,8 @@
                 @if(class_exists('App\\Models\\Customer') && $transaction->customer)
                     <div class="flex items-center">
                         <i class="fas fa-user mr-1 text-xs"></i>
-                        {{ $transaction->customer->name }}
+                        {{ $transaction->customer->last_name . ', ' ?? '' }}
+                        {{ $transaction->customer->first_name ?? '' }}
                     </div>
                 @elseif(class_exists('App\\Models\\Company') && $transaction->company)
                     <div class="flex items-center">
@@ -59,7 +60,10 @@
         @if(class_exists('App\\Models\\Customer') && $transaction->customer)
             <div class="flex items-center">
                 <i class="fas fa-user mr-2 text-gray-400 text-sm"></i>
-                <span class="text-sm">{{ $transaction->customer->name }}</span>
+                <span class="text-sm">
+                    {{ $transaction->customer->last_name . ', ' ?? '' }}
+                    <small class="text-gray-600 dark:text-gray-400">{{ $transaction->customer->first_name ?? '' }}</small>
+                </span>
             </div>
         @elseif(class_exists('App\\Models\\Company') && $transaction->company)
             <div class="flex items-center">
@@ -81,4 +85,4 @@
     <div class="hidden md:flex items-center justify-center">
         {{ $transaction->created_at->format('d/m/Y H:i') }}
     </div>
-</div> 
+</div>

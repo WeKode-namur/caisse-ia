@@ -277,6 +277,36 @@
                         </div>
                     </div>
 
+                    {{-- Points fidélité --}}
+                    @php
+                        $profil = $transaction->customer ?? $transaction->company;
+                        $pointsGagnes = null;
+                        if ($profil) {
+                            $pointsGagnes = $profil->loyaltyPoints()->where('transaction_id', $transaction->id)->sum('points');
+                        }
+                    @endphp
+                    @if($profil)
+                        <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg">
+                            <div class="text-gray-900 dark:text-gray-50 px-4 py-3 border-b border-gray-300 dark:border-gray-700">
+                                <h2 class="font-semibold text-lg">Points fidélité</h2>
+                            </div>
+                            <div class="p-4 space-y-2">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-2xl font-bold text-yellow-500"><i class="fas fa-star"></i></span>
+                                    <span class="text-lg font-mono">{{ $profil->loyalty_points ?? 0 }} points</span>
+                                </div>
+                                @if($pointsGagnes)
+                                    <div class="text-green-700 dark:text-green-400 text-sm">
+                                        +{{ $pointsGagnes }} point{{ $pointsGagnes > 1 ? 's' : '' }} gagnés sur cette transaction
+                                    </div>
+                                @endif
+                                <div class="text-gray-500 dark:text-gray-400 text-xs mt-2">
+                                    Les points de fidélité sont cumulés à chaque achat et peuvent être utilisés pour des avantages ou des remises selon votre programme.
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
                     {{-- Monnaie rendue --}}
                     @php
                         $totalPaid = $transaction->payments->sum('amount');

@@ -25,4 +25,4 @@
     <div class="mt-6">
         {{ $transactions->links() }}
     </div>
-</div> 
+</div>

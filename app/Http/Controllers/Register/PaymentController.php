@@ -411,9 +411,12 @@ class PaymentController extends Controller
             // Attribution des points de fidélité
             $loyaltyStep = config('custom.loyalty_point_step', 1);
             $totalPaid = $transaction->total_amount;
+            Log::info('loyaltyStep: ' . $loyaltyStep);
+            Log::info('totalPaid: ' . $totalPaid);
             $points = 0;
             if ($loyaltyStep > 0) {
                 $points = floor($totalPaid / $loyaltyStep);
+                Log::info('points: ' . $points);
             }
             if ($points > 0) {
                 $loyaltyData = [
@@ -429,6 +432,23 @@ class PaymentController extends Controller
                     $loyaltyData['company_id'] = $transaction->company_id;
                 }
                 LoyaltyPoint::create($loyaltyData);
+                // Mise à jour du total de points sur le profil client/compagnie
+                if ($transaction->customer_id) {
+                    $customer = \App\Models\Customer::find($transaction->customer_id);
+                    if ($customer) {
+                        $nouveauTotal = ($customer->loyalty_points ?? 0) + $points;
+                        $customer->loyalty_points = $nouveauTotal;
+                        $customer->save();
+                    }
+                }
+                if ($transaction->company_id) {
+                    $company = \App\Models\Company::find($transaction->company_id);
+                    if ($company) {
+                        $nouveauTotal = ($company->loyalty_points ?? 0) + $points;
+                        $company->loyalty_points = $nouveauTotal;
+                        $company->save();
+                    }
+                }
             }
 
             // 5. Vider la session
