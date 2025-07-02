@@ -25,7 +25,7 @@ class CreationController extends Controller
         }
 
         $categories = Category::with(['types.subtypes'])->orderBy('name')->get();
-        $tvaRates = [6, 12, 21]; // Taux TVA belges
+        $tvaRates = [0, 6, 12, 21]; // Taux TVA belges
 
         $formAction = $draftId
             ? route('inventory.create.step.one.store')

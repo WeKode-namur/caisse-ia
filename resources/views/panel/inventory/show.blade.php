@@ -3,24 +3,10 @@
         <div class="max-w-7xl mx-auto px-0 lg:px-8">
             <!-- Header -->
             <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg mb-6">
-                <div class="flex items-center justify-between px-3 py-2 border-b border-gray-300 dark:border-gray-700">
-                    <div class="flex items-center space-x-3">
-                        <a href="{{ route('inventory.index') }}" class="text-gray-600 px-1.5 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:scale-105 duration-500">
-                            <i class="fas fa-arrow-left text-xl"></i>
-                        </a>
-                        <h1 class="text-gray-900 dark:text-gray-50 font-bold lg:text-2xl text-xl">{{ $article->name }}</h1>
-                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">
-                            Actif
-                        </span>
-                    </div>
-                    <div class="flex items-center space-x-3">
-                        <button id="btn-edit-article" class="bg-amber-500 dark:bg-amber-800 hover:opacity-75 hover:scale-105 duration-500 text-white px-3 py-1 rounded text-sm">
-                            <i class="fas fa-pen"></i>
-                        </button>
-                        <button class="bg-red-500 dark:bg-red-800 hover:opacity-75 hover:scale-105 duration-500 text-white px-3 py-1 rounded text-sm">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
+                <div class="flex items-center space-x-3 px-3 py-2 border-b border-gray-300 dark:border-gray-700">
+                    <a href="{{ route('inventory.index') }}" class="text-gray-600 px-1.5 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:scale-105 duration-500"><i class="fas fa-arrow-left text-xl"></i></a>
+                    <h1 class="text-gray-900 dark:text-gray-50 font-bold lg:text-2xl text-xl">{{ $article->name }}</h1>
+                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">Actif</span>
                 </div>
             </div>
 
@@ -151,9 +137,10 @@
                                     <i class="fas fa-layer-group mr-2 text-blue-500"></i>
                                     Variants (<span id="variants-count">{{ $variants->count() }}</span>)
                                 </h2>
-{{--                                <button class="text-blue-600 dark:text-blue-400 hover:text-blue-800 hover:scale-105 duration-500 dark:hover:text-blue-200 text-sm">--}}
-{{--                                    <i class="fas fa-plus mr-1"></i>Ajouter un variant--}}
-{{--                                </button>--}}
+                                <button class="bg-green-600 dark:bg-green-400 text-white rounded py-1.5 px-2 hover:opacity-75 hover:scale-105 duration-500">
+                                    <i class="fas fa-plus"></i>
+                                    <span class="sr-only">Ajouter un variant</span>
+                                </button>
                             </div>
                             <div class="p-6">
                                 <!-- Container pour le tableau AJAX -->
@@ -233,11 +220,9 @@
                             <h3 class="font-semibold text-gray-900 dark:text-gray-100">Actions rapides</h3>
                         </div>
                         <div class="p-6 space-y-3">
-                            @if($variants->isNotEmpty())
-                                <button class="w-full px-3 py-2 bg-amber-500 dark:bg-amber-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
-                                    <i class="fas fa-pen mr-2"></i>Modifier
-                                </button>
-                            @endif
+                            <button id="btn-edit-article" class="w-full px-3 py-2 bg-amber-500 dark:bg-amber-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
+                                <i class="fas fa-pen mr-2"></i>Modifier
+                            </button>
                             <button id="btn-ajuster-stock" class="w-full px-3 py-2 bg-green-500 dark:bg-green-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
                                 <i class="fas fa-plus mr-2"></i>Ajuster le stock
                             </button>
@@ -458,7 +443,12 @@
                 </div>
                 <div>
                     <x-label for="edit-article-tva" value="TVA (%)" />
-                    <x-input id="edit-article-tva" name="tva" type="number" min="0" max="100" class="w-full" required />
+                    <select id="edit-article-tva" name="tva" class="form-select w-full" required>
+                        <option value="0">0%</option>
+                        <option value="6">6%</option>
+                        <option value="12">12%</option>
+                        <option value="21">21%</option>
+                    </select>
                     <div class="text-red-500 text-xs mt-1 hidden" id="error-edit-tva"></div>
                 </div>
                 <div>
@@ -471,12 +461,11 @@
                     <select id="edit-article-type" name="type_id" class="form-select w-full"></select>
                     <div class="text-red-500 text-xs mt-1 hidden" id="error-edit-type_id"></div>
                 </div>
-                <div style="{{ config('custom.items.sousType') ? '' : 'position: absolute; left: -200%;' }}">
-                    <x-label for="edit-article-subtype" value="Sous-catégorie"/>
+                <div  style="{{ config('custom.items.sousType') ? '' : 'position: absolute; left: -200%;' }}">
+                    <x-label for="edit-article-subtype" value="Sous-type" />
                     <select id="edit-article-subtype" name="subtype_id" class="form-select w-full"></select>
                     <div class="text-red-500 text-xs mt-1 hidden" id="error-edit-subtype_id"></div>
                 </div>
-                {{ config('custom.items.sousType') }}
                 <div class="md:col-span-2">
                     <x-label for="edit-article-description" value="Description" />
                     <textarea id="edit-article-description" name="description" class="w-full border rounded p-2" rows="3"></textarea>
@@ -786,6 +775,10 @@
                             opt.textContent = sub.name;
                             if (sub.id === data.article.subtype_id) opt.selected = true;
                             subSelect.appendChild(opt);
+                        });
+                        // Sélectionner la TVA
+                        Array.from(document.getElementById('edit-article-tva').options).forEach(opt => {
+                            opt.selected = (parseInt(opt.value) === parseInt(data.article.tva));
                         });
                         window.openModal('edit-article');
                     });
