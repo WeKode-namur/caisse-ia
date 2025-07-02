@@ -109,7 +109,7 @@
                             </div>
 
                             <!-- Sous-type -->
-                            <div class="absolute" style="left: -200%;">
+                            <div class="absolute" style="{{ config('custom.items.sousType') ? '' : 'left: -200%;' }}">
                                 <label for="subtype_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                     Sous-type
                                 </label>

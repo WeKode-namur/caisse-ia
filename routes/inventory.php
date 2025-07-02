@@ -60,6 +60,8 @@ Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::get('/{article}/movements/history', [\App\Http\Controllers\Inventory\MovementHistoryController::class, 'index'])->name('movements.history');
     Route::get('/{article}/movements/history/table', [\App\Http\Controllers\Inventory\MovementHistoryController::class, 'table'])->name('movements.history.table');
     Route::post('/{article}/stock/adjust', [\App\Http\Controllers\Inventory\StockAdjustmentController::class, 'store'])->name('stock.adjust');
+    Route::get('/{id}/edit', [\App\Http\Controllers\Inventory\ArticleEditController::class, 'edit'])->name('edit');
+    Route::post('/{id}/edit', [\App\Http\Controllers\Inventory\ArticleEditController::class, 'update'])->name('edit.save');
 });
 
 Route::prefix('api')->name('api.')->group(function () {

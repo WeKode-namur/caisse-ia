@@ -14,9 +14,9 @@
                         </span>
                     </div>
                     <div class="flex items-center space-x-3">
-                        <a href="{{ route('inventory.create.step.one', $article->id) }}" class="bg-blue-500 dark:bg-blue-800 hover:opacity-75 hover:scale-105 duration-500 text-white px-3 py-1 rounded text-sm">
-                            <i class="fas fa-edit"></i>
-                        </a>
+                        <button id="btn-edit-article" class="bg-amber-500 dark:bg-amber-800 hover:opacity-75 hover:scale-105 duration-500 text-white px-3 py-1 rounded text-sm">
+                            <i class="fas fa-pen"></i>
+                        </button>
                         <button class="bg-red-500 dark:bg-red-800 hover:opacity-75 hover:scale-105 duration-500 text-white px-3 py-1 rounded text-sm">
                             <i class="fas fa-trash"></i>
                         </button>
@@ -235,7 +235,7 @@
                         <div class="p-6 space-y-3">
                             @if($variants->isNotEmpty())
                                 <button class="w-full px-3 py-2 bg-amber-500 dark:bg-amber-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
-                                    <i class="fas fa-layer-group mr-2"></i>Gérer les variants
+                                    <i class="fas fa-pen mr-2"></i>Modifier
                                 </button>
                             @endif
                             <button id="btn-ajuster-stock" class="w-full px-3 py-2 bg-green-500 dark:bg-green-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
@@ -444,6 +444,67 @@
                 <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">Ajouter</button>
             </div>
         </form>
+    </x-modal>
+
+    {{-- Modal d'édition d'article --}}
+    <x-modal name="edit-article" title="Modifier l'article" icon="pen" :closable="true" :footer="false" size="xl">
+        <form id="form-edit-article">
+            <input type="hidden" name="article_id" value="{{ $article->id }}">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <x-label for="edit-article-name" value="Nom" />
+                    <x-input id="edit-article-name" name="name" type="text" class="w-full" required />
+                    <div class="text-red-500 text-xs mt-1 hidden" id="error-edit-name"></div>
+                </div>
+                <div>
+                    <x-label for="edit-article-tva" value="TVA (%)" />
+                    <x-input id="edit-article-tva" name="tva" type="number" min="0" max="100" class="w-full" required />
+                    <div class="text-red-500 text-xs mt-1 hidden" id="error-edit-tva"></div>
+                </div>
+                <div>
+                    <x-label for="edit-article-category" value="Catégorie" />
+                    <select id="edit-article-category" name="category_id" class="form-select w-full" required></select>
+                    <div class="text-red-500 text-xs mt-1 hidden" id="error-edit-category_id"></div>
+                </div>
+                <div>
+                    <x-label for="edit-article-type" value="Type" />
+                    <select id="edit-article-type" name="type_id" class="form-select w-full"></select>
+                    <div class="text-red-500 text-xs mt-1 hidden" id="error-edit-type_id"></div>
+                </div>
+                <div style="{{ config('custom.items.sousType') ? '' : 'position: absolute; left: -200%;' }}">
+                    <x-label for="edit-article-subtype" value="Sous-catégorie"/>
+                    <select id="edit-article-subtype" name="subtype_id" class="form-select w-full"></select>
+                    <div class="text-red-500 text-xs mt-1 hidden" id="error-edit-subtype_id"></div>
+                </div>
+                {{ config('custom.items.sousType') }}
+                <div class="md:col-span-2">
+                    <x-label for="edit-article-description" value="Description" />
+                    <textarea id="edit-article-description" name="description" class="w-full border rounded p-2" rows="3"></textarea>
+                    <div class="text-red-500 text-xs mt-1 hidden" id="error-edit-description"></div>
+                </div>
+                <div>
+                    <x-label for="edit-article-sell-price" value="Prix de vente (€)" />
+                    <x-input id="edit-article-sell-price" name="sell_price" type="number" min="0" step="0.01" class="w-full" />
+                    <div class="text-red-500 text-xs mt-1 hidden" id="error-edit-sell_price"></div>
+                </div>
+            </div>
+            <div class="flex justify-end space-x-2 mt-6">
+                <button type="button" onclick="window.closeModal('edit-article')" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500">Annuler</button>
+                <button type="submit" class="px-4 py-2 bg-amber-600 text-white rounded hover:bg-amber-700">Valider</button>
+            </div>
+        </form>
+    </x-modal>
+
+    {{-- Modal de confirmation d'édition --}}
+    <x-modal name="confirm-edit-article" title="Confirmer la modification" icon="exclamation-triangle" icon-color="red" :closable="true" :footer="false" size="md">
+        <div class="mb-4 text-red-700 dark:text-red-300">
+            <strong>Attention :</strong> Modifier ces informations peut impacter la gestion des stocks, la facturation et l'affichage en caisse. Veuillez vérifier les changements avant de confirmer.
+        </div>
+        <div id="edit-article-recap" class="mb-4 text-sm"></div>
+        <div class="flex justify-end space-x-2 mt-6">
+            <button type="button" onclick="window.closeModal('confirm-edit-article')" class="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-800 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-500">Annuler</button>
+            <button type="button" id="btn-confirm-edit-article" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Confirmer</button>
+        </div>
     </x-modal>
 
     @push('scripts')
@@ -680,6 +741,182 @@
                     }
                 })
                 .catch(() => alert('Erreur lors de l\'ajout du stock'));
+            });
+
+            let editArticleData = null;
+            let editArticleOld = null;
+            let editArticleNew = null;
+            // Ouvre le modal d'édition et charge les données
+            document.getElementById('btn-edit-article').addEventListener('click', function() {
+                fetch(`/inventory/{{ $article->id }}/edit`)
+                    .then(r => r.json())
+                    .then(data => {
+                        editArticleData = data;
+                        // Remplir les champs
+                        document.getElementById('edit-article-name').value = data.article.name;
+                        document.getElementById('edit-article-tva').value = data.article.tva;
+                        document.getElementById('edit-article-description').value = data.article.description || '';
+                        document.getElementById('edit-article-sell-price').value = data.article.sell_price ?? '';
+                        // Catégories
+                        let catSelect = document.getElementById('edit-article-category');
+                        catSelect.innerHTML = '';
+                        data.categories.forEach(cat => {
+                            let opt = document.createElement('option');
+                            opt.value = cat.id;
+                            opt.textContent = cat.name;
+                            if (cat.id === data.article.category_id) opt.selected = true;
+                            catSelect.appendChild(opt);
+                        });
+                        // Types
+                        let typeSelect = document.getElementById('edit-article-type');
+                        typeSelect.innerHTML = '<option value="">-- Aucun --</option>';
+                        data.types.forEach(type => {
+                            let opt = document.createElement('option');
+                            opt.value = type.id;
+                            opt.textContent = type.name;
+                            if (type.id === data.article.type_id) opt.selected = true;
+                            typeSelect.appendChild(opt);
+                        });
+                        // Sous-types
+                        let subSelect = document.getElementById('edit-article-subtype');
+                        subSelect.innerHTML = '<option value="">-- Aucun --</option>';
+                        data.subtypes.forEach(sub => {
+                            let opt = document.createElement('option');
+                            opt.value = sub.id;
+                            opt.textContent = sub.name;
+                            if (sub.id === data.article.subtype_id) opt.selected = true;
+                            subSelect.appendChild(opt);
+                        });
+                        window.openModal('edit-article');
+                    });
+            });
+            // Changement de catégorie => charger types
+            document.getElementById('edit-article-category').addEventListener('change', function() {
+                let catId = this.value;
+                fetch(`/api/catalog/categories/${catId}/types`)
+                    .then(r => r.json())
+                    .then(types => {
+                        let typeSelect = document.getElementById('edit-article-type');
+                        typeSelect.innerHTML = '<option value="">-- Aucun --</option>';
+                        types.forEach(type => {
+                            let opt = document.createElement('option');
+                            opt.value = type.id;
+                            opt.textContent = type.name;
+                            typeSelect.appendChild(opt);
+                        });
+                        document.getElementById('edit-article-subtype').innerHTML = '<option value="">-- Aucun --</option>';
+                    });
+            });
+            // Changement de type => charger sous-types
+            document.getElementById('edit-article-type').addEventListener('change', function() {
+                let typeId = this.value;
+                if (!typeId) {
+                    document.getElementById('edit-article-subtype').innerHTML = '<option value="">-- Aucun --</option>';
+                    return;
+                }
+                fetch(`/api/catalog/types/${typeId}/subtypes`)
+                    .then(r => r.json())
+                    .then(subtypes => {
+                        let subSelect = document.getElementById('edit-article-subtype');
+                        subSelect.innerHTML = '<option value="">-- Aucun --</option>';
+                        subtypes.forEach(sub => {
+                            let opt = document.createElement('option');
+                            opt.value = sub.id;
+                            opt.textContent = sub.name;
+                            subSelect.appendChild(opt);
+                        });
+                    });
+            });
+            // Soumission du formulaire d'édition => ouvrir le modal de confirmation
+            document.getElementById('form-edit-article').addEventListener('submit', function(e) {
+                e.preventDefault();
+                // Nettoyer erreurs
+                ['name','tva','category_id','type_id','subtype_id','description','sell_price'].forEach(f => {
+                    let el = document.getElementById('error-edit-'+f);
+                    if (el) { el.classList.add('hidden'); el.textContent = ''; }
+                });
+                let form = e.target;
+                let formData = new FormData(form);
+                let recap = '';
+                let fields = ['name','tva','category_id','type_id','subtype_id','description','sell_price'];
+                let labels = {
+                    name: 'Nom', tva: 'TVA', category_id: 'Catégorie', type_id: 'Type', subtype_id: 'Sous-catégorie', description: 'Description', sell_price: 'Prix de vente'
+                };
+                let old = editArticleData.article;
+                let newData = {};
+                fields.forEach(f => {
+                    newData[f] = formData.get(f);
+                });
+                editArticleOld = old;
+                editArticleNew = newData;
+                // Récapitulatif des changements
+                recap += '<ul class="list-disc pl-5">';
+                fields.forEach(f => {
+                    let oldVal = old[f] ?? '';
+                    let newVal = newData[f] ?? '';
+                    if (f === 'category_id') {
+                        let cat = editArticleData.categories.find(c => c.id == oldVal);
+                        let catNew = editArticleData.categories.find(c => c.id == newVal);
+                        oldVal = cat ? cat.name : '';
+                        newVal = catNew ? catNew.name : '';
+                    }
+                    if (f === 'type_id') {
+                        let type = editArticleData.types.find(t => t.id == oldVal);
+                        let typeNew = editArticleData.types.find(t => t.id == newVal);
+                        oldVal = type ? type.name : '';
+                        newVal = typeNew ? typeNew.name : '';
+                    }
+                    if (f === 'subtype_id') {
+                        let sub = editArticleData.subtypes.find(s => s.id == oldVal);
+                        let subNew = editArticleData.subtypes.find(s => s.id == newVal);
+                        oldVal = sub ? sub.name : '';
+                        newVal = subNew ? subNew.name : '';
+                    }
+                    if ((oldVal+'') !== (newVal+'')) {
+                        recap += `<li><b>${labels[f]}</b> : <span class='text-gray-600 line-through'>${oldVal}</span> <i class='fas fa-arrow-right mx-1'></i> <span class='text-green-700'>${newVal}</span></li>`;
+                    }
+                });
+                recap += '</ul>';
+                if (recap === '<ul class="list-disc pl-5"></ul>') {
+                    recap = '<span class="text-gray-500">Aucun changement détecté.</span>';
+                }
+                document.getElementById('edit-article-recap').innerHTML = recap;
+                window.openModal('confirm-edit-article');
+            });
+            // Confirmation finale => envoi AJAX
+            document.getElementById('btn-confirm-edit-article').addEventListener('click', function() {
+                let data = {...editArticleNew};
+                fetch(`/inventory/{{ $article->id }}/edit`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                })
+                .then(async r => {
+                    let res;
+                    try { res = await r.json(); } catch { res = {success: false, message: 'Erreur inconnue'}; }
+                    if (res.success) {
+                        window.closeModal('confirm-edit-article');
+                        window.closeModal('edit-article');
+                        window.location.reload();
+                    } else {
+                        if (res.errors) {
+                            Object.entries(res.errors).forEach(function([field, messages]) {
+                                const el = document.getElementById('error-edit-' + field);
+                                if (el) {
+                                    el.textContent = messages[0];
+                                    el.classList.remove('hidden');
+                                }
+                            });
+                        } else {
+                            alert(res.message || 'Erreur lors de la modification');
+                        }
+                    }
+                })
+                .catch(() => alert('Erreur lors de la modification'));
             });
         </script>
     @endpush

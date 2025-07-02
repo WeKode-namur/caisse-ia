@@ -32,4 +32,7 @@ return [
     ],
     'tva' => env('CUSTOM_TVA'),
     'loyalty_point_step' => env('LOYALTY_POINT_STEP', 1),
+    'items' => [
+      'sousType' => env('CUSTOM_ITEMS_SOUS_TYPE', false),
+    ],
 ];

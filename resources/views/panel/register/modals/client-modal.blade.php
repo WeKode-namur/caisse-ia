@@ -9,29 +9,6 @@
                     <input type="text" name="search_client" id="search_client" placeholder="Rechercher un client..." class="border-0 px-3 py-2 flex-1 outline-0 focus:text-black">
                 </div>
 
-                @php
-                    $faker = Faker\Factory::create();
-                    $clients = collect(range(1, 4))->map(function() use ($faker) {
-                        $firstName = $faker->firstName();
-                        $lastName = $faker->lastName();
-                        $initials = substr($firstName, 0, 1) . substr($lastName, 0, 1);
-
-                        return (object) [
-                            'id' => $faker->numberBetween(1, 1000),
-                            'firstName' => $firstName,
-                            'lastName' => $lastName,
-                            'name' => $firstName . ' ' . $lastName,
-                            'email' => $faker->email(),
-                            'phone' => $faker->phoneNumber(),
-                            'initials' => $initials,
-                            'company' => $faker->optional(0.6)->company(),
-                            'point' => $faker->numberBetween(0, 5250),
-                            'lastVisit' => $faker->dateTimeBetween('-6 months', 'now')->format('d/m/Y'),
-                            'bgColor' => $faker->randomElement(['bg-blue-500', 'bg-green-500', 'bg-purple-500', 'bg-pink-500', 'bg-indigo-500'])
-                        ];
-                    });
-                @endphp
-
                     <!-- Liste des clients -->
                 <div class="mt-4 flex-1 overflow-y-auto">
                     <ul id="clients-results-list" role="list" class="divide-y divide-slate-200">
