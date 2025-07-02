@@ -9,7 +9,7 @@
                     <input type="text" name="search_client" id="search_client" placeholder="Rechercher un client..." class="border-0 px-3 py-2 flex-1 outline-0 focus:text-black">
                 </div>
 
-                    <!-- Liste des clients -->
+                    <!-- Liste des clients 8 -->
                 <div class="mt-4 flex-1 overflow-y-auto">
                     <ul id="clients-results-list" role="list" class="divide-y divide-slate-200">
                         <!-- Résultats AJAX ici -->
