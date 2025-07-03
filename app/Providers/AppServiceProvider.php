@@ -3,11 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\{Blade, Schema, View, Auth};
 use App\Helpers\TransactionHelper;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\View;
-use Illuminate\Support\Facades\Auth;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -41,6 +38,10 @@ class AppServiceProvider extends ServiceProvider
                 && version_compare($currentVersion, $checkFrom, '>=');
             $view->with('showChangelog', $showChangelog);
             $view->with('changelogVersion', $currentVersion);
+        });
+
+        Blade::if('suppliersEnabled', function () {
+            return config('custom.suppliers_enabled');
         });
     }
 }

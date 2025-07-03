@@ -70,6 +70,27 @@
                                 @enderror
                             </div>
 
+                            @suppliersEnabled
+                                <div class="md:col-span-2">
+                                    <label for="fournisseur_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Fournisseur
+                                    </label>
+                                    <select name="fournisseur_id" id="fournisseur_id" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                        <option value="">Aucun</option>
+                                        @foreach($fournisseurs as $fournisseur)
+                                            <option value="{{ $fournisseur->id }}" {{ old('fournisseur_id', $draft->fournisseur_id ?? '') == $fournisseur->id ? 'selected' : '' }}>
+                                                {{ $fournisseur->name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('fournisseur_id')
+                                    <p class="text-red-500 text-xs mt-1">{{ $message }}</p>
+                                    @enderror
+                                    <div id="fournisseur-autocomplete"></div>
+                                </div>
+                            @endsuppliersEnabled
+
+
                             <!-- Catégorie -->
                             <div>
                                 <label for="category_id" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -270,8 +291,6 @@
                                 </div>
                             </div>
                         </div>
-
-
 
                         <!-- Actions -->
                         <div class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200 dark:border-gray-600">

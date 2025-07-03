@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
+use App\Models\Fournisseur;
 
 class CreationController extends Controller
 {
@@ -26,23 +27,28 @@ class CreationController extends Controller
 
         $categories = Category::with(['types.subtypes'])->orderBy('name')->get();
         $tvaRates = [0, 6, 12, 21]; // Taux TVA belges
+        $fournisseurs = config('custom.suppliers_enabled') ? Fournisseur::orderBy('name')->get() : collect();
 
         $formAction = $draftId
             ? route('inventory.create.step.one.store')
             : route('inventory.create.step.one.store');
 
-        return view('panel.inventory.create.step-one', compact('draft', 'categories', 'tvaRates', 'formAction', 'draftId'));
+        return view('panel.inventory.create.step-one', compact('draft', 'categories', 'tvaRates', 'formAction', 'draftId', 'fournisseurs'));
     }
 
     public function storeStepOne(Request $request)
     {
-        $request->validate([
+        $rules = [
             'name' => 'required|max:255',
             'category_id' => 'required|exists:categories,id',
             'tva' => 'required|integer|in:6,12,21',
             'buy_price' => 'nullable|numeric|min:0',
             'sell_price' => 'nullable|numeric|min:0',
-        ], [
+        ];
+        if (config('custom.suppliers_enabled')) {
+            $rules['fournisseur_id'] = 'nullable|exists:fournisseurs,id';
+        }
+        $request->validate($rules, [
             // Messages pour le champ 'name'
             'name.required' => 'Le nom de l\'article est obligatoire.',
             'name.max' => 'Le nom ne peut pas dépasser 255 caractères.',
@@ -71,6 +77,9 @@ class CreationController extends Controller
         ]);
 
         $data = $request->only(['name', 'description', 'category_id', 'type_id', 'subtype_id', 'reference', 'tva']);
+        if (config('custom.suppliers_enabled')) {
+            $data['fournisseur_id'] = $request->fournisseur_id;
+        }
 
         // Ajouter les prix seulement si la checkbox est cochée
         if ($request->has('prix_unique')) {

@@ -7,6 +7,7 @@ use App\Models\Article;
 use App\Models\Category;
 use App\Models\Type;
 use App\Models\Subtype;
+use App\Models\Fournisseur;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -30,8 +31,7 @@ class ArticleEditController extends Controller
     // Sauvegarde les modifications
     public function update(Request $request, $id)
     {
-        $article = Article::findOrFail($id);
-        $validated = $request->validate([
+        $rules = [
             'name' => 'required|string|max:255',
             'tva' => 'required|integer|min:0|max:100',
             'category_id' => 'required|exists:categories,id',
@@ -39,10 +39,17 @@ class ArticleEditController extends Controller
             'subtype_id' => 'nullable|exists:subtypes,id',
             'description' => 'nullable|string|max:1000',
             'sell_price' => 'nullable|numeric|min:0',
-        ]);
+        ];
+        if (config('custom.suppliers_enabled')) {
+            $rules['fournisseur_id'] = 'nullable|exists:fournisseurs,id';
+        }
+        $validated = $request->validate($rules);
         DB::beginTransaction();
         try {
             $old = $article->only(['name','tva','category_id','type_id','subtype_id','description','sell_price']);
+            if (config('custom.suppliers_enabled')) {
+                $article->fournisseur_id = $request->fournisseur_id;
+            }
             $article->update($validated);
             DB::commit();
             return response()->json([

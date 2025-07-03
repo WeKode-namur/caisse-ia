@@ -28,6 +28,7 @@ class Article extends Model
         'sell_price',
         'buy_price',
         'tva',
+        'fournisseur_id',
     ];
 
     protected $casts = [
@@ -224,5 +225,10 @@ class Article extends Model
         }
 
         return $duplicate;
+    }
+
+    public function fournisseur()
+    {
+        return $this->belongsTo(Fournisseur::class, 'fournisseur_id');
     }
 }

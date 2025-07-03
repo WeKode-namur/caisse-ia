@@ -61,6 +61,26 @@
                                     <p class="text-gray-900 dark:text-gray-100 mt-2">{{ $article->description }}</p>
                                 </div>
                             @endif
+
+                            @suppliersEnabled
+                            @if($article->fournisseur)
+                                <div class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
+                                    <label class="text-sm font-medium text-gray-600 dark:text-gray-400">Fournisseur</label>
+                                    <p class="text-gray-900 dark:text-gray-100 mt-2">
+                                        {{ $article->fournisseur->name }}<br>
+                                        @if($article->fournisseur->email)
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ $article->fournisseur->email }}</span><br>
+                                        @endif
+                                        @if($article->fournisseur->telephone)
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ $article->fournisseur->telephone }}</span><br>
+                                        @endif
+                                        @if($article->fournisseur->address)
+                                            <span class="text-xs text-gray-500 dark:text-gray-400">{{ $article->fournisseur->address }}</span>
+                                        @endif
+                                    </p>
+                                </div>
+                            @endif
+                            @endsuppliersEnabled
                         </div>
                     </div>
 

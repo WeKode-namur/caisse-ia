@@ -1,3 +1,8 @@
+@php
+    // Fallback pour éviter l'erreur si la variable n'est pas transmise
+    $fournisseurs = $fournisseurs ?? collect();
+@endphp
+
 <x-app-layout>
     <div class="lg:py-12">
         <div class="max-w-7xl mx-auto px-0 lg:px-8">
@@ -62,6 +67,17 @@
                                 <option value="updated_at">Dernière modification</option>
                             </select>
                         </div>
+
+                        @suppliersEnabled
+                        <div>
+                            <select name="fournisseur_id" id="fournisseur-select" class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                                <option value="">Tous les fournisseurs</option>
+                                @foreach($fournisseurs as $fournisseur)
+                                    <option value="{{ $fournisseur->id }}">{{ $fournisseur->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        @endsuppliersEnabled
                     </form>
                 </div>
             </div>
@@ -148,6 +164,14 @@
                             window.location.href = "{{ route('inventory.show', ':id') }}".replace(':id', articleId);
                         }
                     });
+
+                    if (document.getElementById('fournisseur-select')) {
+                        document.getElementById('fournisseur-select').addEventListener('change', () => {
+                            this.currentPage = 1;
+                            this.loadArticles();
+                            this.updateStats();
+                        });
+                    }
                 }
 
                 async loadArticles() {

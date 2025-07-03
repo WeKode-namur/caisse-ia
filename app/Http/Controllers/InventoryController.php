@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Article;
 use App\Models\Category;
+use App\Models\Fournisseur;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
@@ -34,8 +35,9 @@ class InventoryController extends Controller
             'published' => 'Publiés uniquement',
             'inactive' => 'Inactifs'
         ];
+        $fournisseurs = config('custom.suppliers_enabled') ? Fournisseur::orderBy('name')->get() : collect();
 
-        return view('panel.inventory.index', compact('stats', 'categories', 'stockStatuses', 'statusOptions'));
+        return view('panel.inventory.index', compact('stats', 'categories', 'stockStatuses', 'statusOptions', 'fournisseurs'));
     }
 
     /**
@@ -103,6 +105,10 @@ class InventoryController extends Controller
             }
         }
 
+        if ($request->filled('fournisseur_id')) {
+            $query->where('fournisseur_id', $request->fournisseur_id);
+        }
+
         // Tri
         $sortBy = $request->get('sort_by', 'created_at');
         $sortDirection = $request->get('sort_direction', 'desc');
@@ -119,7 +125,7 @@ class InventoryController extends Controller
     /**
      * Calculer les statistiques de l'inventaire avec filtres
      */
-    private function getInventoryStats(Request $request = null)
+    public function getInventoryStats(Request $request)
     {
         // Base query avec filtrage par statut
         $baseQuery = Article::with('variants.stocks');
@@ -159,6 +165,10 @@ class InventoryController extends Controller
 
             if ($request->filled('category_id')) {
                 $baseQuery->where('category_id', $request->category_id);
+            }
+
+            if ($request->filled('fournisseur_id')) {
+                $baseQuery->where('fournisseur_id', $request->fournisseur_id);
             }
         } else {
             // Par défaut : active et published

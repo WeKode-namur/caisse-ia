@@ -35,4 +35,5 @@ return [
     'items' => [
       'sousType' => env('CUSTOM_ITEMS_SOUS_TYPE', false),
     ],
+    'suppliers_enabled' => env('SUPPLIERS_ENABLED', false),
 ];

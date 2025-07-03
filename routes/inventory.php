@@ -5,6 +5,7 @@ use App\Http\Controllers\{Api\InventoryApiController,
     Inventory\CreationController,
     Inventory\DraftController,
     InventoryController};
+use Illuminate\Http\Request;
 
 Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::get('', [InventoryController::class, 'index'])->name('index');
@@ -43,13 +44,7 @@ Route::prefix('inventory')->name('inventory.')->group(function () {
     });
 
     // === ROUTES LOAD STATS INV ===
-    Route::get('/stats', function(Request $request) {
-        $controller = new InventoryController();
-        $reflection = new ReflectionClass($controller);
-        $method = $reflection->getMethod('getInventoryStats');
-
-        return response()->json($method->invoke($controller, $request));
-    })->name('stats');
+    Route::get('/stats', [InventoryController::class, 'getInventoryStats'])->name('stats');
 
     Route::get('/{id}', [ArticleController::class, 'show'])->name('show');
     Route::get('/{id}/variants', [ArticleController::class, 'getVariants'])->name('variants');

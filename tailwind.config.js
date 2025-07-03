@@ -16,10 +16,13 @@ export default {
         'text-violet-400', 'text-violet-600', 'text-violet-800',
         'bg-fuchsia-100', 'bg-fuchsia-600', 'bg-fuchsia-900',
         'text-fuchsia-400', 'text-fuchsia-600', 'text-fuchsia-800',
+        'bg-red-100', 'bg-red-600', 'bg-red-900',
+        'text-red-100', 'text-red-600', 'text-red-900',
         // Ajoute toutes les variantes que tu utilises
         'dark:bg-purple-900/30', 'dark:text-purple-400',
         'dark:bg-violet-900/30', 'dark:text-violet-400',
         'dark:bg-fuchsia-900/30', 'dark:text-fuchsia-400',
+        'dark:bg-red-900/30', 'dark:text-red-400',
         // Size
         'max-w-xs', 'max-w-sm', 'max-w-md', 'max-w-lg', 'max-w-xl',
         'max-w-2xl', 'max-w-3xl','max-w-4xl', 'max-w-5xl', 'max-w-6xl', 'max-w-7xl',

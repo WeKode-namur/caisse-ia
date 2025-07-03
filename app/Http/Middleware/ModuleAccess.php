@@ -65,6 +65,10 @@ class ModuleAccess
             abort(403, "Accès non autorisé au module pour la route : {$routeName}");
         }
 
+        if ($request->routeIs('fournisseurs.*') && !config('custom.suppliers_enabled')) {
+            abort(404);
+        }
+
         return $next($request);
     }
 }

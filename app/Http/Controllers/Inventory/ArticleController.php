@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Article, Variant};
+use App\Models\{Article, Variant, Fournisseur};
 use Endroid\QrCode\{QrCode, Writer\PngWriter};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,6 +19,7 @@ class ArticleController extends Controller
             'category',
             'type',
             'subtype',
+            'fournisseur',
             'variants' => function($query) {
                 $query->with([
                     'stocks' => function($stockQuery) {
@@ -384,5 +385,26 @@ class ArticleController extends Controller
         }
 
         return view('inventory.labels.print-preview', compact('article', 'variants', 'quantities', 'qrCodes'));
+    }
+
+    public function index(Request $request)
+    {
+        $articles = Article::with(['category', 'type', 'subtype', 'fournisseur', 'variants.stocks', 'variants.medias'])
+            ->paginate(20);
+        $categories = \App\Models\Category::all();
+        $stockStatuses = [
+            'all' => 'Tous',
+            'in_stock' => 'En stock',
+            'low_stock' => 'Stock faible',
+            'out_of_stock' => 'Rupture'
+        ];
+        $statusOptions = [
+            'active_published' => 'Actifs',
+            'inactive' => 'Inactifs',
+            'draft' => 'Brouillons'
+        ];
+        $stats = [];
+        $fournisseurs = config('custom.suppliers_enabled') ? Fournisseur::orderBy('name')->get() : collect();
+        return view('panel.inventory.index', compact('articles', 'categories', 'stockStatuses', 'statusOptions', 'stats', 'fournisseurs'));
     }
 }

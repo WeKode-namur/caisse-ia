@@ -2,11 +2,14 @@
     <div class="space-y-2">
         <!-- En-tête -->
         <div class="hidden md:grid gap-4 py-3 px-4 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300"
-             style="grid-template-columns: 2fr 1fr 1fr 1fr 1fr 40px;">
+             style="grid-template-columns: 2fr 1fr 1fr 1fr {{ config('custom.suppliers_enabled') ? '1fr' : ''}} 1fr 40px;">
             <div>Article</div>
             <div class="text-center">Catégorie</div>
             <div class="text-center">Prix de vente</div>
             <div class="text-center">Stock</div>
+            @suppliersEnabled
+            <div class="text-center">Fournisseur</div>
+            @endsuppliersEnabled
             <div class="text-center">Statut</div>
             <div></div>
         </div>
@@ -16,7 +19,7 @@
             @forelse($articles as $article)
                 <div class="article-row gap-4 py-4 px-4 bg-white dark:bg-gray-800 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-200 border border-gray-200 dark:border-gray-600"
                      data-article-id="{{ $article->id }}"
-                     style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr 40px;">
+                     style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr {{ config('custom.suppliers_enabled') ? '1fr' : ''}} 1fr 40px;">
 
                     <!-- Nom et code-barres -->
                     <div class="flex items-center space-x-3">
@@ -77,6 +80,21 @@
                             <span class="text-green-600 dark:text-green-400 font-medium">{{ $totalStock }}</span>
                         @endif
                     </div>
+
+                    <!-- Fournisseur -->
+                    @suppliersEnabled
+                        <div class="flex items-center justify-center">
+                                @if($article->fournisseur)
+                                    <span class="px-2 py-1 text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-full">
+                                        {{ $article->fournisseur->name }}
+                                    </span>
+                                @else
+                                    <span class="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full">
+                                        Aucun
+                                    </span>
+                                @endif
+                        </div>
+                    @endsuppliersEnabled
 
                     <!-- Statut -->
                     <div class="flex items-center justify-center">
