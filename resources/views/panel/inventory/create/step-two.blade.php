@@ -246,6 +246,7 @@
                 availableAttributes: [], // Ajouter cette ligne
                 attributeValues: {}, // Ajouter cette ligne
                 tvaRate: config.tvaRate,
+                barcodeGeneratorEnabled: window.variantConfig?.barcode_generator_enabled || false,
 
                 // État
                 variants: config.existingVariants || [],
@@ -654,6 +655,21 @@
                         hasErrors = true;
                     }
 
+                    // Vérifier le code-barres si le générateur est désactivé
+                    if (!this.barcodeGeneratorEnabled) {
+                        if (!this.modalForm.barcode || this.modalForm.barcode.trim() === '') {
+                            this.validationErrors.barcode = { hasError: true, message: 'Le code-barres est obligatoire quand le générateur automatique est désactivé' };
+                            hasErrors = true;
+                        } else {
+                            // Vérifier l'unicité du code-barres
+                            const isUnique = await this.checkBarcodeUnique();
+                            if (!isUnique) {
+                                this.validationErrors.barcode = { hasError: true, message: 'Ce code-barres est déjà utilisé par un autre variant' };
+                                hasErrors = true;
+                            }
+                        }
+                    }
+
                     // Vérifier le prix de vente
                     if (!this.modalForm.sell_price || parseFloat(this.modalForm.sell_price) <= 0) {
                         this.validationErrors.sell_price = { hasError: true, message: 'Le prix de vente est obligatoire et doit être positif' };
@@ -694,6 +710,57 @@
                 showError(message) {
                     // Vous pouvez implémenter votre système de notification ici
                     console.error('Error:', message);
+                },
+
+                // Méthodes pour la gestion des codes-barres
+                async generateBarcode() {
+                    try {
+                        const response = await fetch('/inventory/generate-barcode', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.modalForm.barcode = data.barcode;
+                            this.showSuccess('Code-barres généré avec succès');
+                        } else {
+                            this.showError(data.message || 'Erreur lors de la génération du code-barres');
+                        }
+                    } catch (error) {
+                        console.error('Erreur lors de la génération du code-barres:', error);
+                        this.showError('Erreur lors de la génération du code-barres');
+                    }
+                },
+
+                async checkBarcodeUnique() {
+                    if (!this.modalForm.barcode || this.modalForm.barcode.trim() === '') {
+                        return true; // Vide = pas de conflit
+                    }
+
+                    try {
+                        const response = await fetch('/inventory/check-barcode-unique', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                barcode: this.modalForm.barcode,
+                                variant_id: this.modalForm.id || null
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        return data.available;
+                    } catch (error) {
+                        console.error('Erreur lors de la vérification du code-barres:', error);
+                        return false; // En cas d'erreur, considérer comme non disponible
+                    }
                 }
             };
         }

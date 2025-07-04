@@ -291,6 +291,27 @@
                                 <h4 class="font-semibold text-gray-900 dark:text-gray-100">Identification</h4>
                             </div>
                             <div class="space-y-4">
+                                <!-- Champ code-barres uniquement si le générateur est désactivé -->
+                                <template x-if="!barcodeGeneratorEnabled">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                            <i class="fas fa-barcode inline mr-1"></i>
+                                            Code-barres <span class="text-red-500">*</span>
+                                        </label>
+                                        <input type="text" x-model="modalForm.barcode"
+                                               :class="getFieldClasses('barcode')"
+                                               class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                                               placeholder="Saisissez le code-barres manuellement"
+                                               @input="checkBarcodeUnique()">
+                                        <p x-show="validationErrors.barcode.hasError"
+                                           x-text="validationErrors.barcode.message"
+                                           class="text-red-600 dark:text-red-400 text-xs"></p>
+                                        <p class="text-xs text-gray-500">
+                                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                                            Code-barres obligatoire - Générateur automatique désactivé
+                                        </p>
+                                    </div>
+                                </template>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                                         <i class="fas fa-tag inline mr-1"></i>
@@ -527,6 +548,7 @@
     window.variantConfig = {
         referent_lot_optionnel: @json(config('custom.referent_lot_optionnel', true)),
         date_expiration_optionnel: @json(config('custom.date_expiration_optionnel', true)),
+        barcode_generator_enabled: @json(config('custom.generator.barcode', false)),
     };
     // ...
     // Dans l'init Alpine/variantManager, s'assurer que $store.config existe :

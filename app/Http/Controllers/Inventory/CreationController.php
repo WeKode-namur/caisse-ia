@@ -209,8 +209,12 @@ class CreationController extends Controller
             ->where('status', 'draft')
             ->firstOrFail();
 
+        // Règles de validation conditionnelles selon la configuration du générateur
+        $barcodeGeneratorEnabled = config('custom.generator.barcode', false);
+        $barcodeRules = $barcodeGeneratorEnabled ? 'nullable|string|unique:variants,barcode,' . ($request->variant_id ?? 'null') : 'required|string|unique:variants,barcode,' . ($request->variant_id ?? 'null');
+        
         $validated = $request->validate([
-            'barcode' => 'nullable|string|unique:variants,barcode,' . ($request->variant_id ?? 'null'),
+            'barcode' => $barcodeRules,
             'reference' => 'nullable|string',
             'sell_price' => 'nullable|numeric|min:0',
             'buy_price' => 'nullable|numeric|min:0',
@@ -223,6 +227,7 @@ class CreationController extends Controller
             'images.*' => 'nullable|image|max:2048'
         ], [
             // Messages pour le code-barres
+            'barcode.required' => 'Le code-barres est obligatoire quand le générateur automatique est désactivé.',
             'barcode.string' => 'Le code-barres doit être une chaîne de caractères.',
             'barcode.unique' => 'Ce code-barres est déjà utilisé par un autre variant.',
 
@@ -258,12 +263,19 @@ class CreationController extends Controller
         try {
             DB::beginTransaction();
 
+            // Gérer le code-barres selon la configuration
+            $barcode = $validated['barcode'];
+            if ($barcodeGeneratorEnabled && empty($barcode)) {
+                // Si le générateur est activé et qu'aucun code-barres n'est fourni, générer automatiquement
+                $barcode = VariantService::generateCustomBarcode();
+            }
+
             // Créer ou mettre à jour le variant
             $variant = Variant::updateOrCreate(
                 ['id' => $request->variant_id],
                 [
                     'article_id' => $draft->id,
-                    'barcode' => $validated['barcode'],
+                    'barcode' => $barcode,
                     'reference' => $validated['reference'] ?? null,
                     'sell_price' => $validated['sell_price'] ?? $draft->sell_price,
                     'buy_price' => $validated['buy_price'] ?? $draft->buy_price,
@@ -431,13 +443,21 @@ class CreationController extends Controller
         $transaction->total_amount = 0;
         $transaction->save();
         Log::info('[finalizeArticle] Transaction technique créée', ['transaction_id' => $transaction->id]);
-        // Générer le code-barres pour chaque variant sans code-barres
+        // Vérifier la configuration du générateur de code-barres
+        $barcodeGeneratorEnabled = config('custom.generator.barcode', false);
+        
+        // Générer le code-barres pour chaque variant sans code-barres (seulement si le générateur est activé)
         foreach ($draft->variants as $variant) {
             Log::info('[finalizeArticle] Traitement variant', ['variant_id' => $variant->id]);
             if (empty($variant->barcode)) {
-                $variant->barcode = VariantService::generateCustomBarcode();
-                $variant->save();
-                Log::info('[finalizeArticle] Code-barres généré', ['variant_id' => $variant->id, 'barcode' => $variant->barcode]);
+                if ($barcodeGeneratorEnabled) {
+                    $variant->barcode = VariantService::generateCustomBarcode();
+                    $variant->save();
+                    Log::info('[finalizeArticle] Code-barres généré automatiquement', ['variant_id' => $variant->id, 'barcode' => $variant->barcode]);
+                } else {
+                    Log::warning('[finalizeArticle] Variant sans code-barres et générateur désactivé', ['variant_id' => $variant->id]);
+                    throw new \Exception("Le variant #{$variant->id} n'a pas de code-barres et le générateur automatique est désactivé. Veuillez saisir un code-barres manuellement.");
+                }
             }
             // === Mouvement de stock initial ===
             $stock = $variant->stocks->first();
@@ -523,8 +543,8 @@ class CreationController extends Controller
 
     public function checkBarcodeUnique(Request $request)
     {
-        $barcode = $request->get('barcode');
-        $variantId = $request->get('variant_id');
+        $barcode = $request->get('barcode') ?? $request->input('barcode');
+        $variantId = $request->get('variant_id') ?? $request->input('variant_id');
 
         $query = Variant::where('barcode', $barcode);
 
@@ -539,6 +559,27 @@ class CreationController extends Controller
         return response()->json([
             'available' => !$query->exists()
         ]);
+    }
+
+    /**
+     * Générer un nouveau code-barres unique
+     */
+    public function generateBarcode(Request $request)
+    {
+        try {
+            $barcode = VariantService::generateCustomBarcode();
+            
+            return response()->json([
+                'success' => true,
+                'barcode' => $barcode,
+                'message' => 'Code-barres généré avec succès'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la génération du code-barres: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function uploadVariantImage(Request $request, $draftId, $variantId)

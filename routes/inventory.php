@@ -57,6 +57,10 @@ Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::post('/{article}/stock/adjust', [\App\Http\Controllers\Inventory\StockAdjustmentController::class, 'store'])->name('stock.adjust');
     Route::get('/{id}/edit', [\App\Http\Controllers\Inventory\ArticleEditController::class, 'edit'])->name('edit');
     Route::post('/{id}/edit', [\App\Http\Controllers\Inventory\ArticleEditController::class, 'update'])->name('edit.save');
+
+    
+    Route::post('/generate-barcode', [CreationController::class, 'generateBarcode'])->name('generate.barcode');
+    Route::post('/check-barcode-unique', [CreationController::class, 'checkBarcodeUnique'])->name('check.barcode.unique');
 });
 
 Route::prefix('api')->name('api.')->group(function () {
