@@ -28,7 +28,8 @@
                         existingVariants: @js($existingVariants),
                         tvaRate: {{ $draft->tva ?? 21 }},
                         draft: @js($draft)  // AJOUTER CETTE LIGNE
-                    })">
+                    })"
+                 x-init="if (!$store.config) { Alpine.store('config', { ...window.variantConfig, draft: draft }); } else { $store.config.draft = draft; }">
 
                 <form method="POST" action="{{ $formAction }}" id="variants-form">
                     @csrf

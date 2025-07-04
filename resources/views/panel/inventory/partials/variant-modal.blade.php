@@ -1,5 +1,10 @@
 <!-- Modal pour créer/modifier un variant -->
 <div x-show="isModalOpen"
+     x-data="{
+         get basePriceDefined() {
+             return $store.config && $store.config.draft && $store.config.draft.sell_price && parseFloat($store.config.draft.sell_price) > 0;
+         }
+     }"
      x-transition:enter="transition ease-out duration-300"
      x-transition:enter-start="opacity-0"
      x-transition:enter-end="opacity-100"
@@ -54,8 +59,7 @@
             <!-- Contenu du modal -->
             <div class="bg-white dark:bg-gray-800 px-6 py-6">
                 <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
-
-                    <!-- Section 1: Attributs et Identification -->
+                    <!-- Colonne 1 : Attributs -->
                     <div class="space-y-6">
                         <!-- Attributs du variant -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4" :class="validationErrors.attributes.hasError ? 'ring-2 ring-red-500' : ''">
@@ -176,24 +180,24 @@
                                 </div>
                             </div>
                         </div>
-
                     </div>
-
-                    <!-- Section 2: Prix et Stock -->
+                    <!-- Colonne 2 : Tarification + Stock -->
                     <div class="space-y-6">
-                        <!-- Prix -->
+                        <!-- Tarification -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <div class="flex items-center space-x-2 mb-4">
                                 <i class="fas fa-euro-sign text-lg text-yellow-600"></i>
                                 <h4 class="font-semibold text-gray-900 dark:text-gray-100">Tarification</h4>
                             </div>
                             <div class="space-y-4">
-                                <div>
+                                <!-- Champ masqué si basePriceDefined -->
+                                <div :class="basePriceDefined ? 'absolute -left-[200%]' : ''">
                                     <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Prix de vente (TVAC)</label>
                                     <div class="relative">
                                         <input type="number" x-model="modalForm.sell_price" step="0.01" min="0"
                                                :class="getFieldClasses('sell_price')"
                                                @input="updateCalculations()"
+                                               :readonly="basePriceDefined"
                                                class="w-full px-3 py-2 pr-8 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:outline-none"
                                                placeholder="0.00">
                                         <span class="absolute right-3 top-2 text-gray-500 font-medium">€</span>
@@ -202,7 +206,10 @@
                                        x-text="validationErrors.sell_price.message"
                                        class="text-red-600 dark:text-red-400 text-xs mt-1"></p>
                                 </div>
-
+                                <!-- Message d'info si prix de base défini -->
+                                <div x-show="basePriceDefined" class="p-3 bg-blue-50 border border-blue-200 rounded text-blue-800 text-sm mb-2">
+                                    Le prix de vente est défini à l'étape 1 et ne peut pas être modifié ici.
+                                </div>
                                 <!-- Calculs automatiques -->
                                 <div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded border border-blue-200 dark:border-blue-800">
                                     <h5 class="text-sm font-medium text-blue-800 dark:text-blue-200 mb-2">Calculs automatiques</h5>
@@ -223,7 +230,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <!-- Stock -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <div class="flex items-center space-x-2 mb-4">
@@ -280,10 +286,8 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Section 3: Images -->
+                    <!-- Colonne 3 : Identification + Photo -->
                     <div class="space-y-6">
-
                         <!-- Codes et références -->
                         <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                             <div class="flex items-center space-x-2 mb-4">
@@ -308,7 +312,7 @@
                                            class="text-red-600 dark:text-red-400 text-xs"></p>
                                         <p class="text-xs text-gray-500">
                                             <i class="fas fa-exclamation-triangle mr-1"></i>
-                                            Code-barres obligatoire - Générateur automatique désactivé
+                                            Code-barres obligatoire
                                         </p>
                                     </div>
                                 </template>
@@ -508,8 +512,7 @@
                     </div>
                 </div>
             </div>
-
-            <!-- Footer du modal -->
+            <!-- Footer du modal (en dehors du grid) -->
             <div class="bg-gray-50 dark:bg-gray-700 px-6 py-4 flex items-center justify-between border-t border-gray-200 dark:border-gray-600">
                 <div class="text-sm text-gray-500 dark:text-gray-400">
                     <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
