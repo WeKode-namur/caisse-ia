@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Support\Facades\{Route, Request};
+use Illuminate\Support\Facades\{Request, Route};
 
 // Routes protégées par Jetstream (auth + email vérifié)
 Route::middleware([
@@ -27,6 +27,8 @@ Route::middleware([
     // 👥 Clients
     require __DIR__ . '/clients.php';
 
+    // ⚙️ Paramètres
+    require __DIR__ . '/settings.php';
 
     // 📈 Statistiques
     Route::get('/statistics', function () {
@@ -59,11 +61,6 @@ Route::middleware([
     Route::get('/users/{id}/edit', function ($id) {
         return '';
     })->name('users.edit');
-
-    // ⚙️ Paramètres
-    Route::get('/settings', function () {
-        return '';
-    })->name('settings.index');
 
     Route::get('/settings/roles', function () {
         return '';

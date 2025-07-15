@@ -114,6 +114,3 @@ Le système est rétrocompatible :
 - Les variants avec code-barres existants ne sont pas affectés
 - La configuration peut être modifiée à tout moment
 
-## Dossier de documentation
-
-Ce fichier est désormais dans le dossier `WIKI/` à la racine du projet pour centraliser toute la documentation technique. 

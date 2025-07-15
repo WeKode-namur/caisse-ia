@@ -1,0 +1,94 @@
+<?php
+
+use App\Http\Controllers\Settings\AttributesController;
+use App\Http\Controllers\Settings\CategoriesController;
+use App\Http\Controllers\Settings\LogsController;
+use App\Http\Controllers\Settings\RolesController;
+use App\Http\Controllers\Settings\SettingsController;
+use App\Http\Controllers\Settings\UpdatesController;
+use App\Http\Controllers\Settings\UsersController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verified', 'module.access', 'settings.session'])->group(function () {
+
+    // Page d'accueil des paramètres
+    Route::get('/', [SettingsController::class, 'index'])->name('index');
+    Route::post('/', [SettingsController::class, 'confirmPassword'])->name('confirm-password');
+    Route::post('/reset-session', [SettingsController::class, 'resetPasswordConfirmation'])->name('reset-session');
+
+    // Gestion des attributs
+    Route::prefix('attributes')->name('attributes.')->group(function () {
+        Route::get('/', [AttributesController::class, 'index'])->name('index');
+        Route::get('/create', [AttributesController::class, 'create'])->name('create');
+        Route::post('/', [AttributesController::class, 'store'])->name('store');
+        Route::get('/{attribute}/edit', [AttributesController::class, 'edit'])->name('edit');
+        Route::put('/{attribute}', [AttributesController::class, 'update'])->name('update');
+        Route::delete('/{attribute}', [AttributesController::class, 'destroy'])->name('destroy');
+
+        // Valeurs des attributs
+        Route::get('/{attribute}/values', [AttributesController::class, 'values'])->name('values');
+        Route::post('/{attribute}/values', [AttributesController::class, 'storeValue'])->name('values.store');
+        Route::put('/{attribute}/values/{value}', [AttributesController::class, 'updateValue'])->name('values.update');
+        Route::delete('/{attribute}/values/{value}', [AttributesController::class, 'destroyValue'])->name('values.destroy');
+        Route::post('/{attribute}/values/order', [AttributesController::class, 'updateValuesOrder'])->name('values.updateOrder');
+        Route::get('/{attribute}/values/{value}', [AttributesController::class, 'showValue'])->name('values.show');
+        Route::get('/{attribute}/values-table', [AttributesController::class, 'ajaxTable'])->name('values.table');
+    });
+
+    // Gestion des catégories
+    Route::prefix('categories')->name('categories.')->group(function () {
+        Route::get('/', [CategoriesController::class, 'index'])->name('index');
+        Route::get('/create', [CategoriesController::class, 'create'])->name('create');
+        Route::post('/', [CategoriesController::class, 'store'])->name('store');
+        Route::get('/{category}/edit', [CategoriesController::class, 'edit'])->name('edit');
+        Route::put('/{category}', [CategoriesController::class, 'update'])->name('update');
+        Route::delete('/{category}', [CategoriesController::class, 'destroy'])->name('destroy');
+
+        // Sous-catégories
+        Route::get('/{category}/subcategories', [CategoriesController::class, 'subcategories'])->name('subcategories');
+        Route::post('/{category}/subcategories', [CategoriesController::class, 'storeSubcategory'])->name('subcategories.store');
+        Route::put('/{category}/subcategories/{subcategory}', [CategoriesController::class, 'updateSubcategory'])->name('subcategories.update');
+        Route::delete('/{category}/subcategories/{subcategory}', [CategoriesController::class, 'destroySubcategory'])->name('subcategories.destroy');
+    });
+
+    // Gestion des utilisateurs
+    Route::prefix('users')->name('users.')->group(function () {
+        Route::get('/', [UsersController::class, 'index'])->name('index');
+        Route::get('/create', [UsersController::class, 'create'])->name('create');
+        Route::post('/', [UsersController::class, 'store'])->name('store');
+        Route::get('/{user}/edit', [UsersController::class, 'edit'])->name('edit');
+        Route::put('/{user}', [UsersController::class, 'update'])->name('update');
+        Route::delete('/{user}', [UsersController::class, 'destroy'])->name('destroy');
+        Route::post('/{user}/toggle-status', [UsersController::class, 'toggleStatus'])->name('toggle-status');
+    });
+
+    // Gestion des rôles
+    Route::prefix('roles')->name('roles.')->group(function () {
+        Route::get('/', [RolesController::class, 'index'])->name('index');
+        Route::get('/create', [RolesController::class, 'create'])->name('create');
+        Route::post('/', [RolesController::class, 'store'])->name('store');
+        Route::get('/{role}/edit', [RolesController::class, 'edit'])->name('edit');
+        Route::put('/{role}', [RolesController::class, 'update'])->name('update');
+        Route::delete('/{role}', [RolesController::class, 'destroy'])->name('destroy');
+    });
+
+    // Logs système
+    Route::prefix('logs')->name('logs.')->group(function () {
+        Route::get('/', [LogsController::class, 'index'])->name('index');
+        Route::get('/cash-register', [LogsController::class, 'cashRegister'])->name('cash-register');
+        Route::get('/system', [LogsController::class, 'system'])->name('system');
+        Route::get('/download/{type}', [LogsController::class, 'download'])->name('download');
+    });
+
+    // Historique des mises à jour
+    Route::prefix('updates')->name('updates.')->group(function () {
+        Route::get('/', [UpdatesController::class, 'index'])->name('index');
+        Route::get('/{version}', [UpdatesController::class, 'show'])->name('show');
+    });
+
+    // Articles Z (articles avec stock zéro)
+    Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
+        Route::get('/', [SettingsController::class, 'zeroStock'])->name('index');
+        Route::post('/bulk-update', [SettingsController::class, 'bulkUpdateZeroStock'])->name('bulk-update');
+    });
+});

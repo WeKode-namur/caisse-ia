@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\ModuleAccess;
+use App\Http\Middleware\SettingsSession;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,7 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         //
         $middleware->alias([
-            'module.access' => \App\Http\Middleware\ModuleAccess::class,
+            'module.access' => ModuleAccess::class,
+            'settings.session' => SettingsSession::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

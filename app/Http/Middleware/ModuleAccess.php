@@ -2,9 +2,9 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Module;
 use Closure;
 use Illuminate\Http\Request;
-use App\Models\Module;
 use Symfony\Component\HttpFoundation\Response;
 
 class ModuleAccess
@@ -68,6 +68,11 @@ class ModuleAccess
         if ($request->routeIs('fournisseurs.*') && !config('custom.suppliers_enabled')) {
             abort(404);
         }
+
+        // Réinitialiser la session des paramètres si on quitte le domaine /settings/
+        // if ($request->session()->has('settings_password_confirmed') && !$request->is('settings*')) {
+        //     $request->session()->forget('settings_password_confirmed');
+        // }
 
         return $next($request);
     }
