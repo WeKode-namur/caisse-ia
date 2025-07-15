@@ -139,7 +139,8 @@ class AttributesController extends Controller
             ]
         ];
 
-        return response()->json($stats);
+        // Retourner la vue partielle HTML
+        return view('panel.settings.attributes.partials._stats', compact('stats'))->render();
     }
 
     /**

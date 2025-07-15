@@ -105,96 +105,6 @@
                 </div>
             </div>
 
-            <!-- Section Administration -->
-            <div
-                class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg mb-6">
-                <h2 class="font-semibold text-xl px-3 py-2 border-b border-gray-300 dark:border-gray-700 flex items-center">
-                    <i class="fas fa-user-shield mr-3 text-blue-600"></i>
-                    Administration
-                </h2>
-                <div class="p-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <!-- Gestion des utilisateurs -->
-                        <div
-                            class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200">
-                            <div class="flex items-center mb-3">
-                                <div
-                                    class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
-                                    <i class="fas fa-users-cog text-blue-600 dark:text-blue-400"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900 dark:text-white">Utilisateurs</h3>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Gérer les accès</p>
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <a href="{{ route('settings.users.index') }}"
-                                   class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">Liste des utilisateurs</span>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </a>
-                                <a href="{{ route('settings.users.create') }}"
-                                   class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">Nouvel utilisateur</span>
-                                    <i class="fas fa-plus text-gray-400"></i>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Articles Z -->
-                        <div
-                            class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200">
-                            <div class="flex items-center mb-3">
-                                <div
-                                    class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mr-3">
-                                    <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900 dark:text-white">Articles Z</h3>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Stock épuisé</p>
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <a href="{{ route('settings.zero-stock.index') }}"
-                                   class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">Articles en stock zéro</span>
-                                    <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium">
-                                        {{ $stats['zero_stock_articles'] }}
-                                    </span>
-                                </a>
-                            </div>
-                        </div>
-
-                        <!-- Logs système -->
-                        <div
-                            class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200">
-                            <div class="flex items-center mb-3">
-                                <div
-                                    class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3">
-                                    <i class="fas fa-file-alt text-indigo-600 dark:text-indigo-400"></i>
-                                </div>
-                                <div>
-                                    <h3 class="font-semibold text-gray-900 dark:text-white">Logs Système</h3>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Historique des actions</p>
-                                </div>
-                            </div>
-                            <div class="space-y-2">
-                                <a href="{{ route('settings.logs.index') }}"
-                                   class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">Logs généraux</span>
-                                    <i class="fas fa-chevron-right text-gray-400"></i>
-                                </a>
-                                <a href="{{ route('settings.logs.cash-register') }}"
-                                   class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">Logs caisse</span>
-                                    <i class="fas fa-cash-register text-gray-400"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Section Configuration -->
             <div
                 class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg mb-6">
@@ -245,11 +155,108 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <a href="{{ route('settings.categories.index') }}"
-                                   class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                                {{--                                <a href="{{ route('settings.categories.index') }}"--}}
+                                <button href="" disabled
+                                        class="disabled:bg-gray-200 w-full disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Gestion des catégories</span>
                                     <i class="fas fa-chevron-right text-gray-400"></i>
-                                </a>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Articles Z -->
+                        <div
+                            class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200">
+                            <div class="flex items-center mb-3">
+                                <div
+                                    class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Articles Z</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Stock épuisé</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                {{--                                <a href="{{ route('settings.zero-stock.index') }}"--}}
+                                <button href="" disabled
+                                        class="disabled:bg-gray-200 w-full disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Articles en stock zéro</span>
+                                    <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium">
+                                        {{ $stats['zero_stock_articles'] }}
+                                    </span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Section Administration -->
+            <div
+                class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg mb-6">
+                <h2 class="font-semibold text-xl px-3 py-2 border-b border-gray-300 dark:border-gray-700 flex items-center">
+                    <i class="fas fa-user-shield mr-3 text-blue-600"></i>
+                    Administration
+                </h2>
+                <div class="p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Gestion des utilisateurs -->
+                        <div
+                            class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200">
+                            <div class="flex items-center mb-3">
+                                <div
+                                    class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-users-cog text-blue-600 dark:text-blue-400"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Utilisateurs</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Gérer les accès</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                {{--                                <a href="{{ route('settings.users.index') }}"--}}
+                                <button href="" disabled
+                                        class="disabled:bg-gray-200 w-full disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Liste des utilisateurs</span>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
+
+                                {{--                                <a href="{{ route('settings.users.create') }}"--}}
+                                <button href="" disabled
+                                        class="disabled:bg-gray-200 w-full disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Nouvel utilisateur</span>
+                                    <i class="fas fa-plus text-gray-400"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Logs système -->
+                        <div
+                            class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200">
+                            <div class="flex items-center mb-3">
+                                <div
+                                    class="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-file-alt text-indigo-600 dark:text-indigo-400"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Logs Système</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Historique des actions</p>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                {{--                                <a href="{{ route('settings.logs.index') }}"--}}
+                                <button href="" disabled
+                                        class="disabled:bg-gray-200 w-full disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Logs généraux</span>
+                                    <i class="fas fa-chevron-right text-gray-400"></i>
+                                </button>
+                                {{--                                <a href="{{ route('settings.logs.cash-register') }}"--}}
+                                <button href="" disabled
+                                        class="disabled:bg-gray-200 w-full disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Logs caisse</span>
+                                    <i class="fas fa-cash-register text-gray-400"></i>
+                                </button>
                             </div>
                         </div>
 
@@ -267,17 +274,19 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                <a href="{{ route('settings.updates.index') }}"
-                                   class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                                {{--                                <a href="{{ route('settings.updates.index') }}"--}}
+                                <button href="" disabled
+                                        class="disabled:bg-gray-200 w-full disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
                                     <span
                                         class="text-sm text-gray-700 dark:text-gray-300">Historique des versions</span>
                                     <i class="fas fa-chevron-right text-gray-400"></i>
-                                </a>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
         </div>
     </div>
 

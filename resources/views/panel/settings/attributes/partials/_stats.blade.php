@@ -47,17 +47,17 @@
             <div class="ml-4">
                 <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Types</p>
                 <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center">
                         <span class="w-2 h-2 bg-green-500 rounded-full mr-1.5"></span>
-                        <span>Nombre: {{ $stats['by_type']['number'] }}</span>
+                        <span>Nombre:&nbsp; {{ $stats['by_type']['number'] }}</span>
                     </div>
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center">
                         <span class="w-2 h-2 bg-purple-500 rounded-full mr-1.5"></span>
-                        <span>Sélection: {{ $stats['by_type']['select'] }}</span>
+                        <span>Sélection:&nbsp; {{ $stats['by_type']['select'] }}</span>
                     </div>
-                    <div class="flex items-center justify-between">
+                    <div class="flex items-center">
                         <span class="w-2 h-2 bg-pink-500 rounded-full mr-1.5"></span>
-                        <span>Couleur: {{ $stats['by_type']['color'] }}</span>
+                        <span>Couleur:&nbsp; {{ $stats['by_type']['color'] }}</span>
                     </div>
                 </div>
             </div>
