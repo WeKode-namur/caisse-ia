@@ -109,10 +109,20 @@
     // Fonctions helpers pour ouvrir/fermer les modals
     window.openModal = function(name) {
         window.dispatchEvent(new CustomEvent('open-modal-' + name));
+
+        // Nettoyer les erreurs des champs si la fonction existe
+        if (typeof clearFieldErrors === 'function') {
+            clearFieldErrors();
+        }
     }
 
     window.closeModal = function(name) {
         window.dispatchEvent(new CustomEvent('close-modal-' + name));
+
+        // Nettoyer les erreurs des champs si la fonction existe
+        if (typeof clearFieldErrors === 'function') {
+            clearFieldErrors();
+        }
     }
 </script>
 @endpush

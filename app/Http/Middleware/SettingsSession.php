@@ -14,7 +14,7 @@ class SettingsSession
     /**
      * Durée de validité de la session settings (en minutes)
      */
-    private const SESSION_TIMEOUT = 30;
+    private const SESSION_TIMEOUT = 120; // 2 heures au lieu de 30 minutes
 
     /**
      * Handle an incoming request.
@@ -30,8 +30,15 @@ class SettingsSession
             return redirect()->route('login');
         }
 
-        // Vérifier le niveau d'admin minimum (80)
+        // Vérifier le niveau d'admin minimum (80) seulement pour les routes principales
         if (Auth::user()->is_admin < 80) {
+            // Si c'est une requête AJAX, retourner une erreur JSON au lieu de rediriger
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'error' => 'Accès refusé. Niveau d\'administrateur insuffisant.',
+                    'redirect' => route('settings.index')
+                ], 403);
+            }
             return redirect()->route('settings.index')->with('error', 'Accès refusé. Niveau d\'administrateur insuffisant.');
         }
 

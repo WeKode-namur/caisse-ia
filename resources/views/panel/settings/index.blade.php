@@ -10,12 +10,12 @@
                     <div class="flex items-center space-x-3">
                         <div class="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                             <i class="fas fa-shield-alt text-green-500"></i>
-                            <span>Accès sécurisé</span>
+                            <span>Accès sécurisé aux paramètres</span>
                         </div>
                         <button onclick="resetPasswordConfirmation()"
                                 class="bg-gray-500 text-white rounded py-1 px-3 hover:opacity-75 hover:scale-105 transition-all duration-200">
                             <i class="fas fa-lock mr-1"></i>
-                            Réinitialiser
+                            Verrouiller
                         </button>
                     </div>
                 </div>

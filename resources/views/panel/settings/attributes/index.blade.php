@@ -216,7 +216,7 @@
                             if (value) params.append(key, value);
                         }
 
-                        const response = await fetch(`{{ route('settings.attributes.index') }}?${params}`, {
+                        const response = await fetch(`{{ route('settings.attributes.table') }}?${params}`, {
                             headers: {
                                 'X-Requested-With': 'XMLHttpRequest',
                                 'Accept': 'text/html'

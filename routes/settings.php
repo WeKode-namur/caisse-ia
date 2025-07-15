@@ -11,14 +11,16 @@ use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\Settings\UpdatesController;
 // use App\Http\Controllers\Settings\UsersController;
 
-// Routes AJAX (sans confirmation de mot de passe, mais avec vérification admin)
-Route::prefix('settings')->name('settings.')->group(function () {
 
+// Routes AJAX (sans confirmation de mot de passe, mais avec vérification admin)
+Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verified', 'module.access'])->group(function () {
     // Routes AJAX pour les attributs
     Route::prefix('attributes')->name('attributes.')->group(function () {
         Route::get('/stats', [AttributesController::class, 'getStats'])->name('stats');
+        Route::get('/table', [AttributesController::class, 'getTableData'])->name('table');
         Route::get('/{attribute}/values-table', [AttributesController::class, 'ajaxTable'])->name('values.table');
         Route::get('/{attribute}/values-archives-table', [AttributesController::class, 'ajaxArchivesTable'])->name('values.archivesTable');
+        Route::get('/{attribute}/values/{value}', [AttributesController::class, 'showValue'])->name('values.show');
 
         // Actions CRUD pour les attributs
         Route::post('/', [AttributesController::class, 'store'])->name('store');
@@ -42,7 +44,6 @@ Route::prefix('settings')->name('settings.')->group(function () {
 
 // Routes principales (avec confirmation de mot de passe)
 Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verified', 'module.access', 'settings.session'])->group(function () {
-
     // Page d'accueil des paramètres
     Route::get('/', [SettingsController::class, 'index'])->name('index');
     Route::post('/', [SettingsController::class, 'confirmPassword'])->name('confirm-password');
@@ -56,8 +57,14 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
 
         // Valeurs des attributs (vues uniquement)
         Route::get('/{attribute}/values', [AttributesController::class, 'values'])->name('values');
-        Route::get('/{attribute}/values/{value}', [AttributesController::class, 'showValue'])->name('values.show');
     });
+
+    // Articles Z (articles avec stock zéro)
+    Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
+        Route::get('/', [SettingsController::class, 'zeroStock'])->name('index');
+    });
+});
+
 
     // Gestion des catégories (temporairement commenté)
     /*
@@ -119,9 +126,3 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
         Route::get('/{version}', [UpdatesController::class, 'show'])->name('show');
     });
     */
-
-    // Articles Z (articles avec stock zéro)
-    Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
-        Route::get('/', [SettingsController::class, 'zeroStock'])->name('index');
-    });
-});

@@ -47,15 +47,20 @@ class SettingsController extends Controller
     {
         $request->validate([
             'password' => 'required|string',
+        ], [
+            'password.required' => 'Le mot de passe est obligatoire.',
+            'password.string' => 'Le mot de passe doit être une chaîne de caractères.',
         ]);
 
         if (Hash::check($request->password, Auth::user()->password)) {
             $request->session()->put('settings_password_confirmed', true);
-            $request->session()->put('settings_last_activity', now()->timestamp);
-            return redirect()->route('settings.index')->with('success', 'Accès aux paramètres autorisé.');
+            $request->session()->put('settings_last_activity', time());
+            return redirect()->route('settings.index');
         }
 
-        return back()->withErrors(['password' => 'Le mot de passe est incorrect.']);
+        return back()->withErrors([
+            'password' => 'Le mot de passe fourni ne correspond pas à votre mot de passe actuel.',
+        ]);
     }
 
     /**

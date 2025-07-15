@@ -808,9 +808,21 @@
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
     <script>
         function loadValuesTable() {
-            fetch("{{ route('settings.attributes.values.table', $attribute) }}")
-                .then(res => res.text())
+            fetch("{{ route('settings.attributes.values.table', $attribute) }}", {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        // Session expirée ou niveau d'admin insuffisant, rediriger vers la page de confirmation
+                        window.location.href = '{{ route("settings.index") }}';
+                        return;
+                    }
+                    return res.text();
+                })
                 .then(html => {
+                    if (!html) return; // Si on a redirigé, html sera null
                     document.getElementById('values-table').innerHTML = html;
                     // Réactiver le drag & drop après chargement
                     enableSortable();
@@ -818,9 +830,21 @@
         }
 
         function loadArchivesTable() {
-            fetch("{{ route('settings.attributes.values.archivesTable', $attribute) }}")
-                .then(res => res.text())
+            fetch("{{ route('settings.attributes.values.archivesTable', $attribute) }}", {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(res => {
+                    if (res.status === 401 || res.status === 403) {
+                        // Session expirée ou niveau d'admin insuffisant, rediriger vers la page de confirmation
+                        window.location.href = '{{ route("settings.index") }}';
+                        return;
+                    }
+                    return res.text();
+                })
                 .then(html => {
+                    if (!html) return; // Si on a redirigé, html sera null
                     document.getElementById('archives-table').innerHTML = html;
                     updateArchivesCount();
                 });
@@ -878,12 +902,21 @@
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'X-Requested-With': 'XMLHttpRequest'
                         },
                         body: JSON.stringify({order})
                     })
-                        .then(res => res.json())
+                        .then(res => {
+                            if (res.status === 401 || res.status === 403) {
+                                // Session expirée ou niveau d'admin insuffisant, rediriger vers la page de confirmation
+                                window.location.href = '{{ route("settings.index") }}';
+                                return;
+                            }
+                            return res.json();
+                        })
                         .then(data => {
+                            if (!data) return; // Si on a redirigé, data sera null
                             if (data.success) {
                                 showNotif('Nouvel ordre enregistré !');
                                 loadValuesTable();
@@ -921,12 +954,54 @@
             }
         }
 
+        // Fonction pour afficher les erreurs dans les champs
+        function showFieldErrors(errors) {
+            // Nettoyer toutes les erreurs précédentes
+            clearFieldErrors();
+
+            // Afficher les nouvelles erreurs
+            Object.keys(errors).forEach(field => {
+                const input = document.querySelector(`[name="${field}"]`);
+                if (input) {
+                    // Ajouter la classe d'erreur à l'input
+                    input.classList.add('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+
+                    // Créer le message d'erreur
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'mt-1 text-sm text-red-600';
+                    errorDiv.id = `error-${field}`;
+                    errorDiv.textContent = errors[field][0];
+
+                    // Insérer le message d'erreur après l'input
+                    input.parentNode.appendChild(errorDiv);
+                }
+            });
+        }
+
+        // Fonction pour nettoyer les erreurs des champs
+        function clearFieldErrors() {
+            // Retirer les classes d'erreur de tous les inputs
+            document.querySelectorAll('input, select, textarea').forEach(input => {
+                input.classList.remove('border-red-500', 'focus:border-red-500', 'focus:ring-red-500');
+            });
+
+            // Supprimer tous les messages d'erreur
+            document.querySelectorAll('[id^="error-"]').forEach(errorDiv => {
+                errorDiv.remove();
+            });
+        }
+
+
+
         function submitAddForm() {
             const form = document.querySelector('form[action$="/values"]');
             if (!form) {
                 console.error('Add form not found');
                 return;
             }
+
+            // Nettoyer les erreurs précédentes
+            clearFieldErrors();
 
             // Soumettre le formulaire en AJAX
             const formData = new FormData(form);
@@ -939,15 +1014,37 @@
                 },
                 body: formData
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (response.status === 401 || response.status === 403) {
+                        // Session expirée ou niveau d'admin insuffisant, rediriger vers la page de confirmation
+                        window.location.href = '{{ route("settings.index") }}';
+                        return;
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    if (!data) return; // Si on a redirigé, data sera null
+
                     if (data.success) {
                         showNotif(data.message, false);
                         closeModal('add-value');
                         form.reset();
                         loadValuesTable();
                     } else {
-                        showNotif(data.message || 'Erreur lors de l\'ajout', true);
+                        // Afficher les erreurs dans les champs si présentes
+                        if (data.errors) {
+                            showFieldErrors(data.errors);
+                        } else if (data.message) {
+                            // Si c'est un message d'erreur général, l'afficher dans le champ value
+                            const valueInput = document.querySelector('input[name="value"]');
+                            if (valueInput && data.message.includes('existe déjà')) {
+                                showFieldErrors({'value': [data.message]});
+                            } else {
+                                showNotif(data.message || 'Erreur lors de l\'ajout', true);
+                            }
+                        } else {
+                            showNotif('Erreur lors de l\'ajout', true);
+                        }
                     }
                 })
                 .catch(error => {
@@ -963,11 +1060,13 @@
                 return;
             }
 
+            // Nettoyer les erreurs précédentes
+            clearFieldErrors();
+
             // Debug: afficher les données du formulaire
             const formData = new FormData(form);
 
             // Soumettre le formulaire en AJAX
-
             fetch(form.action, {
                 method: 'POST',
                 headers: {
@@ -976,14 +1075,36 @@
                 },
                 body: formData
             })
-                .then(response => response.json())
+                .then(response => {
+                    if (response.status === 401 || response.status === 403) {
+                        // Session expirée ou niveau d'admin insuffisant, rediriger vers la page de confirmation
+                        window.location.href = '{{ route("settings.index") }}';
+                        return;
+                    }
+                    return response.json();
+                })
                 .then(data => {
+                    if (!data) return; // Si on a redirigé, data sera null
+
                     if (data.success) {
                         showNotif(data.message, false);
                         closeModal('edit-value');
                         loadValuesTable();
                     } else {
-                        showNotif(data.message || 'Erreur lors de la modification', true);
+                        // Afficher les erreurs dans les champs si présentes
+                        if (data.errors) {
+                            showFieldErrors(data.errors);
+                        } else if (data.message) {
+                            // Si c'est un message d'erreur général, l'afficher dans le champ value
+                            const valueInput = document.querySelector('#edit_value');
+                            if (valueInput && data.message.includes('existe déjà')) {
+                                showFieldErrors({'value': [data.message]});
+                            } else {
+                                showNotif(data.message || 'Erreur lors de la modification', true);
+                            }
+                        } else {
+                            showNotif('Erreur lors de la modification', true);
+                        }
                     }
                 })
                 .catch(error => {
@@ -1032,8 +1153,16 @@
                         'X-Requested-With': 'XMLHttpRequest'
                     }
                 })
-                    .then(res => res.json())
+                    .then(res => {
+                        if (res.status === 401 || res.status === 403) {
+                            // Session expirée ou niveau d'admin insuffisant, rediriger vers la page de confirmation
+                            window.location.href = '{{ route("settings.index") }}';
+                            return;
+                        }
+                        return res.json();
+                    })
                     .then(data => {
+                        if (!data) return; // Si on a redirigé, data sera null
                         if (data.success) {
                             showNotif(data.message);
                             reloadTables();
@@ -1051,11 +1180,15 @@
                         } else {
                             // Afficher les erreurs de validation si présentes
                             if (data.errors) {
-                                Object.keys(data.errors).forEach(field => {
-                                    showNotif(data.errors[field][0], true);
-                                });
+                                showFieldErrors(data.errors);
                             } else if (data.message) {
-                                showNotif(data.message, true);
+                                // Si c'est un message d'erreur général, l'afficher dans le champ value si c'est une erreur de duplication
+                                const valueInput = e.target.querySelector('input[name="value"]');
+                                if (valueInput && data.message.includes('existe déjà')) {
+                                    showFieldErrors({'value': [data.message]});
+                                } else {
+                                    showNotif(data.message, true);
+                                }
                             }
                         }
                     })

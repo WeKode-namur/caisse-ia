@@ -182,6 +182,15 @@ class AttributesController extends Controller
             'name' => 'required|string|max:255|unique:attributes,name',
             'type' => 'required|in:number,select,color',
             'unit' => 'nullable|string|max:50',
+        ], [
+            'name.required' => 'Le nom de l\'attribut est obligatoire.',
+            'name.string' => 'Le nom de l\'attribut doit être une chaîne de caractères.',
+            'name.max' => 'Le nom de l\'attribut ne peut pas dépasser 255 caractères.',
+            'name.unique' => 'Un attribut avec ce nom existe déjà.',
+            'type.required' => 'Le type d\'attribut est obligatoire.',
+            'type.in' => 'Le type d\'attribut doit être "Nombre", "Sélection" ou "Couleur".',
+            'unit.string' => 'L\'unité doit être une chaîne de caractères.',
+            'unit.max' => 'L\'unité ne peut pas dépasser 50 caractères.',
         ]);
 
         if ($validator->fails()) {
@@ -303,6 +312,13 @@ class AttributesController extends Controller
         $validator = Validator::make($request->all(), [
             'value' => $valueRules,
             'second_value' => 'nullable|string|max:255',
+        ], [
+            'value.required' => 'La valeur est obligatoire.',
+            'value.string' => 'La valeur doit être une chaîne de caractères.',
+            'value.numeric' => 'La valeur doit être un nombre.',
+            'value.max' => 'La valeur ne peut pas dépasser 255 caractères.',
+            'second_value.string' => 'La valeur secondaire doit être une chaîne de caractères.',
+            'second_value.max' => 'La valeur secondaire ne peut pas dépasser 255 caractères.',
         ]);
 
         if ($validator->fails()) {
@@ -317,7 +333,10 @@ class AttributesController extends Controller
         // Vérifier si la valeur existe déjà
         if ($attribute->values()->where('value', $request->value)->exists()) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Cette valeur existe déjà pour cet attribut.'], 409);
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['value' => ['Cette valeur existe déjà pour cet attribut.']]
+                ], 422);
             }
             return redirect()->back()
                 ->with('error', 'Cette valeur existe déjà pour cet attribut.')
@@ -380,6 +399,13 @@ class AttributesController extends Controller
         $validator = Validator::make($request->all(), [
             'value' => $valueRules,
             'second_value' => 'nullable|string|max:255',
+        ], [
+            'value.required' => 'La valeur est obligatoire.',
+            'value.string' => 'La valeur doit être une chaîne de caractères.',
+            'value.numeric' => 'La valeur doit être un nombre.',
+            'value.max' => 'La valeur ne peut pas dépasser 255 caractères.',
+            'second_value.string' => 'La valeur secondaire doit être une chaîne de caractères.',
+            'second_value.max' => 'La valeur secondaire ne peut pas dépasser 255 caractères.',
         ]);
 
         if ($validator->fails()) {
@@ -399,7 +425,10 @@ class AttributesController extends Controller
         // Vérifier si la valeur existe déjà (sauf pour cette valeur)
         if ($attribute->values()->where('value', $request->value)->where('id', '!=', $value->id)->exists()) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'message' => 'Cette valeur existe déjà pour cet attribut.'], 409);
+                return response()->json([
+                    'success' => false,
+                    'errors' => ['value' => ['Cette valeur existe déjà pour cet attribut.']]
+                ], 422);
             }
             return redirect()->back()
                 ->with('error', 'Cette valeur existe déjà pour cet attribut.')
@@ -431,6 +460,15 @@ class AttributesController extends Controller
             'name' => 'required|string|max:255|unique:attributes,name,' . $attribute->id,
             'type' => 'required|in:number,select,color',
             'unit' => 'nullable|string|max:50',
+        ], [
+            'name.required' => 'Le nom de l\'attribut est obligatoire.',
+            'name.string' => 'Le nom de l\'attribut doit être une chaîne de caractères.',
+            'name.max' => 'Le nom de l\'attribut ne peut pas dépasser 255 caractères.',
+            'name.unique' => 'Un attribut avec ce nom existe déjà.',
+            'type.required' => 'Le type d\'attribut est obligatoire.',
+            'type.in' => 'Le type d\'attribut doit être "Nombre", "Sélection" ou "Couleur".',
+            'unit.string' => 'L\'unité doit être une chaîne de caractères.',
+            'unit.max' => 'L\'unité ne peut pas dépasser 50 caractères.',
         ]);
 
         if ($validator->fails()) {
