@@ -51,6 +51,7 @@ class SettingsController extends Controller
 
         if (Hash::check($request->password, Auth::user()->password)) {
             $request->session()->put('settings_password_confirmed', true);
+            $request->session()->put('settings_last_activity', now()->timestamp);
             return redirect()->route('settings.index')->with('success', 'Accès aux paramètres autorisé.');
         }
 
@@ -137,7 +138,7 @@ class SettingsController extends Controller
      */
     public function resetPasswordConfirmation(Request $request)
     {
-        $request->session()->forget('settings_password_confirmed');
+        $request->session()->forget(['settings_password_confirmed', 'settings_last_activity']);
         return redirect()->route('settings.index');
     }
 }

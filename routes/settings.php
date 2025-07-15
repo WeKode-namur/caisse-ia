@@ -11,6 +11,36 @@ use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\Settings\UpdatesController;
 // use App\Http\Controllers\Settings\UsersController;
 
+// Routes AJAX (sans confirmation de mot de passe, mais avec vérification admin)
+Route::prefix('settings')->name('settings.')->group(function () {
+
+    // Routes AJAX pour les attributs
+    Route::prefix('attributes')->name('attributes.')->group(function () {
+        Route::get('/stats', [AttributesController::class, 'getStats'])->name('stats');
+        Route::get('/{attribute}/values-table', [AttributesController::class, 'ajaxTable'])->name('values.table');
+        Route::get('/{attribute}/values-archives-table', [AttributesController::class, 'ajaxArchivesTable'])->name('values.archivesTable');
+
+        // Actions CRUD pour les attributs
+        Route::post('/', [AttributesController::class, 'store'])->name('store');
+        Route::put('/{attribute}', [AttributesController::class, 'update'])->name('update');
+        Route::delete('/{attribute}', [AttributesController::class, 'destroy'])->name('destroy');
+        Route::patch('/{attribute}/activate', [AttributesController::class, 'activate'])->name('activate');
+
+        // Actions pour les valeurs d'attributs
+        Route::post('/{attribute}/values', [AttributesController::class, 'storeValue'])->name('values.store');
+        Route::put('/{attribute}/values/{value}', [AttributesController::class, 'updateValue'])->name('values.update');
+        Route::delete('/{attribute}/values/{value}', [AttributesController::class, 'destroyValue'])->name('values.destroy');
+        Route::patch('/{attribute}/values/{value}/activate', [AttributesController::class, 'activateValue'])->name('values.activate');
+        Route::post('/{attribute}/values/order', [AttributesController::class, 'updateValuesOrder'])->name('values.updateOrder');
+    });
+
+    // Actions pour les articles zero-stock
+    Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
+        Route::post('/bulk-update', [SettingsController::class, 'bulkUpdateZeroStock'])->name('bulk-update');
+    });
+});
+
+// Routes principales (avec confirmation de mot de passe)
 Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verified', 'module.access', 'settings.session'])->group(function () {
 
     // Page d'accueil des paramètres
@@ -18,27 +48,15 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
     Route::post('/', [SettingsController::class, 'confirmPassword'])->name('confirm-password');
     Route::post('/reset-session', [SettingsController::class, 'resetPasswordConfirmation'])->name('reset-session');
 
-    // Gestion des attributs
+    // Gestion des attributs (vues principales uniquement)
     Route::prefix('attributes')->name('attributes.')->group(function () {
         Route::get('/', [AttributesController::class, 'index'])->name('index');
-        Route::get('/stats', [AttributesController::class, 'getStats'])->name('stats');
         Route::get('/create', [AttributesController::class, 'create'])->name('create');
-        Route::post('/', [AttributesController::class, 'store'])->name('store');
         Route::get('/{attribute}/edit', [AttributesController::class, 'edit'])->name('edit');
-        Route::put('/{attribute}', [AttributesController::class, 'update'])->name('update');
-        Route::delete('/{attribute}', [AttributesController::class, 'destroy'])->name('destroy');
-        Route::patch('/{attribute}/activate', [AttributesController::class, 'activate'])->name('activate');
 
-        // Valeurs des attributs
+        // Valeurs des attributs (vues uniquement)
         Route::get('/{attribute}/values', [AttributesController::class, 'values'])->name('values');
-        Route::post('/{attribute}/values', [AttributesController::class, 'storeValue'])->name('values.store');
-        Route::put('/{attribute}/values/{value}', [AttributesController::class, 'updateValue'])->name('values.update');
-        Route::delete('/{attribute}/values/{value}', [AttributesController::class, 'destroyValue'])->name('values.destroy');
-        Route::patch('/{attribute}/values/{value}/activate', [AttributesController::class, 'activateValue'])->name('values.activate');
-        Route::post('/{attribute}/values/order', [AttributesController::class, 'updateValuesOrder'])->name('values.updateOrder');
         Route::get('/{attribute}/values/{value}', [AttributesController::class, 'showValue'])->name('values.show');
-        Route::get('/{attribute}/values-table', [AttributesController::class, 'ajaxTable'])->name('values.table');
-        Route::get('/{attribute}/values-archives-table', [AttributesController::class, 'ajaxArchivesTable'])->name('values.archivesTable');
     });
 
     // Gestion des catégories (temporairement commenté)
@@ -105,6 +123,5 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
     // Articles Z (articles avec stock zéro)
     Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
         Route::get('/', [SettingsController::class, 'zeroStock'])->name('index');
-        Route::post('/bulk-update', [SettingsController::class, 'bulkUpdateZeroStock'])->name('bulk-update');
     });
 });

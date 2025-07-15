@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -10,6 +11,11 @@ use Illuminate\Support\Facades\Auth;
 
 class SettingsSession
 {
+    /**
+     * Durée de validité de la session settings (en minutes)
+     */
+    private const SESSION_TIMEOUT = 30;
+
     /**
      * Handle an incoming request.
      *
@@ -42,7 +48,32 @@ class SettingsSession
             return redirect()->route('settings.index');
         }
 
-        // Si la session est confirmée, continuer
+        // Vérifier l'expiration de la session
+        $lastActivity = $request->session()->get('settings_last_activity');
+        if ($lastActivity) {
+            $lastActivityTime = Carbon::createFromTimestamp($lastActivity);
+            $timeoutTime = $lastActivityTime->addMinutes(self::SESSION_TIMEOUT);
+
+            if (Carbon::now()->isAfter($timeoutTime)) {
+                // Session expirée, la supprimer
+                $request->session()->forget(['settings_password_confirmed', 'settings_last_activity']);
+
+                // Si c'est une requête AJAX, retourner une erreur JSON
+                if ($request->ajax() || $request->wantsJson()) {
+                    return response()->json([
+                        'error' => 'Session expirée. Veuillez vous reconnecter.',
+                        'redirect' => route('settings.index')
+                    ], 401);
+                }
+
+                return redirect()->route('settings.index')->with('error', 'Session expirée. Veuillez vous reconnecter.');
+            }
+        }
+
+        // Mettre à jour le timestamp d'activité
+        $request->session()->put('settings_last_activity', Carbon::now()->timestamp);
+
+        // Si la session est confirmée et valide, continuer
         return $next($request);
     }
 }

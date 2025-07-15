@@ -106,6 +106,20 @@
                                     </div>
                                 </x-dropdown-link>
 
+                                <!-- Déconnexion des paramètres (visible seulement si session settings active) -->
+                                @if(session('settings_password_confirmed'))
+                                    <form method="POST" action="{{ route('settings.reset-session') }}" x-data>
+                                        @csrf
+                                        <x-dropdown-link href="{{ route('settings.reset-session') }}"
+                                                         @click.prevent="$root.submit();">
+                                            <div class="flex items-center text-orange-600 dark:text-orange-400 w-full">
+                                                <i class="fa-solid fa-lock mr-3"></i>
+                                                <span class="flex-1">{{ __('Déconnexion paramètres') }}</span>
+                                            </div>
+                                        </x-dropdown-link>
+                                    </form>
+                                @endif
+
                                 <!-- Support -->
 {{--                                <x-dropdown-link href="{{ route('support') }}">--}}
 {{--                                    <div class="flex items-center w-full">--}}

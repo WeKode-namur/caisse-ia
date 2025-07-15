@@ -40,6 +40,14 @@ class AttributesController extends Controller
      */
     public function getTableData(Request $request)
     {
+        // Vérifier le niveau d'admin minimum (80) pour les routes AJAX
+        if (Auth::user()->is_admin < 80) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => 'Accès refusé. Niveau d\'administrateur insuffisant.'], 403);
+            }
+            return redirect()->route('settings.index')->with('error', 'Accès refusé. Niveau d\'administrateur insuffisant.');
+        }
+
         $search = $request->get('search');
         $type = $request->get('type', '');
         $status = $request->get('status', 'active'); // Par défaut 'active'
@@ -105,6 +113,14 @@ class AttributesController extends Controller
      */
     public function getStats(Request $request)
     {
+        // Vérifier le niveau d'admin minimum (80) pour les routes AJAX
+        if (Auth::user()->is_admin < 80) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['error' => 'Accès refusé. Niveau d\'administrateur insuffisant.'], 403);
+            }
+            return redirect()->route('settings.index')->with('error', 'Accès refusé. Niveau d\'administrateur insuffisant.');
+        }
+
         $search = $request->get('search');
         $type = $request->get('type', '');
         $status = $request->get('status', 'all');

@@ -8,6 +8,7 @@ Route::middleware([
     config('jetstream.auth_session'),
     'verified',
     'module.access',
+    'settings.logout', // Détecte automatiquement la sortie de la section settings
 ])->group(function () {
 
     // 📊 Page principale - Dashboard
