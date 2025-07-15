@@ -12,10 +12,12 @@ class AttributeValue extends Model
         'value',
         'second_value',
         'order',
+        'actif',
     ];
 
     protected $casts = [
         'order' => 'integer',
+        'actif' => 'boolean',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -74,5 +76,56 @@ class AttributeValue extends Model
     public function scopeForAttribute($query, int $attributeId)
     {
         return $query->where('attribute_id', $attributeId);
+    }
+
+    /**
+     * Scope pour les valeurs actives uniquement
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('actif', true);
+    }
+
+    /**
+     * Scope pour les valeurs inactives uniquement
+     */
+    public function scopeInactive($query)
+    {
+        return $query->where('actif', false);
+    }
+
+    /**
+     * Compter les articles liés à cette valeur
+     */
+    public function getArticlesCountAttribute()
+    {
+        return $this->variants()
+            ->join('articles', 'variants.article_id', '=', 'articles.id')
+            ->distinct('articles.id')
+            ->count('articles.id');
+    }
+
+    /**
+     * Compter les variants liés à cette valeur
+     */
+    public function getVariantsCountAttribute()
+    {
+        return $this->variants()->count();
+    }
+
+    /**
+     * Désactiver la valeur
+     */
+    public function deactivate()
+    {
+        $this->update(['actif' => false]);
+    }
+
+    /**
+     * Réactiver la valeur
+     */
+    public function activate()
+    {
+        $this->update(['actif' => true]);
     }
 }

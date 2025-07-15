@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\{Attribute, AttributeValue, Subtype, Type};
+use DB;
+use Exception;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Request;
 
@@ -39,7 +41,7 @@ class InventoryApiController extends Controller
     public function getAttributes(): JsonResponse
     {
         try {
-            $attributes = Attribute::select('id', 'name', 'type', 'unit')
+            $attributes = Attribute::active()->select('id', 'name', 'type', 'unit')
                 ->orderBy('name')
                 ->get();
 
@@ -47,7 +49,7 @@ class InventoryApiController extends Controller
                 'success' => true,
                 'attributes' => $attributes
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération des attributs',
@@ -62,9 +64,9 @@ class InventoryApiController extends Controller
     public function getAttributeValues($id): JsonResponse
     {
         try {
-            $attribute = Attribute::findOrFail($id);
+            $attribute = Attribute::active()->findOrFail($id);
 
-            $values = AttributeValue::where('attribute_id', $id)
+            $values = AttributeValue::active()->where('attribute_id', $id)
                 ->select('id', 'value', 'second_value', 'order')
                 ->orderBy('order')
                 ->orderBy('value')
@@ -75,7 +77,7 @@ class InventoryApiController extends Controller
                 'attribute' => $attribute,
                 'values' => $values
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la récupération des valeurs d\'attribut',
@@ -91,7 +93,7 @@ class InventoryApiController extends Controller
     {
         $query = $request->get('q', '');
 
-        $attributes = Attribute::where('name', 'LIKE', "%{$query}%")
+        $attributes = Attribute::active()->where('name', 'LIKE', "%{$query}%")
             ->orderBy('name')
             ->limit(10)
             ->get(['id', 'name', 'type', 'unit']);
@@ -113,25 +115,28 @@ class InventoryApiController extends Controller
         ]);
 
         try {
-            \DB::beginTransaction();
+            DB::beginTransaction();
 
-            // Créer l'attribut s'il n'existe pas
+            // Créer l'attribut s'il n'existe pas (actif par défaut)
             $attribute = Attribute::firstOrCreate(
                 ['name' => $validated['name']],
                 [
                     'type' => $validated['type'],
-                    'unit' => $validated['unit']
+                    'unit' => $validated['unit'],
+                    'actif' => true
                 ]
             );
 
-            // Créer la valeur
+            // Créer la valeur (active par défaut)
             $attributeValue = AttributeValue::firstOrCreate([
                 'attribute_id' => $attribute->id,
                 'value' => $validated['value'],
                 'second_value' => $validated['second_value']
+            ], [
+                'actif' => true
             ]);
 
-            \DB::commit();
+            DB::commit();
 
             return response()->json([
                 'success' => true,
@@ -139,8 +144,57 @@ class InventoryApiController extends Controller
                 'attribute_value' => $attributeValue
             ]);
 
-        } catch (\Exception $e) {
-            \DB::rollBack();
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Erreur lors de la création: ' . $e->getMessage()
+            ], 422);
+        }
+    }
+
+    public function createAttribute(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'type' => 'required|string|in:text,number,select,color',
+            'unit' => 'nullable|string|max:50',
+            'value' => 'required|string|max:255',
+            'second_value' => 'nullable|string|max:255'
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            // Créer l'attribut s'il n'existe pas (actif par défaut)
+            $attribute = Attribute::firstOrCreate(
+                ['name' => $validated['name']],
+                [
+                    'type' => $validated['type'],
+                    'unit' => $validated['unit'],
+                    'actif' => true
+                ]
+            );
+
+            // Créer la valeur (active par défaut)
+            $attributeValue = AttributeValue::firstOrCreate([
+                'attribute_id' => $attribute->id,
+                'value' => $validated['value'],
+                'second_value' => $validated['second_value']
+            ], [
+                'actif' => true
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'attribute' => $attribute,
+                'attribute_value' => $attributeValue
+            ]);
+
+        } catch (Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la création: ' . $e->getMessage()

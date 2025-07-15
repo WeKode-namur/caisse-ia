@@ -44,14 +44,12 @@
 
                         <!-- Type d'attribut -->
                         <div class="col-span-1">
-                            <label for="type" class="block text-sm font-medium text-gray-700">Type d'attribut *</label>
+                            <label for="type" class="block text-sm font-medium text-gray-700">Type d'attribut <span
+                                    class="text-red-500">*</span></label>
                             <select name="type"
                                     id="type"
                                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('type') border-red-300 @enderror">
                                 <option value="">Sélectionnez un type</option>
-                                <option value="text" {{ old('type', $attribute->type) == 'text' ? 'selected' : '' }}>
-                                    Texte
-                                </option>
                                 <option
                                     value="number" {{ old('type', $attribute->type) == 'number' ? 'selected' : '' }}>
                                     Nombre
@@ -60,12 +58,8 @@
                                     value="select" {{ old('type', $attribute->type) == 'select' ? 'selected' : '' }}>
                                     Sélection
                                 </option>
-                                <option
-                                    value="boolean" {{ old('type', $attribute->type) == 'boolean' ? 'selected' : '' }}>
-                                    Oui/Non
-                                </option>
-                                <option value="date" {{ old('type', $attribute->type) == 'date' ? 'selected' : '' }}>
-                                    Date
+                                <option value="color" {{ old('type', $attribute->type) == 'color' ? 'selected' : '' }}>
+                                    Couleur
                                 </option>
                             </select>
                             @error('type')
@@ -73,43 +67,46 @@
                             @enderror
                         </div>
 
-                        <!-- Description -->
-                        <div class="col-span-2">
-                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                            <textarea name="description"
-                                      id="description"
-                                      rows="3"
-                                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('description') border-red-300 @enderror"
-                                      placeholder="Description optionnelle de l'attribut...">{{ old('description', $attribute->description) }}</textarea>
-                            @error('description')
+                        <!-- Unité -->
+                        <div class="col-span-1">
+                            <label for="unit" class="block text-sm font-medium text-gray-700">Unité</label>
+                            <input type="text"
+                                   name="unit"
+                                   id="unit"
+                                   value="{{ old('unit', $attribute->unit) }}"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('unit') border-red-300 @enderror"
+                                   placeholder="Ex: GB, L, cm, kg...">
+                            @error('unit')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <!-- Options -->
+                        <!-- Avertissement lors de la modification -->
                         <div class="col-span-2">
-                            <div class="flex items-center space-x-6">
-                                <div class="flex items-center">
-                                    <input type="checkbox"
-                                           name="is_required"
-                                           id="is_required"
-                                           value="1"
-                                           {{ old('is_required', $attribute->is_required) ? 'checked' : '' }}
-                                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                    <label for="is_required" class="ml-2 block text-sm text-gray-900">
-                                        Attribut requis
-                                    </label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox"
-                                           name="is_searchable"
-                                           id="is_searchable"
-                                           value="1"
-                                           {{ old('is_searchable', $attribute->is_searchable) ? 'checked' : '' }}
-                                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                    <label for="is_searchable" class="ml-2 block text-sm text-gray-900">
-                                        Recherchable
-                                    </label>
+                            <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                                  clip-rule="evenodd"/>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h4 class="text-sm font-medium text-amber-800">Attention : Modification
+                                            d'attribut</h4>
+                                        <div class="mt-1 text-sm text-amber-700">
+                                            <p class="mb-2">La modification de cet attribut peut avoir des répercussions
+                                                sur :</p>
+                                            <ul class="list-disc list-inside space-y-1 text-xs">
+                                                <li>Les articles existants utilisant cet attribut</li>
+                                                <li>Les variants déjà créés</li>
+                                                <li>L'affichage des valeurs dans l'interface</li>
+                                            </ul>
+                                            <p class="mt-2 font-medium">Il est recommandé de ne modifier que le nom ou
+                                                l'unité si nécessaire.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

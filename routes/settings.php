@@ -1,13 +1,15 @@
 <?php
 
 use App\Http\Controllers\Settings\AttributesController;
-use App\Http\Controllers\Settings\CategoriesController;
-use App\Http\Controllers\Settings\LogsController;
-use App\Http\Controllers\Settings\RolesController;
 use App\Http\Controllers\Settings\SettingsController;
-use App\Http\Controllers\Settings\UpdatesController;
-use App\Http\Controllers\Settings\UsersController;
 use Illuminate\Support\Facades\Route;
+
+// use App\Http\Controllers\Settings\CategoriesController;
+// use App\Http\Controllers\Settings\LogsController;
+// use App\Http\Controllers\Settings\RolesController;
+
+// use App\Http\Controllers\Settings\UpdatesController;
+// use App\Http\Controllers\Settings\UsersController;
 
 Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verified', 'module.access', 'settings.session'])->group(function () {
 
@@ -19,23 +21,28 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
     // Gestion des attributs
     Route::prefix('attributes')->name('attributes.')->group(function () {
         Route::get('/', [AttributesController::class, 'index'])->name('index');
+        Route::get('/stats', [AttributesController::class, 'getStats'])->name('stats');
         Route::get('/create', [AttributesController::class, 'create'])->name('create');
         Route::post('/', [AttributesController::class, 'store'])->name('store');
         Route::get('/{attribute}/edit', [AttributesController::class, 'edit'])->name('edit');
         Route::put('/{attribute}', [AttributesController::class, 'update'])->name('update');
         Route::delete('/{attribute}', [AttributesController::class, 'destroy'])->name('destroy');
+        Route::patch('/{attribute}/activate', [AttributesController::class, 'activate'])->name('activate');
 
         // Valeurs des attributs
         Route::get('/{attribute}/values', [AttributesController::class, 'values'])->name('values');
         Route::post('/{attribute}/values', [AttributesController::class, 'storeValue'])->name('values.store');
         Route::put('/{attribute}/values/{value}', [AttributesController::class, 'updateValue'])->name('values.update');
         Route::delete('/{attribute}/values/{value}', [AttributesController::class, 'destroyValue'])->name('values.destroy');
+        Route::patch('/{attribute}/values/{value}/activate', [AttributesController::class, 'activateValue'])->name('values.activate');
         Route::post('/{attribute}/values/order', [AttributesController::class, 'updateValuesOrder'])->name('values.updateOrder');
         Route::get('/{attribute}/values/{value}', [AttributesController::class, 'showValue'])->name('values.show');
         Route::get('/{attribute}/values-table', [AttributesController::class, 'ajaxTable'])->name('values.table');
+        Route::get('/{attribute}/values-archives-table', [AttributesController::class, 'ajaxArchivesTable'])->name('values.archivesTable');
     });
 
-    // Gestion des catégories
+    // Gestion des catégories (temporairement commenté)
+    /*
     Route::prefix('categories')->name('categories.')->group(function () {
         Route::get('/', [CategoriesController::class, 'index'])->name('index');
         Route::get('/create', [CategoriesController::class, 'create'])->name('create');
@@ -50,8 +57,10 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
         Route::put('/{category}/subcategories/{subcategory}', [CategoriesController::class, 'updateSubcategory'])->name('subcategories.update');
         Route::delete('/{category}/subcategories/{subcategory}', [CategoriesController::class, 'destroySubcategory'])->name('subcategories.destroy');
     });
+    */
 
-    // Gestion des utilisateurs
+    // Gestion des utilisateurs (temporairement commenté)
+    /*
     Route::prefix('users')->name('users.')->group(function () {
         Route::get('/', [UsersController::class, 'index'])->name('index');
         Route::get('/create', [UsersController::class, 'create'])->name('create');
@@ -61,8 +70,10 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
         Route::delete('/{user}', [UsersController::class, 'destroy'])->name('destroy');
         Route::post('/{user}/toggle-status', [UsersController::class, 'toggleStatus'])->name('toggle-status');
     });
+    */
 
-    // Gestion des rôles
+    // Gestion des rôles (temporairement commenté)
+    /*
     Route::prefix('roles')->name('roles.')->group(function () {
         Route::get('/', [RolesController::class, 'index'])->name('index');
         Route::get('/create', [RolesController::class, 'create'])->name('create');
@@ -71,20 +82,25 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
         Route::put('/{role}', [RolesController::class, 'update'])->name('update');
         Route::delete('/{role}', [RolesController::class, 'destroy'])->name('destroy');
     });
+    */
 
-    // Logs système
+    // Logs système (temporairement commenté)
+    /*
     Route::prefix('logs')->name('logs.')->group(function () {
         Route::get('/', [LogsController::class, 'index'])->name('index');
         Route::get('/cash-register', [LogsController::class, 'cashRegister'])->name('cash-register');
         Route::get('/system', [LogsController::class, 'system'])->name('system');
         Route::get('/download/{type}', [LogsController::class, 'download'])->name('download');
     });
+    */
 
-    // Historique des mises à jour
+    // Historique des mises à jour (temporairement commenté)
+    /*
     Route::prefix('updates')->name('updates.')->group(function () {
         Route::get('/', [UpdatesController::class, 'index'])->name('index');
         Route::get('/{version}', [UpdatesController::class, 'show'])->name('show');
     });
+    */
 
     // Articles Z (articles avec stock zéro)
     Route::prefix('zero-stock')->name('zero-stock.')->group(function () {

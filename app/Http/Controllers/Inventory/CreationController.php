@@ -4,17 +4,20 @@ namespace App\Http\Controllers\Inventory;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Attribute;
-use App\Models\AttributeValue;
 use App\Models\Category;
+use App\Models\Fournisseur;
 use App\Models\Stock;
+use App\Models\Transaction;
+use App\Models\TransactionItem;
+use App\Models\TransactionStockMovement;
 use App\Models\Variant;
 use App\Services\VariantService;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
-use App\Models\Fournisseur;
+use Illuminate\Support\Facades\Storage;
 
 class CreationController extends Controller
 {
@@ -113,8 +116,8 @@ class CreationController extends Controller
             ->with(['category', 'type', 'subtype', 'variants.stocks', 'variants.attributeValues.attribute'])
             ->firstOrFail();
 
-        // Charger les attributs disponibles pour les variants
-        $attributes = Attribute::orderBy('name')->get();
+        // Charger les attributs actifs disponibles pour les variants
+        $attributes = Attribute::active()->with('activeValues')->orderBy('name')->get();
 
         // Préparer les données des variants existants
         $existingVariants = $draft->variants->map(function ($variant) {
@@ -189,7 +192,7 @@ class CreationController extends Controller
             return redirect()->route('inventory.create.index')
                 ->with('success', 'Brouillon sauvegardé.');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             \Log::error('[storeStepTwo] Erreur lors de la sauvegarde', [
                 'exception' => $e,
@@ -212,7 +215,7 @@ class CreationController extends Controller
         // Règles de validation conditionnelles selon la configuration du générateur
         $barcodeGeneratorEnabled = config('custom.generator.barcode', false);
         $barcodeRules = $barcodeGeneratorEnabled ? 'nullable|string|unique:variants,barcode,' . ($request->variant_id ?? 'null') : 'required|string|unique:variants,barcode,' . ($request->variant_id ?? 'null');
-        
+
         $validated = $request->validate([
             'barcode' => $barcodeRules,
             'reference' => 'nullable|string',
@@ -324,7 +327,7 @@ class CreationController extends Controller
                 'variant' => $this->formatVariantForJson($variant)
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
@@ -367,7 +370,7 @@ class CreationController extends Controller
                 'message' => 'Variant supprimé définitivement avec succès'
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
@@ -428,10 +431,10 @@ class CreationController extends Controller
         // Vérifier qu'il y a au moins un variant
         if ($draft->variants()->count() === 0) {
             Log::warning('[finalizeArticle] Aucun variant trouvé', ['article_id' => $draft->id]);
-            throw new \Exception("L'article doit avoir au moins un variant.");
+            throw new Exception("L'article doit avoir au moins un variant.");
         }
         // Créer une transaction technique pour l'initialisation du stock
-        $transaction = new \App\Models\Transaction();
+        $transaction = new Transaction();
         $transaction->transaction_number = 'INIT-' . now()->format('YmdHis') . '-' . $draft->id;
         $transaction->transaction_type = 'init_stock';
         $transaction->status = 'completed';
@@ -445,7 +448,7 @@ class CreationController extends Controller
         Log::info('[finalizeArticle] Transaction technique créée', ['transaction_id' => $transaction->id]);
         // Vérifier la configuration du générateur de code-barres
         $barcodeGeneratorEnabled = config('custom.generator.barcode', false);
-        
+
         // Générer le code-barres pour chaque variant sans code-barres (seulement si le générateur est activé)
         foreach ($draft->variants as $variant) {
             Log::info('[finalizeArticle] Traitement variant', ['variant_id' => $variant->id]);
@@ -456,7 +459,7 @@ class CreationController extends Controller
                     Log::info('[finalizeArticle] Code-barres généré automatiquement', ['variant_id' => $variant->id, 'barcode' => $variant->barcode]);
                 } else {
                     Log::warning('[finalizeArticle] Variant sans code-barres et générateur désactivé', ['variant_id' => $variant->id]);
-                    throw new \Exception("Le variant #{$variant->id} n'a pas de code-barres et le générateur automatique est désactivé. Veuillez saisir un code-barres manuellement.");
+                    throw new Exception("Le variant #{$variant->id} n'a pas de code-barres et le générateur automatique est désactivé. Veuillez saisir un code-barres manuellement.");
                 }
             }
             // === Mouvement de stock initial ===
@@ -464,7 +467,7 @@ class CreationController extends Controller
             if ($stock && $stock->quantity > 0) {
                 Log::info('[finalizeArticle] Stock initial détecté', ['variant_id' => $variant->id, 'stock_id' => $stock->id, 'quantity' => $stock->quantity]);
                 // Créer un TransactionItem technique pour l'initialisation
-                $transactionItem = new \App\Models\TransactionItem();
+                $transactionItem = new TransactionItem();
                 $transactionItem->transaction_id = $transaction->id;
                 $transactionItem->variant_id = $variant->id;
                 $transactionItem->stock_id = $stock->id;
@@ -486,7 +489,7 @@ class CreationController extends Controller
                 Log::info('[finalizeArticle] TransactionItem créé', ['transaction_item_id' => $transactionItem->id]);
 
                 // Mouvement de stock (entrée)
-                $movement = \App\Models\TransactionStockMovement::create([
+                $movement = TransactionStockMovement::create([
                     'transaction_item_id' => $transactionItem->id,
                     'stock_id' => $stock->id,
                     'quantity_used' => -$stock->quantity, // Entrée
@@ -568,13 +571,13 @@ class CreationController extends Controller
     {
         try {
             $barcode = VariantService::generateCustomBarcode();
-            
+
             return response()->json([
                 'success' => true,
                 'barcode' => $barcode,
                 'message' => 'Code-barres généré avec succès'
             ]);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de la génération du code-barres: ' . $e->getMessage()

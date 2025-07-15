@@ -42,61 +42,68 @@
 
                         <!-- Type d'attribut -->
                         <div class="col-span-1">
-                            <label for="type" class="block text-sm font-medium text-gray-700">Type d'attribut *</label>
+                            <label for="type" class="block text-sm font-medium text-gray-700">Type d'attribut <span
+                                    class="text-red-500">*</span></label>
                             <select name="type"
                                     id="type"
                                     class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('type') border-red-300 @enderror">
                                 <option value="">Sélectionnez un type</option>
-                                <option value="text" {{ old('type') == 'text' ? 'selected' : '' }}>Texte</option>
                                 <option value="number" {{ old('type') == 'number' ? 'selected' : '' }}>Nombre</option>
                                 <option value="select" {{ old('type') == 'select' ? 'selected' : '' }}>Sélection
                                 </option>
-                                <option value="boolean" {{ old('type') == 'boolean' ? 'selected' : '' }}>Oui/Non
-                                </option>
-                                <option value="date" {{ old('type') == 'date' ? 'selected' : '' }}>Date</option>
+                                <option value="color" {{ old('type') == 'color' ? 'selected' : '' }}>Couleur</option>
                             </select>
                             @error('type')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <!-- Description -->
-                        <div class="col-span-2">
-                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
-                            <textarea name="description"
-                                      id="description"
-                                      rows="3"
-                                      class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('description') border-red-300 @enderror"
-                                      placeholder="Description optionnelle de l'attribut...">{{ old('description') }}</textarea>
-                            @error('description')
+                        <!-- Unité -->
+                        <div class="col-span-1">
+                            <label for="unit" class="block text-sm font-medium text-gray-700">Unité</label>
+                            <input type="text"
+                                   name="unit"
+                                   id="unit"
+                                   value="{{ old('unit') }}"
+                                   class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm @error('unit') border-red-300 @enderror"
+                                   placeholder="Ex: GB, L, cm, kg...">
+                            @error('unit')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        <!-- Options -->
+                        <!-- Info-bulle explicative -->
                         <div class="col-span-2">
-                            <div class="flex items-center space-x-6">
-                                <div class="flex items-center">
-                                    <input type="checkbox"
-                                           name="is_required"
-                                           id="is_required"
-                                           value="1"
-                                           {{ old('is_required') ? 'checked' : '' }}
-                                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                    <label for="is_required" class="ml-2 block text-sm text-gray-900">
-                                        Attribut requis
-                                    </label>
-                                </div>
-                                <div class="flex items-center">
-                                    <input type="checkbox"
-                                           name="is_searchable"
-                                           id="is_searchable"
-                                           value="1"
-                                           {{ old('is_searchable') ? 'checked' : '' }}
-                                           class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
-                                    <label for="is_searchable" class="ml-2 block text-sm text-gray-900">
-                                        Recherchable
-                                    </label>
+                            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <svg class="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fill-rule="evenodd"
+                                                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                                                  clip-rule="evenodd"/>
+                                        </svg>
+                                    </div>
+                                    <div class="ml-3">
+                                        <h4 class="text-sm font-medium text-blue-800">Comment créer un attribut ?</h4>
+                                        <div class="mt-1 text-sm text-blue-700">
+                                            <ul class="list-disc list-inside space-y-1">
+                                                <li><strong>Nombre :</strong> Pour les valeurs numériques (ex: taille,
+                                                    poids, capacité)
+                                                </li>
+                                                <li><strong>Sélection :</strong> Pour une liste de choix (ex: marque,
+                                                    matériau, style)
+                                                </li>
+                                                <li><strong>Couleur :</strong> Pour les attributs de couleur avec
+                                                    sélecteur visuel
+                                                </li>
+                                                <li><strong>Unité :</strong> Facultatif, pour préciser l'unité de mesure
+                                                    (ex: GB pour stockage, L pour volume)
+                                                </li>
+                                            </ul>
+                                            <p class="mt-2 font-medium">Après création, vous pourrez ajouter les valeurs
+                                                possibles pour cet attribut.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

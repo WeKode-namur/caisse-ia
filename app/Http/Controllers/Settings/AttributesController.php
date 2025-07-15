@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Settings;
 use App\Http\Controllers\Controller;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
+use Log;
 
 class AttributesController extends Controller
 {
@@ -19,14 +21,125 @@ class AttributesController extends Controller
     /**
      * Affiche la liste des attributs
      */
-    public function index()
+    public function index(Request $request)
     {
         $permissionCheck = $this->checkAdminPermissions();
         if ($permissionCheck) return $permissionCheck;
 
-        $attributes = Attribute::withCount('values')->orderBy('name')->get();
+        // Si c'est une requête AJAX, retourner le tableau
+        if ($request->ajax()) {
+            return $this->getTableData($request);
+        }
 
-        return view('panel.settings.attributes.index', compact('attributes'));
+        // Sinon, afficher la page complète
+        return view('panel.settings.attributes.index');
+    }
+
+    /**
+     * Retourne les données du tableau en AJAX
+     */
+    public function getTableData(Request $request)
+    {
+        $search = $request->get('search');
+        $type = $request->get('type', '');
+        $status = $request->get('status', 'active'); // Par défaut 'active'
+        $sort = $request->get('sort', 'name');
+        $page = $request->get('page', 1);
+
+        $query = Attribute::withCount(['values', 'activeValues'])
+            ->withCount(['values as total_values_count', 'activeValues as active_values_count']);
+
+        // Filtre par recherche (nom)
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        // Filtre par type
+        if ($type && $type !== 'all') {
+            $query->where('type', $type);
+        }
+
+        // Filtre par statut
+        if ($status !== 'all') {
+            if ($status === 'active') {
+                $query->where('actif', true);
+            } elseif ($status === 'inactive') {
+                $query->where('actif', false);
+            }
+        }
+
+        // Tri
+        switch ($sort) {
+            case 'name':
+                $query->orderBy('name');
+                break;
+            case 'type':
+                $query->orderBy('type')->orderBy('name');
+                break;
+            case 'created_at':
+                $query->orderBy('created_at', 'desc');
+                break;
+            case 'values_count':
+                $query->orderBy('total_values_count', 'desc');
+                break;
+            default:
+                $query->orderBy('actif', 'desc')->orderBy('name'); // Actifs en premier
+                break;
+        }
+
+        // Pagination
+        $perPage = 15;
+        $attributes = $query->paginate($perPage);
+
+        // Charger les compteurs d'articles et variants pour chaque attribut
+        foreach ($attributes as $attribute) {
+            $attribute->articles_count = $attribute->getArticlesCountAttribute();
+            $attribute->variants_count = $attribute->getVariantsCountAttribute();
+        }
+
+        return view('panel.settings.attributes.partials.table', compact('attributes', 'search', 'type', 'status', 'sort'));
+    }
+
+    /**
+     * Retourne les statistiques en AJAX
+     */
+    public function getStats(Request $request)
+    {
+        $search = $request->get('search');
+        $type = $request->get('type', '');
+        $status = $request->get('status', 'all');
+
+        $query = Attribute::query();
+
+        // Appliquer les mêmes filtres que pour le tableau
+        if ($search) {
+            $query->where('name', 'like', "%{$search}%");
+        }
+
+        if ($type && $type !== 'all') {
+            $query->where('type', $type);
+        }
+
+        if ($status !== 'all') {
+            if ($status === 'active') {
+                $query->where('actif', true);
+            } elseif ($status === 'inactive') {
+                $query->where('actif', false);
+            }
+        }
+
+        $stats = [
+            'total' => $query->count(),
+            'active' => (clone $query)->where('actif', true)->count(),
+            'inactive' => (clone $query)->where('actif', false)->count(),
+            'by_type' => [
+                'number' => (clone $query)->where('type', 'number')->count(),
+                'select' => (clone $query)->where('type', 'select')->count(),
+                'color' => (clone $query)->where('type', 'color')->count(),
+            ]
+        ];
+
+        return response()->json($stats);
     }
 
     /**
@@ -50,10 +163,8 @@ class AttributesController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:attributes,name',
-            'description' => 'nullable|string|max:500',
-            'type' => 'required|in:text,number,select,boolean,date',
-            'is_required' => 'boolean',
-            'is_searchable' => 'boolean',
+            'type' => 'required|in:number,select,color',
+            'unit' => 'nullable|string|max:50',
         ]);
 
         if ($validator->fails()) {
@@ -91,23 +202,27 @@ class AttributesController extends Controller
     }
 
     /**
-     * Supprime un attribut
+     * Supprime un attribut (désactive au lieu de supprimer)
      */
     public function destroy(Attribute $attribute)
     {
         $permissionCheck = $this->checkAdminPermissions();
         if ($permissionCheck) return $permissionCheck;
 
-        // Vérifier si l'attribut est utilisé
-        if ($attribute->values()->count() > 0) {
-            return redirect()->route('settings.attributes.index')
-                ->with('error', 'Impossible de supprimer cet attribut car il possède des valeurs associées.');
+        // Compter les articles et variants liés
+        $articlesCount = $attribute->articles_count;
+        $variantsCount = $attribute->variants_count;
+
+        // Désactiver l'attribut au lieu de le supprimer
+        $attribute->deactivate();
+
+        $message = 'Attribut désactivé avec succès.';
+        if ($articlesCount > 0 || $variantsCount > 0) {
+            $message = "Attribut désactivé avec succès. {$articlesCount} articles et {$variantsCount} variants sont encore liés à cet attribut.";
         }
 
-        $attribute->delete();
-
         return redirect()->route('settings.attributes.index')
-            ->with('success', 'Attribut supprimé avec succès.');
+            ->with('success', $message);
     }
 
     /**
@@ -119,8 +234,20 @@ class AttributesController extends Controller
         if ($permissionCheck) return $permissionCheck;
 
         $values = $attribute->values()->orderBy('order')->orderBy('value')->get();
+        $inactiveValues = $attribute->values()->inactive()->orderBy('order')->orderBy('value')->get();
 
-        return view('panel.settings.attributes.values', compact('attribute', 'values'));
+        // Charger les compteurs d'articles et variants pour chaque valeur
+        foreach ($values as $value) {
+            $value->articles_count = $value->getArticlesCountAttribute();
+            $value->variants_count = $value->getVariantsCountAttribute();
+        }
+
+        foreach ($inactiveValues as $value) {
+            $value->articles_count = $value->getArticlesCountAttribute();
+            $value->variants_count = $value->getVariantsCountAttribute();
+        }
+
+        return view('panel.settings.attributes.values', compact('attribute', 'values', 'inactiveValues'));
     }
 
     /**
@@ -128,15 +255,43 @@ class AttributesController extends Controller
      */
     public function storeValue(Request $request, Attribute $attribute)
     {
+        Log::debug('storeValue appelé', [
+            'user_id' => auth()->id(),
+            'attribute_id' => $attribute->id,
+            'is_ajax' => $request->ajax(),
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'data' => $request->all(),
+        ]);
+
         $permissionCheck = $this->checkAdminPermissions();
-        if ($permissionCheck) return $permissionCheck;
+        if ($permissionCheck) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permission refusée.'
+                ], 403);
+            }
+            return $permissionCheck;
+        }
+
+        // Règles de validation selon le type d'attribut
+        $valueRules = ['required', 'max:255'];
+        if ($attribute->type === 'number') {
+            $valueRules[] = 'numeric';
+        } else {
+            $valueRules[] = 'string';
+        }
 
         $validator = Validator::make($request->all(), [
-            'value' => 'required|string|max:255',
-            'description' => 'nullable|string|max:500',
+            'value' => $valueRules,
+            'second_value' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
+            }
             return redirect()->back()
                 ->withErrors($validator)
                 ->withInput();
@@ -144,6 +299,9 @@ class AttributesController extends Controller
 
         // Vérifier si la valeur existe déjà
         if ($attribute->values()->where('value', $request->value)->exists()) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json(['success' => false, 'message' => 'Cette valeur existe déjà pour cet attribut.'], 409);
+            }
             return redirect()->back()
                 ->with('error', 'Cette valeur existe déjà pour cet attribut.')
                 ->withInput();
@@ -155,9 +313,14 @@ class AttributesController extends Controller
 
         $attribute->values()->create([
             'value' => $request->value,
-            'description' => $request->description,
+            'second_value' => $request->second_value,
             'order' => $order
         ]);
+
+        if ($request->ajax() || $request->wantsJson()) {
+            Log::debug('storeValue - retour JSON succès');
+            return response()->json(['success' => true, 'message' => 'Valeur ajoutée avec succès.']);
+        }
 
         return redirect()->route('settings.attributes.values', $attribute)
             ->with('success', 'Valeur ajoutée avec succès.');
@@ -168,15 +331,46 @@ class AttributesController extends Controller
      */
     public function updateValue(Request $request, Attribute $attribute, AttributeValue $value)
     {
+        Log::debug('updateValue appelé', [
+            'user_id' => auth()->id(),
+            'attribute_id' => $attribute->id,
+            'value_id' => $value->id,
+            'is_ajax' => $request->ajax(),
+            'method' => $request->method(),
+            'url' => $request->fullUrl(),
+            'data' => $request->all(),
+        ]);
+
         $permissionCheck = $this->checkAdminPermissions();
-        if ($permissionCheck) return $permissionCheck;
+        if ($permissionCheck) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permission refusée.'
+                ], 403);
+            }
+            return $permissionCheck;
+        }
+
+        // Règles de validation selon le type d'attribut
+        $valueRules = ['required', 'max:255'];
+        if ($attribute->type === 'number') {
+            $valueRules[] = 'numeric';
+        } else {
+            $valueRules[] = 'string';
+        }
 
         $validator = Validator::make($request->all(), [
-            'value' => 'required|string|max:255',
-            'description' => 'nullable|string|max:500',
+            'value' => $valueRules,
+            'second_value' => 'nullable|string|max:255',
         ]);
 
         if ($validator->fails()) {
+            Log::debug('updateValue - validation échouée', [
+                'errors' => $validator->errors()->toArray(),
+                'data' => $request->all()
+            ]);
+
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
             }
@@ -197,7 +391,7 @@ class AttributesController extends Controller
 
         $value->update([
             'value' => $request->value,
-            'description' => $request->description
+            'second_value' => $request->second_value
         ]);
 
         if ($request->ajax() || $request->wantsJson()) {
@@ -218,10 +412,8 @@ class AttributesController extends Controller
 
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:attributes,name,' . $attribute->id,
-            'description' => 'nullable|string|max:500',
-            'type' => 'required|in:text,number,select,boolean,date',
-            'is_required' => 'boolean',
-            'is_searchable' => 'boolean',
+            'type' => 'required|in:number,select,color',
+            'unit' => 'nullable|string|max:50',
         ]);
 
         if ($validator->fails()) {
@@ -237,23 +429,53 @@ class AttributesController extends Controller
     }
 
     /**
-     * Supprime une valeur d'attribut
+     * Supprime une valeur d'attribut (désactive au lieu de supprimer)
      */
     public function destroyValue(Attribute $attribute, AttributeValue $value)
     {
         $permissionCheck = $this->checkAdminPermissions();
-        if ($permissionCheck) return $permissionCheck;
-
-        // Vérifier si la valeur est utilisée dans des articles
-        if ($value->articles()->count() > 0) {
-            return redirect()->route('settings.attributes.values', $attribute)
-                ->with('error', 'Impossible de supprimer cette valeur car elle est utilisée par des articles.');
+        if ($permissionCheck) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Permission refusée.'
+                ], 403);
+            }
+            return $permissionCheck;
         }
 
-        $value->delete();
+        try {
+            // Compter les articles et variants liés
+            $articlesCount = $value->getArticlesCountAttribute();
+            $variantsCount = $value->getVariantsCountAttribute();
 
-        return redirect()->route('settings.attributes.values', $attribute)
-            ->with('success', 'Valeur supprimée avec succès.');
+            // Désactiver la valeur au lieu de la supprimer
+            $value->deactivate();
+
+            $message = 'Valeur désactivée avec succès.';
+            if ($articlesCount > 0 || $variantsCount > 0) {
+                $message = "Valeur désactivée avec succès. {$articlesCount} articles et {$variantsCount} variants sont encore liés à cette valeur.";
+            }
+
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $message
+                ]);
+            }
+
+            return redirect()->route('settings.attributes.values', $attribute)
+                ->with('success', $message);
+        } catch (Exception $e) {
+            if (request()->ajax() || request()->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erreur lors de la désactivation : ' . $e->getMessage()
+                ], 500);
+            }
+            return redirect()->route('settings.attributes.values', $attribute)
+                ->with('error', 'Erreur lors de la désactivation : ' . $e->getMessage());
+        }
     }
 
     public function updateValuesOrder(Request $request, Attribute $attribute)
@@ -293,7 +515,7 @@ class AttributesController extends Controller
             'value' => [
                 'id' => $value->id,
                 'value' => $value->value,
-                'description' => $value->description,
+                'second_value' => $value->second_value,
                 'order' => $value->order,
                 'variants_count' => $variantsCount,
                 'articles_count' => $articlesCount,
@@ -308,7 +530,65 @@ class AttributesController extends Controller
      */
     public function ajaxTable(Attribute $attribute)
     {
-        $values = $attribute->values()->orderBy('order')->orderBy('value')->get();
+        $values = $attribute->values()->active()->orderBy('order')->orderBy('value')->get();
+
+        // Charger les compteurs d'articles et variants pour chaque valeur
+        foreach ($values as $value) {
+            $value->articles_count = $value->getArticlesCountAttribute();
+            $value->variants_count = $value->getVariantsCountAttribute();
+        }
+
         return view('panel.settings.attributes._table', compact('attribute', 'values'))->render();
+    }
+
+    /**
+     * Retourne le tableau des valeurs d'attributs inactives en AJAX
+     */
+    public function ajaxArchivesTable(Attribute $attribute)
+    {
+        $inactiveValues = $attribute->values()->inactive()->orderBy('order')->orderBy('value')->get();
+
+        // Charger les compteurs d'articles et variants pour chaque valeur
+        foreach ($inactiveValues as $value) {
+            $value->articles_count = $value->getArticlesCountAttribute();
+            $value->variants_count = $value->getVariantsCountAttribute();
+        }
+
+        return view('panel.settings.attributes._archives_table', compact('attribute', 'inactiveValues'))->render();
+    }
+
+    /**
+     * Réactive un attribut
+     */
+    public function activate(Attribute $attribute)
+    {
+        $permissionCheck = $this->checkAdminPermissions();
+        if ($permissionCheck) return $permissionCheck;
+
+        $attribute->activate();
+
+        return redirect()->route('settings.attributes.index')
+            ->with('success', 'Attribut réactivé avec succès.');
+    }
+
+    /**
+     * Réactive une valeur d'attribut
+     */
+    public function activateValue(Attribute $attribute, AttributeValue $value)
+    {
+        $permissionCheck = $this->checkAdminPermissions();
+        if ($permissionCheck) return $permissionCheck;
+
+        $value->activate();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Valeur réactivée avec succès.'
+            ]);
+        }
+
+        return redirect()->route('settings.attributes.values', $attribute)
+            ->with('success', 'Valeur réactivée avec succès.');
     }
 }

@@ -16,11 +16,11 @@ class LoadingSpinner extends Component
      * Create a new component instance.
      */
     public function __construct(
-        string $size = 'w-8 h-8',
+        string $size = 'medium',
         string $message = 'Chargement...',
         bool $overlay = false
     ) {
-        $this->size = $size;
+        $this->size = $this->getSizeClasses($size);
         $this->message = $message;
         $this->overlay = $overlay;
     }
@@ -40,9 +40,9 @@ class LoadingSpinner extends Component
     /**
      * Get spinner size classes
      */
-    public function getSizeClasses(): string
+    public function getSizeClasses(string $size): string
     {
-        return match($this->size) {
+        return match ($size) {
             'small' => 'w-4 h-4',
             'medium' => 'w-8 h-8',
             'large' => 'w-12 h-12',

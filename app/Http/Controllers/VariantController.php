@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
-use App\Models\Variant;
 use App\Models\Attribute;
 use App\Models\AttributeValue;
+use App\Models\Variant;
+use Exception;
 use Illuminate\Http\Request;
 
 class VariantController extends Controller
@@ -28,7 +29,7 @@ class VariantController extends Controller
      */
     public function create(Article $article)
     {
-        $attributes = Attribute::with('attributeValues')->orderBy('name')->get();
+        $attributes = Attribute::active()->with('activeValues')->orderBy('name')->get();
 
         return view('panel.variants.create', compact('article', 'attributes'));
     }
@@ -79,7 +80,7 @@ class VariantController extends Controller
                 ->route('articles.variants.show', [$article, $variant])
                 ->with('success', 'Variant créé avec succès');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -155,7 +156,7 @@ class VariantController extends Controller
                 ->route('articles.variants.show', [$article, $variant])
                 ->with('success', 'Variant mis à jour avec succès');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()
                 ->back()
                 ->withInput()
@@ -191,7 +192,7 @@ class VariantController extends Controller
                 ->route('articles.variants.index', $article)
                 ->with('success', 'Variant supprimé avec succès');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()
                 ->back()
                 ->with('error', 'Erreur lors de la suppression: ' . $e->getMessage());
@@ -219,7 +220,7 @@ class VariantController extends Controller
                 ->route('articles.variants.show', [$article, $newVariant])
                 ->with('success', 'Variant dupliqué avec succès');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()
                 ->back()
                 ->with('error', 'Erreur lors de la duplication: ' . $e->getMessage());
@@ -269,7 +270,7 @@ class VariantController extends Controller
                 ->route('articles.variants.index', $article)
                 ->with('success', "$createdVariants variants créés avec succès");
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return redirect()
                 ->back()
                 ->with('error', 'Erreur lors de la génération: ' . $e->getMessage());

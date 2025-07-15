@@ -2,9 +2,10 @@
 
 namespace App\Services;
 
-use App\Models\{Article, Variant, Stock, AttributeValue, Media};
-use Illuminate\Support\Facades\{DB, Storage};
+use App\Models\{Article, AttributeValue, Stock, Variant};
+use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\{DB};
 
 class VariantService
 {
@@ -76,11 +77,19 @@ class VariantService
                 continue;
             }
 
-            // Créer ou récupérer la valeur d'attribut
-            $attributeValue = AttributeValue::firstOrCreate([
+            // Vérifier que l'attribut est actif
+            $attribute = Attribute::active()->find($attrData['attribute_id']);
+            if (!$attribute) {
+                continue;
+            }
+
+            // Créer ou récupérer la valeur d'attribut (active)
+            $attributeValue = AttributeValue::active()->firstOrCreate([
                 'attribute_id' => $attrData['attribute_id'],
                 'value' => $attrData['value'],
-                'secondValue' => $attrData['second_value'] ?? null,
+                'second_value' => $attrData['second_value'] ?? null,
+            ], [
+                'actif' => true
             ]);
 
             // Associer au variant
@@ -101,7 +110,7 @@ class VariantService
                 'quantity' => $stockData['quantity'],
                 'lot_reference' => $stockData['lot_reference'] ?? null,
                 'expiry_date' => isset($stockData['expiry_date']) ?
-                    \Carbon\Carbon::parse($stockData['expiry_date']) : null,
+                    Carbon::parse($stockData['expiry_date']) : null,
             ]
         );
     }
