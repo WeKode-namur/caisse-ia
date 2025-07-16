@@ -141,6 +141,12 @@
                                         </div>
                                     </x-dropdown-link>
                                 </form>
+
+                                <div class="border-t border-gray-200 dark:border-gray-600"></div>
+
+                                <div class="text-right pt-1 text-xs text-gray-600 dark:text-gray-400 px-2"><i
+                                        class="mr-1">Version actuel
+                                        :</i> {{ preg_replace('/v/', '', config('custom.version.current')) }}</div>
                             </div>
                         </x-slot>
                     </x-dropdown>

@@ -73,7 +73,7 @@
          :class="[
              isMobile ? 'w-full fixed inset-y-0 left-0' : (expanded ? 'w-64' : 'w-16'),
              !isMobile ? 'relative' : '',
-             isMobile ? 'h-screen' : 'h-full min-h-screen'
+             isMobile ? 'h-screen' : 'h-full '
          ]"
          class="z-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transform transition-all duration-300 flex flex-col">
 

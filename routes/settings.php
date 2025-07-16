@@ -2,13 +2,13 @@
 
 use App\Http\Controllers\Settings\AttributesController;
 use App\Http\Controllers\Settings\SettingsController;
+use App\Http\Controllers\Settings\UpdatesController;
 use Illuminate\Support\Facades\Route;
 
 // use App\Http\Controllers\Settings\CategoriesController;
 // use App\Http\Controllers\Settings\LogsController;
 // use App\Http\Controllers\Settings\RolesController;
 
-// use App\Http\Controllers\Settings\UpdatesController;
 // use App\Http\Controllers\Settings\UsersController;
 
 
@@ -46,6 +46,14 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
     Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
         Route::post('/bulk-update', [SettingsController::class, 'bulkUpdateZeroStock'])->name('bulk-update');
     });
+
+    // Routes AJAX pour les mises à jour
+    Route::prefix('updates')->name('updates.')->group(function () {
+        Route::get('/versions', [UpdatesController::class, 'getVersions'])->name('versions');
+        Route::get('/search', [UpdatesController::class, 'searchVersions'])->name('search');
+        Route::get('/content', [UpdatesController::class, 'getVersionContent'])->name('content');
+        Route::get('/stats', [UpdatesController::class, 'getStats'])->name('stats');
+    });
 });
 
 // Routes principales (avec confirmation de mot de passe)
@@ -68,6 +76,11 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
     // Articles Z (articles avec stock zéro)
     Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
         Route::get('/', [SettingsController::class, 'zeroStock'])->name('index');
+    });
+
+    // Historique des mises à jour
+    Route::prefix('updates')->name('updates.')->group(function () {
+        Route::get('/', [UpdatesController::class, 'index'])->name('index');
     });
 });
 

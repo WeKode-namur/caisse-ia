@@ -42,7 +42,7 @@
          x-transition:leave="ease-in duration-200"
          x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
          x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-         class="flex items-center justify-center min-h-screen px-4 py-6 sm:p-0">
+         class="flex items-center justify-center min-h-screen px-4 py-6 sm:p-0 lg:my-6">
 
         <div @click.stop
              class="relative w-full max-w-{{ $size ?? '' }} bg-white dark:bg-gray-800 rounded-lg shadow-xl transform transition-all">
