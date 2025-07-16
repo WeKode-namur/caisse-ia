@@ -1,0 +1,167 @@
+[
+    {
+        "class": "fas fa-tree",
+        "name": "Arbre",
+        "category": "Nature"
+    },
+    {
+        "class": "fas fa-leaf",
+        "name": "Feuille",
+        "category": "Nature"
+    },
+    {
+        "class": "fas fa-seedling",
+        "name": "Jeune pousse",
+        "category": "Nature"
+    },
+    {
+        "class": "fas fa-tshirt",
+        "name": "T-shirt",
+        "category": "Vêtements"
+    },
+    {
+        "class": "fas fa-shoe-prints",
+        "name": "Chaussures",
+        "category": "Vêtements"
+    },
+    {
+        "class": "fas fa-hat-cowboy",
+        "name": "Chapeau",
+        "category": "Vêtements"
+    },
+    {
+        "class": "fas fa-laptop",
+        "name": "Ordinateur",
+        "category": "Technologie"
+    },
+    {
+        "class": "fas fa-mobile-alt",
+        "name": "Téléphone",
+        "category": "Technologie"
+    },
+    {
+        "class": "fas fa-tablet-alt",
+        "name": "Tablette",
+        "category": "Technologie"
+    },
+    {
+        "class": "fas fa-apple-alt",
+        "name": "Pomme",
+        "category": "Alimentation"
+    },
+    {
+        "class": "fas fa-carrot",
+        "name": "Carotte",
+        "category": "Alimentation"
+    },
+    {
+        "class": "fas fa-bread-slice",
+        "name": "Pain",
+        "category": "Alimentation"
+    },
+    {
+        "class": "fas fa-car",
+        "name": "Voiture",
+        "category": "Transport"
+    },
+    {
+        "class": "fas fa-bus",
+        "name": "Bus",
+        "category": "Transport"
+    },
+    {
+        "class": "fas fa-bicycle",
+        "name": "Vélo",
+        "category": "Transport"
+    },
+    {
+        "class": "fas fa-home",
+        "name": "Maison",
+        "category": "Maison"
+    },
+    {
+        "class": "fas fa-couch",
+        "name": "Canapé",
+        "category": "Maison"
+    },
+    {
+        "class": "fas fa-bed",
+        "name": "Lit",
+        "category": "Maison"
+    },
+    {
+        "class": "fas fa-store",
+        "name": "Magasin",
+        "category": "Commerce"
+    },
+    {
+        "class": "fas fa-shopping-cart",
+        "name": "Panier",
+        "category": "Commerce"
+    },
+    {
+        "class": "fas fa-tags",
+        "name": "Étiquettes",
+        "category": "Commerce"
+    },
+    {
+        "class": "fas fa-heartbeat",
+        "name": "Santé",
+        "category": "Santé"
+    },
+    {
+        "class": "fas fa-user-md",
+        "name": "Médecin",
+        "category": "Santé"
+    },
+    {
+        "class": "fas fa-pills",
+        "name": "Pilules",
+        "category": "Santé"
+    },
+    {
+        "class": "fas fa-basketball-ball",
+        "name": "Basket",
+        "category": "Loisirs"
+    },
+    {
+        "class": "fas fa-futbol",
+        "name": "Football",
+        "category": "Loisirs"
+    },
+    {
+        "class": "fas fa-music",
+        "name": "Musique",
+        "category": "Loisirs"
+    },
+    {
+        "class": "fas fa-dog",
+        "name": "Chien",
+        "category": "Animaux"
+    },
+    {
+        "class": "fas fa-cat",
+        "name": "Chat",
+        "category": "Animaux"
+    },
+    {
+        "class": "fas fa-fish",
+        "name": "Poisson",
+        "category": "Animaux"
+    },
+    {
+        "class": "fas fa-wrench",
+        "name": "Clé",
+        "category": "Outils"
+    },
+    {
+        "class": "fas fa-tools",
+        "name": "Outils",
+        "category": "Outils"
+    },
+    {
+        "class": "fas fa-hammer",
+        "name": "Marteau",
+        "category": "Outils"
+    }
+]

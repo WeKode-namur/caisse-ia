@@ -150,7 +150,7 @@
     </div>
 
     <!-- Modal pour ajouter une valeur -->
-    <x-modal name="add-value" title="Ajouter une valeur" size="lg" icon="fas fa-plus-circle" iconColor="green">
+    <x-modal name="add-value" title="Ajouter une valeur" size="lg" icon="plus" iconColor="blue">
         <form action="{{ route('settings.attributes.values.store', $attribute) }}" method="POST" data-ajax>
             @csrf
             <div class="space-y-4">
@@ -223,7 +223,7 @@
     </x-modal>
 
     <!-- Modal pour modifier une valeur -->
-    <x-modal name="edit-value" title="Modifier la valeur" size="2xl" icon="fas fa-pen" iconColor="amber">
+    <x-modal name="edit-value" title="Modifier la valeur" size="2xl" icon="edit" iconColor="amber">
         <form id="editValueForm" method="POST">
             @csrf
             @method('PUT')

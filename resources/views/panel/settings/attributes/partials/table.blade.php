@@ -116,7 +116,7 @@
 
                             <!-- Modifier -->
                             <a href="{{ route('settings.attributes.edit', $attribute) }}"
-                               class="group relative p-1 lg:p-2 text-blue-600 hover:text-blue-900 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                               class="group relative p-1 lg:p-2 text-amber-600 hover:text-amber-900 hover:bg-amber-50 rounded-lg transition-colors duration-200"
                                title="Modifier cet attribut">
                                 <i class="fa-solid fa-pen w-4 h-4 lg:w-5 lg:h-5"></i>
                                 <!-- Tooltip -->

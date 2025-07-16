@@ -1,11 +1,11 @@
 <?php
 
 use App\Http\Controllers\Settings\AttributesController;
+use App\Http\Controllers\Settings\CategoriesController;
 use App\Http\Controllers\Settings\SettingsController;
 use App\Http\Controllers\Settings\UpdatesController;
 use Illuminate\Support\Facades\Route;
 
-// use App\Http\Controllers\Settings\CategoriesController;
 // use App\Http\Controllers\Settings\LogsController;
 // use App\Http\Controllers\Settings\RolesController;
 
@@ -42,6 +42,27 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
         Route::post('/{attribute}/values/order', [AttributesController::class, 'updateValuesOrder'])->name('values.updateOrder');
     });
 
+    // Routes AJAX pour les catégories
+    Route::prefix('categories')->name('categories.')->group(function () {
+        Route::get('/table', [CategoriesController::class, 'getTable'])->name('table');
+        Route::get('/stats', [CategoriesController::class, 'getStats'])->name('stats');
+        Route::get('/icons', [CategoriesController::class, 'getIcons'])->name('icons');
+        Route::post('/', [CategoriesController::class, 'store'])->name('store');
+        Route::put('/{category}', [CategoriesController::class, 'update'])->name('update');
+        Route::patch('/{category}/toggle', [CategoriesController::class, 'toggle'])->name('toggle');
+        Route::delete('/{category}', [CategoriesController::class, 'destroy'])->name('destroy');
+
+        // Routes pour les types
+        Route::prefix('{category}/types')->name('types.')->group(function () {
+            Route::get('/table', [CategoriesController::class, 'getTypesTable'])->name('table');
+            Route::get('/stats', [CategoriesController::class, 'getTypesStats'])->name('stats');
+            Route::post('/', [CategoriesController::class, 'storeType'])->name('store');
+            Route::put('/{type}', [CategoriesController::class, 'updateType'])->name('update');
+            Route::patch('/{type}/toggle', [CategoriesController::class, 'toggleType'])->name('toggle');
+            Route::delete('/{type}', [CategoriesController::class, 'destroyType'])->name('destroy');
+        });
+    });
+
     // Actions pour les articles zero-stock
     Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
         Route::post('/bulk-update', [SettingsController::class, 'bulkUpdateZeroStock'])->name('bulk-update');
@@ -73,6 +94,16 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
         Route::get('/{attribute}/values', [AttributesController::class, 'values'])->name('values');
     });
 
+    // Gestion des catégories (vues principales uniquement)
+    Route::prefix('categories')->name('categories.')->group(function () {
+        Route::get('/', [CategoriesController::class, 'index'])->name('index');
+        Route::get('/create', [CategoriesController::class, 'create'])->name('create');
+        Route::get('/{category}/edit', [CategoriesController::class, 'edit'])->name('edit');
+
+        // Types des catégories (vues uniquement)
+        Route::get('/{category}/types', [CategoriesController::class, 'types'])->name('types');
+    });
+
     // Articles Z (articles avec stock zéro)
     Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
         Route::get('/', [SettingsController::class, 'zeroStock'])->name('index');
@@ -84,24 +115,6 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
     });
 });
 
-
-    // Gestion des catégories (temporairement commenté)
-    /*
-    Route::prefix('categories')->name('categories.')->group(function () {
-        Route::get('/', [CategoriesController::class, 'index'])->name('index');
-        Route::get('/create', [CategoriesController::class, 'create'])->name('create');
-        Route::post('/', [CategoriesController::class, 'store'])->name('store');
-        Route::get('/{category}/edit', [CategoriesController::class, 'edit'])->name('edit');
-        Route::put('/{category}', [CategoriesController::class, 'update'])->name('update');
-        Route::delete('/{category}', [CategoriesController::class, 'destroy'])->name('destroy');
-
-        // Sous-catégories
-        Route::get('/{category}/subcategories', [CategoriesController::class, 'subcategories'])->name('subcategories');
-        Route::post('/{category}/subcategories', [CategoriesController::class, 'storeSubcategory'])->name('subcategories.store');
-        Route::put('/{category}/subcategories/{subcategory}', [CategoriesController::class, 'updateSubcategory'])->name('subcategories.update');
-        Route::delete('/{category}/subcategories/{subcategory}', [CategoriesController::class, 'destroySubcategory'])->name('subcategories.destroy');
-    });
-    */
 
     // Gestion des utilisateurs (temporairement commenté)
     /*

@@ -13,6 +13,12 @@ class Category extends Model
     protected $fillable = [
         'name',
         'description',
+        'actif',
+        'icon',
+    ];
+
+    protected $casts = [
+        'actif' => 'boolean',
     ];
 
     /**

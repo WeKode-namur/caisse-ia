@@ -155,12 +155,11 @@
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                {{--                                <a href="{{ route('settings.categories.index') }}"--}}
-                                <button href="" disabled
-                                        class="disabled:bg-gray-200 w-full disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                                <a href="{{ route('settings.categories.index') }}"
+                                   class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
                                     <span class="text-sm text-gray-700 dark:text-gray-300">Gestion des catégories</span>
                                     <i class="fas fa-chevron-right text-gray-400"></i>
-                                </button>
+                                </a>
                             </div>
                         </div>
 

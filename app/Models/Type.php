@@ -15,6 +15,11 @@ class Type extends Model
         'name',
         'description',
         'category_id',
+        'actif',
+    ];
+
+    protected $casts = [
+        'actif' => 'boolean',
     ];
 
     /**
