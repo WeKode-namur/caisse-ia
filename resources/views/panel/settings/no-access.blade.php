@@ -1,6 +1,6 @@
 <x-app-layout>
     <div
-        class="min-h-screen flex items-center justify-center bg-gradient-to-r from-violet-50 to-blue-50 dark:from-blue-950 dark:to-violet-950">
+        class="min-h-screen flex items-center justify-center">
         <div class="max-w-md w-full space-y-8">
             <div class="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-8 text-center">
                 <!-- Icône d'accès refusé -->
@@ -24,12 +24,12 @@
                     <div class="flex items-center justify-center space-x-2">
                         <i class="fas fa-shield-alt text-gray-500"></i>
                         <span class="text-sm text-gray-600 dark:text-gray-400">
-                            Niveau d'administrateur requis : <span class="font-semibold text-gray-900 dark:text-white">80</span>
+                            Niveau d'administrateur requis : <span class="font-semibold text-gray-900 dark:text-white">Admin</span>
                         </span>
                     </div>
-                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        Votre niveau actuel : <span class="font-semibold">{{ Auth::user()->is_admin }}</span>
-                    </div>
+                    {{--                    <div class="mt-2 text-xs text-gray-500 dark:text-gray-400">--}}
+                    {{--                        Votre niveau actuel : <span class="font-semibold">{{ Auth::user()->is_admin }}</span>--}}
+                    {{--                    </div>--}}
                 </div>
 
                 <!-- Actions -->

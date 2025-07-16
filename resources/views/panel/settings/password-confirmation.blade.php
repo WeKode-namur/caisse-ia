@@ -1,6 +1,6 @@
 <x-app-layout>
     <div
-        class="min-h-screen flex items-center justify-center bg-gradient-to-r from-violet-50 to-blue-50 dark:from-blue-950 dark:to-violet-950">
+        class="min-h-screen flex items-center justify-center">
         <div class="max-w-md w-full space-y-8">
             <div class="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-8">
                 <!-- En-tête -->

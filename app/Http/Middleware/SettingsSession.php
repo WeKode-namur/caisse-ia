@@ -36,10 +36,10 @@ class SettingsSession
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'error' => 'Accès refusé. Niveau d\'administrateur insuffisant.',
-                    'redirect' => route('settings.index')
+                    'redirect' => route('settings.no-access')
                 ], 403);
             }
-            return redirect()->route('settings.index')->with('error', 'Accès refusé. Niveau d\'administrateur insuffisant.');
+            return redirect()->route('settings.no-access');
         }
 
         // Vérifier si la confirmation de mot de passe est nécessaire

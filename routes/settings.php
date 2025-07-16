@@ -12,8 +12,14 @@ use Illuminate\Support\Facades\Route;
 // use App\Http\Controllers\Settings\UsersController;
 
 
+// Route d'accès refusé (en dehors du middleware settings.session)
+
+
 // Routes AJAX (sans confirmation de mot de passe, mais avec vérification admin)
 Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verified', 'module.access'])->group(function () {
+    Route::get('/no-access', function () {
+        return view('panel.settings.no-access');
+    })->name('no-access');
     // Routes AJAX pour les attributs
     Route::prefix('attributes')->name('attributes.')->group(function () {
         Route::get('/stats', [AttributesController::class, 'getStats'])->name('stats');
