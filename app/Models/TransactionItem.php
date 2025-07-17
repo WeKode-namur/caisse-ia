@@ -88,6 +88,14 @@ class TransactionItem extends Model
         return $this->hasMany(TransactionDiscount::class, 'target_item_id');
     }
 
+    /**
+     * Article inconnu associé (si source = unknown_item)
+     */
+    public function unknownItem()
+    {
+        return $this->hasOne(UnknownItem::class);
+    }
+
     // ===== ACCESSORS =====
 
     /**

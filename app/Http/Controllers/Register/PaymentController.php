@@ -3,11 +3,20 @@
 namespace App\Http\Controllers\Register;
 
 use App\Http\Controllers\Controller;
+use Exception;
+use App\Models\{Company,
+    Customer,
+    LoyaltyPoint,
+    Payment,
+    PaymentMethod,
+    Stock,
+    Transaction,
+    TransactionItem,
+    UnknownItem};
 use App\Services\RegisterSessionService;
-use Illuminate\Support\Facades\Log;
-use App\Models\{PaymentMethod, Transaction, Payment, Stock, TransactionItem, ItemsUnknown, LoyaltyPoint};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PaymentController extends Controller
 {
@@ -133,7 +142,7 @@ class PaymentController extends Controller
                 ], 422);
             }
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors du traitement du paiement: ' . $e->getMessage()
@@ -210,7 +219,7 @@ class PaymentController extends Controller
                 ]
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors du remboursement: ' . $e->getMessage()
@@ -341,19 +350,8 @@ class PaymentController extends Controller
                 $margin = $totalPriceTTC - $discountAmount - $totalCost;
 
                 // Déterminer la source
-                $isArticleZ = empty($item['variant_id']) || empty($item['stock_id']);
-                $source = $isArticleZ ? 'article_z' : 'stock';
-                // Si article Z, on l'insère dans items_unknown
-                if ($isArticleZ) {
-                    ItemsUnknown::create([
-                        'article_name' => $item['article_name'] ?? 'Inconnu',
-                        'description' => isset($item['variant_attributes']) ? json_encode($item['variant_attributes']) : null,
-                        'price' => $unitPriceTTC,
-                        'quantity' => $quantity,
-                        'status' => 'new',
-                        'id_variant' => $item['variant_id'] ?? null,
-                    ]);
-                }
+                $isArticleInconnu = empty($item['variant_id']) || empty($item['stock_id']);
+                $source = $isArticleInconnu ? 'unknown_item' : 'stock';
 
                 $transactionItem = $transaction->items()->create([
                     'variant_id' => $item['variant_id'],
@@ -376,8 +374,21 @@ class PaymentController extends Controller
                     'source' => $source,
                 ]);
 
-                // 3. Décompter le stock en FIFO uniquement si ce n'est pas un article Z
-                if (!$isArticleZ) {
+                // Si c'est un article inconnu, créer l'enregistrement dans unknown_items
+                if ($isArticleInconnu) {
+                    UnknownItem::create([
+                        'transaction_item_id' => $transactionItem->id,
+                        'nom' => $item['article_name'] ?? 'Article inconnu',
+                        'description' => $item['description'] ?? null,
+                        'prix' => $unitPriceTTC,
+                        'tva' => $taxRate,
+                        'note_interne' => null,
+                        'est_regularise' => false,
+                    ]);
+                }
+
+                // 3. Décompter le stock en FIFO uniquement si ce n'est pas un article inconnu
+                if (!$isArticleInconnu) {
                     $this->decrementStockFIFO($transactionItem, $item['variant_id'], $quantity, $item['article_name'] ?? null);
                 }
             }
@@ -434,7 +445,7 @@ class PaymentController extends Controller
                 LoyaltyPoint::create($loyaltyData);
                 // Mise à jour du total de points sur le profil client/compagnie
                 if ($transaction->customer_id) {
-                    $customer = \App\Models\Customer::find($transaction->customer_id);
+                    $customer = Customer::find($transaction->customer_id);
                     if ($customer) {
                         $nouveauTotal = ($customer->loyalty_points ?? 0) + $points;
                         $customer->loyalty_points = $nouveauTotal;
@@ -442,7 +453,7 @@ class PaymentController extends Controller
                     }
                 }
                 if ($transaction->company_id) {
-                    $company = \App\Models\Company::find($transaction->company_id);
+                    $company = Company::find($transaction->company_id);
                     if ($company) {
                         $nouveauTotal = ($company->loyalty_points ?? 0) + $points;
                         $company->loyalty_points = $nouveauTotal;
@@ -459,7 +470,7 @@ class PaymentController extends Controller
             return redirect()->route('tickets.index', $transaction->id)
                              ->with('success', 'Vente finalisée avec succès.');
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             Log::error('Erreur lors de la finalisation de la vente: ' . $e->getMessage());
             return back()->with('error', $e->getMessage());
@@ -638,7 +649,7 @@ class PaymentController extends Controller
         // Si on n'a pas pu décompter toute la quantité, c'est un problème
         if ($remainingQuantity > 0) {
             $nom = $articleName ?? $variantId ?? 'Inconnu';
-            throw new \Exception("Stock insuffisant pour l'article '{$nom}'. Manquant: {$remainingQuantity}");
+            throw new Exception("Stock insuffisant pour l'article '{$nom}'. Manquant: {$remainingQuantity}");
         }
     }
 }

@@ -3,16 +3,12 @@
 namespace App\Http\Controllers\Register;
 
 use App\Http\Controllers\Controller;
-use App\Models\Variant;
-use App\Models\Stock;
-use App\Models\Customer;
 use App\Models\Company;
+use App\Models\Customer;
 use App\Models\Discount;
-use App\Models\GiftCard;
-use App\Models\SessionItem;
+use App\Models\Variant;
 use App\Services\RegisterSessionService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 
 class CartController extends Controller
 {
@@ -152,7 +148,7 @@ class CartController extends Controller
 
         $item = $cart[$itemId];
 
-        // Si c'est un article temporaire (Article Z), on ne vérifie pas le stock ni le variant
+        // Si c'est un article temporaire (Article inconnu), on ne vérifie pas le stock ni le variant
         if (isset($item['attributes']['is_temporary']) && $item['attributes']['is_temporary']) {
             $updates = [
                 'quantity' => $request->quantity
@@ -175,7 +171,7 @@ class CartController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Article Z mis à jour',
+                'message' => 'Article inconnu mis à jour',
                 'item' => $updatedItem ? $this->formatCartItem($updatedItem) : null,
                 'cart_totals' => RegisterSessionService::calculateTotals()
             ]);
@@ -468,7 +464,7 @@ class CartController extends Controller
     }
 
     /**
-     * Ajoute un article temporaire (Article Z) au panier
+     * Ajoute un article temporaire (Article inconnu) au panier
      */
     public function addTemporaryItem(Request $request)
     {
@@ -476,6 +472,7 @@ class CartController extends Controller
             'name' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
             'price' => 'required|numeric|min:0.01',
+            'tva' => 'required|integer|in:0,6,12,21',
         ]);
 
         $itemData = [
@@ -487,7 +484,7 @@ class CartController extends Controller
             'quantity' => 1,
             'unit_price' => $request->price,
             'total_price' => $request->price,
-            'tax_rate' => 21, // TVA par défaut
+            'tax_rate' => $request->tva,
             'cost_price' => 0,
             'attributes' => [
                 'is_temporary' => true,
@@ -495,14 +492,14 @@ class CartController extends Controller
             ],
         ];
 
-        $itemId = \App\Services\RegisterSessionService::addCartItem($itemData);
+        $itemId = RegisterSessionService::addCartItem($itemData);
         $itemData['id'] = $itemId;
 
         return response()->json([
             'success' => true,
-            'message' => "Article Z ajouté au panier",
+            'message' => "Article inconnu ajouté au panier",
             'item' => $this->formatCartItem($itemData),
-            'cart_totals' => \App\Services\RegisterSessionService::calculateTotals(),
+            'cart_totals' => RegisterSessionService::calculateTotals(),
         ]);
     }
 
@@ -536,7 +533,7 @@ class CartController extends Controller
             $customerData['company_number_be'] = $client->company_number_be;
         }
 
-        \App\Services\RegisterSessionService::setCustomer($customerData);
+        RegisterSessionService::setCustomer($customerData);
 
         return response()->json(['success' => true, 'customer' => $customerData]);
     }

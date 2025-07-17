@@ -163,28 +163,29 @@
                             </div>
                         </div>
 
-                        <!-- Articles Z -->
+                        <!-- Articles inconnus -->
                         <div
                             class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200">
                             <div class="flex items-center mb-3">
                                 <div
-                                    class="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center mr-3">
-                                    <i class="fas fa-exclamation-triangle text-red-600 dark:text-red-400"></i>
+                                    class="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center mr-3">
+                                    <i class="fas fa-question-circle text-orange-600 dark:text-orange-400"></i>
                                 </div>
                                 <div>
-                                    <h3 class="font-semibold text-gray-900 dark:text-white">Articles Z</h3>
-                                    <p class="text-sm text-gray-600 dark:text-gray-400">Stock épuisé</p>
+                                    <h3 class="font-semibold text-gray-900 dark:text-white">Articles inconnus</h3>
+                                    <p class="text-sm text-gray-600 dark:text-gray-400">Gérez les articles non
+                                        identifiés</p>
                                 </div>
                             </div>
                             <div class="space-y-2">
-                                {{--                                <a href="{{ route('settings.zero-stock.index') }}"--}}
-                                <button href="" disabled
-                                        class="disabled:bg-gray-200 w-full disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
-                                    <span class="text-sm text-gray-700 dark:text-gray-300">Articles en stock zéro</span>
-                                    <span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full font-medium">
-                                        {{ $stats['zero_stock_articles'] }}
+                                <a href="{{ route('settings.unknown-items.index') }}"
+                                   class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">
+                                    <span class="text-sm text-gray-700 dark:text-gray-300">Articles inconnus</span>
+                                    <span
+                                        class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded-full font-medium">
+                                        {{ $stats['unknown_items'] ?? 0 }}
                                     </span>
-                                </button>
+                                </a>
                             </div>
                         </div>
                     </div>

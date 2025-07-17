@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Attribute;
 use App\Models\Category;
+use App\Models\UnknownItem;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,6 +32,7 @@ class SettingsController extends Controller
             })->orWhereHas('variants', function ($query) {
                 $query->whereDoesntHave('stocks');
             })->count(),
+            'unknown_items' => UnknownItem::count(),
             'total_categories' => Category::count(),
             'total_attributes' => Attribute::count(),
             'total_users' => User::count(),
@@ -61,81 +63,6 @@ class SettingsController extends Controller
         return back()->withErrors([
             'password' => 'Le mot de passe fourni ne correspond pas à votre mot de passe actuel.',
         ]);
-    }
-
-    /**
-     * Afficher les articles avec stock zéro
-     */
-    public function zeroStock()
-    {
-        $articles = Article::whereDoesntHave('variants.stocks', function ($query) {
-            $query->where('quantity', '>', 0);
-        })
-            ->orWhereHas('variants', function ($query) {
-                $query->whereDoesntHave('stocks');
-            })
-            ->with(['category', 'variants.stocks'])
-            ->orderBy('name')
-            ->paginate(20);
-
-        return view('panel.settings.zero-stock.index', compact('articles'));
-    }
-
-    /**
-     * Mise à jour en masse des articles avec stock zéro
-     */
-    public function bulkUpdateZeroStock(Request $request)
-    {
-
-        $request->validate([
-            'action' => 'required|in:delete,archive,update_stock',
-            'article_ids' => 'required|array',
-            'article_ids.*' => 'exists:articles,id',
-        ]);
-
-        $articles = Article::whereIn('id', $request->article_ids)
-            ->where(function ($query) {
-                $query->whereDoesntHave('variants.stocks', function ($stockQuery) {
-                    $stockQuery->where('quantity', '>', 0);
-                })
-                    ->orWhereHas('variants', function ($variantQuery) {
-                        $variantQuery->whereDoesntHave('stocks');
-                    });
-            });
-
-        switch ($request->action) {
-            case 'delete':
-                $articles->delete();
-                $message = 'Articles supprimés avec succès.';
-                break;
-            case 'archive':
-                $articles->update(['status' => 'archived']);
-                $message = 'Articles archivés avec succès.';
-                break;
-            case 'update_stock':
-                $request->validate([
-                    'new_stock' => 'required|integer|min:0',
-                ]);
-
-                // Pour chaque article, créer un stock pour chaque variant
-                $articles->with('variants')->get()->each(function ($article) use ($request) {
-                    foreach ($article->variants as $variant) {
-                        // Créer ou mettre à jour le stock pour ce variant
-                        $variant->stocks()->updateOrCreate(
-                            ['variant_id' => $variant->id],
-                            [
-                                'quantity' => $request->new_stock,
-                                'buy_price' => $variant->buy_price ?? $article->buy_price ?? 0,
-                                'lot_reference' => 'STOCK-ZERO-UPDATE-' . now()->format('Y-m-d')
-                            ]
-                        );
-                    }
-                });
-                $message = 'Stock mis à jour avec succès.';
-                break;
-        }
-
-        return back()->with('success', $message);
     }
 
     /**

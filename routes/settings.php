@@ -3,6 +3,7 @@
 use App\Http\Controllers\Settings\AttributesController;
 use App\Http\Controllers\Settings\CategoriesController;
 use App\Http\Controllers\Settings\SettingsController;
+use App\Http\Controllers\Settings\UnknownItemsController;
 use App\Http\Controllers\Settings\UpdatesController;
 use Illuminate\Support\Facades\Route;
 
@@ -63,9 +64,17 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
         });
     });
 
-    // Actions pour les articles zero-stock
-    Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
-        Route::post('/bulk-update', [SettingsController::class, 'bulkUpdateZeroStock'])->name('bulk-update');
+    // Actions pour les articles inconnus
+    Route::prefix('unknown-items')->name('unknown-items.')->group(function () {
+        Route::get('/table', [UnknownItemsController::class, 'getTableData'])->name('table');
+        Route::get('/stats', [UnknownItemsController::class, 'getStats'])->name('stats');
+        Route::get('/variants', [UnknownItemsController::class, 'getVariantsForRegularization'])->name('variants');
+        Route::post('/search', [UnknownItemsController::class, 'searchArticles'])->name('search');
+        Route::post('/{unknownItem}/regularize', [UnknownItemsController::class, 'regularize'])->name('regularize');
+        Route::post('/{unknownItem}/mark-non-identifiable', [UnknownItemsController::class, 'markNonIdentifiable'])->name('mark-non-identifiable');
+        Route::delete('/{unknownItem}', [UnknownItemsController::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-action', [UnknownItemsController::class, 'bulkAction'])->name('bulk-action');
+        Route::get('/report', [UnknownItemsController::class, 'generateReport'])->name('report');
     });
 
     // Routes AJAX pour les mises à jour
@@ -104,9 +113,10 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
         Route::get('/{category}/types', [CategoriesController::class, 'types'])->name('types');
     });
 
-    // Articles Z (articles avec stock zéro)
-    Route::prefix('zero-stock')->name('zero-stock.')->group(function () {
-        Route::get('/', [SettingsController::class, 'zeroStock'])->name('index');
+    // Articles inconnus
+    Route::prefix('unknown-items')->name('unknown-items.')->group(function () {
+        Route::get('/', [UnknownItemsController::class, 'index'])->name('index');
+        Route::get('/{unknownItem}', [UnknownItemsController::class, 'show'])->name('show');
     });
 
     // Historique des mises à jour
