@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\Register;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Transaction, TransactionItem, TransactionStockMovement, Customer, Company, Variant, Stock};
+use App\Services\RegisterSessionService;
+use Exception;
+use Log;
+use App\Models\{Transaction, TransactionItem, TransactionStockMovement, Variant};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -104,7 +107,7 @@ class TransactionController extends Controller
                 ]
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             return response()->json([
@@ -215,7 +218,7 @@ class TransactionController extends Controller
 
                 // Vérifier que la quantité n'excède pas l'original
                 if ($returnQuantity > $originalItem->quantity) {
-                    throw new \Exception("Quantité de retour trop élevée pour {$originalItem->article_name}");
+                    throw new Exception("Quantité de retour trop élevée pour {$originalItem->article_name}");
                 }
 
                 // Créer l'article de retour (quantités négatives)
@@ -260,7 +263,7 @@ class TransactionController extends Controller
                 ]
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             return response()->json([
@@ -294,7 +297,7 @@ class TransactionController extends Controller
                 'message' => 'Transaction annulée avec succès'
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Erreur lors de l\'annulation: ' . $e->getMessage()
@@ -335,17 +338,19 @@ class TransactionController extends Controller
                 $variant = Variant::with('stocks')->findOrFail($item['variant_id']);
                 $quantity = $item['quantity'];
 
-                // Vérifier le stock
-                $availableStock = $variant->stocks->sum('quantity');
-                if ($quantity > $availableStock) {
-                    throw new \Exception("Stock insuffisant pour {$variant->article->name}");
+                // Vérifier le stock (sauf pour les articles avec stock illimité)
+                if (!$variant->article->stock_no_limit) {
+                    $availableStock = $variant->stocks->sum('quantity');
+                    if ($quantity > $availableStock) {
+                        throw new Exception("Stock insuffisant pour {$variant->article->name}");
+                    }
                 }
 
                 // Créer l'item (prix à 0 pour les sorties Wix)
                 $transactionItem = TransactionItem::create([
                     'transaction_id' => $transaction->id,
                     'variant_id' => $variant->id,
-                    'stock_id' => $variant->stocks->first()->id,
+                    'stock_id' => $variant->article->stock_no_limit ? null : $variant->stocks->first()->id,
                     'article_name' => $variant->article->name,
                     'variant_reference' => $variant->reference,
                     'barcode' => $variant->barcode,
@@ -375,7 +380,7 @@ class TransactionController extends Controller
                 ]
             ]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollback();
 
             return response()->json([
@@ -439,7 +444,7 @@ class TransactionController extends Controller
      */
     public function createFromCart(Request $request)
     {
-        $sessionData = \App\Services\RegisterSessionService::exportSessionData();
+        $sessionData = RegisterSessionService::exportSessionData();
 
         if (empty($sessionData['cart'])) {
             return response()->json(['success' => false, 'message' => 'Le panier est vide.'], 400);
@@ -447,11 +452,11 @@ class TransactionController extends Controller
 
         try {
             DB::beginTransaction();
-            
+
             // Créer la transaction principale
             $transaction = Transaction::create([
                 'cashier_id' => auth()->id(),
-                'cash_register_id' => \App\Services\RegisterSessionService::getCurrentCashRegister(),
+                'cash_register_id' => RegisterSessionService::getCurrentCashRegister(),
                 'customer_id' => $sessionData['customer']['id'] ?? null,
                 'transaction_type' => 'ticket',
                 'total_amount' => $sessionData['totals']['total'],
@@ -467,14 +472,14 @@ class TransactionController extends Controller
                 unset($itemData['id'], $itemData['added_at']); // Retirer les clés non pertinentes
                 $transaction->items()->create($itemData);
             }
-            
+
             DB::commit();
 
             return response()->json(['success' => true, 'transaction' => $transaction]);
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
-            \Log::error('Erreur lors de la création de la transaction depuis le panier: ' . $e->getMessage());
+            Log::error('Erreur lors de la création de la transaction depuis le panier: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Une erreur est survenue.'], 500);
         }
     }
@@ -534,6 +539,12 @@ class TransactionController extends Controller
      */
     private function deductStock(Variant $variant, $quantity, TransactionItem $transactionItem)
     {
+        // Vérifier si l'article a l'option stock illimité
+        if ($variant->article->stock_no_limit) {
+            // Pour les articles avec stock illimité, ne pas décompter le stock
+            return;
+        }
+
         $remainingQuantity = $quantity;
 
         // Récupérer les stocks par ordre FIFO (plus anciens en premier)
@@ -566,7 +577,7 @@ class TransactionController extends Controller
         }
 
         if ($remainingQuantity > 0) {
-            throw new \Exception("Stock insuffisant pour {$variant->article->name}");
+            throw new Exception("Stock insuffisant pour {$variant->article->name}");
         }
     }
 

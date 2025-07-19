@@ -14,12 +14,14 @@
                 <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                     Prix de vente
                 </th>
-                <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Stock
-                    <div class="text-gray-400 dark:text-gray-600 block" style="font-size: 0.6rem">
-                        Seuil: {{ config('custom.article.seuil') }}
-                    </div>
-                </th>
+                @if(!$article->stock_no_limit)
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Stock
+                        <div class="text-gray-400 dark:text-gray-600 block" style="font-size: 0.6rem">
+                            Seuil: {{ config('custom.article.seuil') }}
+                        </div>
+                    </th>
+                @endif
             </tr>
             </thead>
             <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -77,18 +79,20 @@
                             {{ number_format($variant->sell_price ?? $variant->article->sell_price ?? 0, 2) }}€
                         </span>
                     </td>
-                    <td class="px-4 py-4 text-center">
-                        <div class="flex items-center justify-center space-x-2">
-                            <span class="text-sm font-bold
-                                {{ $variant->total_stock == 0 ? 'text-red-600 dark:text-red-400' :
-                                   ($variant->total_stock <= ($variant->seuil_alerte ?? 5) ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400') }}">
-                                {{ $variant->total_stock ?? 0 }}
-                            </span>
-                            @if($variant->total_stock <= ($variant->seuil_alerte ?? 5))
-                                <i class="fas fa-exclamation-triangle text-{{ $variant->total_stock == 0 ? 'red' : 'orange' }}-500 text-xs"></i>
-                            @endif
-                        </div>
-                    </td>
+                    @if(!$article->stock_no_limit)
+                        <td class="px-4 py-4 text-center">
+                            <div class="flex items-center justify-center space-x-2">
+                                <span class="text-sm font-bold
+                                    {{ $variant->total_stock == 0 ? 'text-red-600 dark:text-red-400' :
+                                       ($variant->total_stock <= ($variant->seuil_alerte ?? 5) ? 'text-orange-600 dark:text-orange-400' : 'text-green-600 dark:text-green-400') }}">
+                                    {{ $variant->total_stock ?? 0 }}
+                                </span>
+                                @if($variant->total_stock <= ($variant->seuil_alerte ?? 5))
+                                    <i class="fas fa-exclamation-triangle text-{{ $variant->total_stock == 0 ? 'red' : 'orange' }}-500 text-xs"></i>
+                                @endif
+                            </div>
+                        </td>
+                    @endif
                 </tr>
             @endforeach
             </tbody>

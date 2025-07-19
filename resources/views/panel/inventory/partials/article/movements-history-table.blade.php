@@ -1,5 +1,6 @@
 @if($mouvements->count() > 0)
-    <div class="space-y-3">
+    <div class="p-6">
+        <div class="space-y-3">
         @foreach($mouvements as $mouvement)
             <div class="grid grid-cols-4 items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                 <div class="col-span-2 flex items-center space-x-3">
@@ -53,12 +54,13 @@
                 </div>
             </div>
         @endforeach
+        </div>
     </div>
-    <div class="mt-6">
+    <div class="px-6 pb-6">
         {{ $mouvements->links() }}
     </div>
 @else
-    <div class="text-center py-8">
+    <div class="p-6 text-center">
         <i class="fas fa-history text-4xl text-gray-400 mb-3"></i>
         <h3 class="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Aucun mouvement</h3>
         <p class="text-gray-500 dark:text-gray-400">Aucun mouvement trouvé pour ces filtres.</p>

@@ -147,8 +147,8 @@
         // Fonction pour rendre les produits
         function renderProducts(products, reset = false) {
             // Séparer les produits en stock et en rupture
-            const produitsEnStock = products.filter(p => p.stock_quantity > 0);
-            const produitsRupture = products.filter(p => p.stock_quantity === 0);
+            const produitsEnStock = products.filter(p => p.in_stock);
+            const produitsRupture = products.filter(p => !p.in_stock);
 
             // Générer le HTML pour chaque groupe
             const htmlEnStock = produitsEnStock.map(product => {

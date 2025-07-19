@@ -290,6 +290,29 @@
                                     </div>
                                 </div>
                             </div>
+
+
+                            @if(config('custom.item_stock_no_limit'))
+                                <div class="md:col-span-2 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                                    <div class="flex items-center space-x-3 mb-4">
+                                        <input type="checkbox"
+                                               id="stock_no_limit"
+                                               name="stock_no_limit"
+                                               value="1"
+                                               {{ old('stock_no_limit', $draft->stock_no_limit ?? false) ? 'checked' : '' }}
+                                               class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded">
+                                        <label for="stock_no_limit"
+                                               class="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                            Stock illimité
+                                        </label>
+                                    </div>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                                        Si coché, cet article sera considéré comme un service ou une prestation sans
+                                        limite de stock. <br/>
+                                        Les variants n'auront pas de gestion de stock.
+                                    </p>
+                                </div>
+                            @endif
                         </div>
 
                         <!-- Actions -->

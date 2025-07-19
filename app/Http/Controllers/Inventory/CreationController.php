@@ -93,6 +93,11 @@ class CreationController extends Controller
             $data['sell_price'] = $request->sell_price;
         }
 
+        // Ajouter l'option stock illimité si la configuration est activée
+        if (config('custom.item_stock_no_limit')) {
+            $data['stock_no_limit'] = $request->has('stock_no_limit');
+        }
+
         $data['status'] = Article::STATUS_DRAFT;
 
         if ($request->draft_id) {
@@ -219,19 +224,23 @@ class CreationController extends Controller
         $barcodeGeneratorEnabled = config('custom.generator.barcode', false);
         $barcodeRules = $barcodeGeneratorEnabled ? 'nullable|string|unique:variants,barcode,' . ($request->variant_id ?? 'null') : 'required|string|unique:variants,barcode,' . ($request->variant_id ?? 'null');
 
-        $validated = $request->validate([
+        // Règles de validation conditionnelles selon l'option stock illimité
+        $stockRules = $draft->stock_no_limit ? [] : [
+            'stock.quantity' => 'nullable|integer|min:0',
+            'stock.buy_price' => 'nullable|numeric|min:0',
+            'stock.lot_reference' => 'nullable|string',
+            'stock.expiry_date' => 'nullable|date',
+        ];
+
+        $validated = $request->validate(array_merge([
             'barcode' => $barcodeRules,
             'reference' => 'nullable|string',
             'sell_price' => 'nullable|numeric|min:0',
             'buy_price' => 'nullable|numeric|min:0',
             'attributes' => 'required|array|min:1',
             'attributes.*.attribute_value_id' => 'required|exists:attribute_values,id',
-            'stock.quantity' => 'nullable|integer|min:0',
-            'stock.buy_price' => 'nullable|numeric|min:0',
-            'stock.lot_reference' => 'nullable|string',
-            'stock.expiry_date' => 'nullable|date',
             'images.*' => 'nullable|image|max:2048'
-        ], [
+        ], $stockRules), [
             // Messages pour le code-barres
             'barcode.required' => 'Le code-barres est obligatoire quand le générateur automatique est désactivé.',
             'barcode.string' => 'Le code-barres doit être une chaîne de caractères.',
@@ -294,8 +303,8 @@ class CreationController extends Controller
             $attributeValueIds = collect($validated['attributes'])->pluck('attribute_value_id');
             $variant->attributeValues()->attach($attributeValueIds);
 
-            // Gestion du stock
-            if (isset($validated['stock']) && $validated['stock']['quantity'] > 0) {
+            // Gestion du stock (seulement si l'article n'a pas l'option stock illimité)
+            if (!$draft->stock_no_limit && isset($validated['stock']) && $validated['stock']['quantity'] > 0) {
                 Stock::updateOrCreate(
                     ['variant_id' => $variant->id],
                     [
@@ -465,44 +474,48 @@ class CreationController extends Controller
                     throw new Exception("Le variant #{$variant->id} n'a pas de code-barres et le générateur automatique est désactivé. Veuillez saisir un code-barres manuellement.");
                 }
             }
-            // === Mouvement de stock initial ===
-            $stock = $variant->stocks->first();
-            if ($stock && $stock->quantity > 0) {
-                Log::info('[finalizeArticle] Stock initial détecté', ['variant_id' => $variant->id, 'stock_id' => $stock->id, 'quantity' => $stock->quantity]);
-                // Créer un TransactionItem technique pour l'initialisation
-                $transactionItem = new TransactionItem();
-                $transactionItem->transaction_id = $transaction->id;
-                $transactionItem->variant_id = $variant->id;
-                $transactionItem->stock_id = $stock->id;
-                $transactionItem->article_name = $draft->name;
-                $transactionItem->variant_reference = $variant->reference;
-                $transactionItem->quantity = $stock->quantity;
-                $transactionItem->unit_price_ht = $stock->buy_price;
-                $transactionItem->unit_price_ttc = $stock->buy_price;
-                $transactionItem->total_price_ht = $stock->quantity * $stock->buy_price;
-                $transactionItem->total_price_ttc = $stock->quantity * $stock->buy_price;
-                $transactionItem->tax_rate = 0;
-                $transactionItem->tax_amount = 0;
-                $transactionItem->discount_rate = 0;
-                $transactionItem->discount_amount = 0;
-                $transactionItem->total_cost = $stock->quantity * $stock->buy_price;
-                $transactionItem->margin = 0;
-                $transactionItem->source = 'init_stock';
-                $transactionItem->save();
-                Log::info('[finalizeArticle] TransactionItem créé', ['transaction_item_id' => $transactionItem->id]);
+            // === Mouvement de stock initial === (seulement si l'article n'a pas l'option stock illimité)
+            if (!$draft->stock_no_limit) {
+                $stock = $variant->stocks->first();
+                if ($stock && $stock->quantity > 0) {
+                    Log::info('[finalizeArticle] Stock initial détecté', ['variant_id' => $variant->id, 'stock_id' => $stock->id, 'quantity' => $stock->quantity]);
+                    // Créer un TransactionItem technique pour l'initialisation
+                    $transactionItem = new TransactionItem();
+                    $transactionItem->transaction_id = $transaction->id;
+                    $transactionItem->variant_id = $variant->id;
+                    $transactionItem->stock_id = $stock->id;
+                    $transactionItem->article_name = $draft->name;
+                    $transactionItem->variant_reference = $variant->reference;
+                    $transactionItem->quantity = $stock->quantity;
+                    $transactionItem->unit_price_ht = $stock->buy_price;
+                    $transactionItem->unit_price_ttc = $stock->buy_price;
+                    $transactionItem->total_price_ht = $stock->quantity * $stock->buy_price;
+                    $transactionItem->total_price_ttc = $stock->quantity * $stock->buy_price;
+                    $transactionItem->tax_rate = 0;
+                    $transactionItem->tax_amount = 0;
+                    $transactionItem->discount_rate = 0;
+                    $transactionItem->discount_amount = 0;
+                    $transactionItem->total_cost = $stock->quantity * $stock->buy_price;
+                    $transactionItem->margin = 0;
+                    $transactionItem->source = 'init_stock';
+                    $transactionItem->save();
+                    Log::info('[finalizeArticle] TransactionItem créé', ['transaction_item_id' => $transactionItem->id]);
 
-                // Mouvement de stock (entrée)
-                $movement = TransactionStockMovement::create([
-                    'transaction_item_id' => $transactionItem->id,
-                    'stock_id' => $stock->id,
-                    'quantity_used' => -$stock->quantity, // Entrée
-                    'cost_price' => $stock->buy_price,
-                    'total_cost' => $stock->quantity * $stock->buy_price,
-                    'lot_reference' => $stock->lot_reference,
-                ]);
-                Log::info('[finalizeArticle] Mouvement de stock créé', ['movement_id' => $movement->id]);
+                    // Mouvement de stock (entrée)
+                    $movement = TransactionStockMovement::create([
+                        'transaction_item_id' => $transactionItem->id,
+                        'stock_id' => $stock->id,
+                        'quantity_used' => -$stock->quantity, // Entrée
+                        'cost_price' => $stock->buy_price,
+                        'total_cost' => $stock->quantity * $stock->buy_price,
+                        'lot_reference' => $stock->lot_reference,
+                    ]);
+                    Log::info('[finalizeArticle] Mouvement de stock créé', ['movement_id' => $movement->id]);
+                } else {
+                    Log::info('[finalizeArticle] Pas de stock initial pour ce variant', ['variant_id' => $variant->id]);
+                }
             } else {
-                Log::info('[finalizeArticle] Pas de stock initial pour ce variant', ['variant_id' => $variant->id]);
+                Log::info('[finalizeArticle] Article avec stock illimité - pas de gestion de stock', ['variant_id' => $variant->id]);
             }
         }
         $draft->update(['status' => 'active']);

@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\{Api\InventoryApiController,
     Inventory\ArticleController,
+    Inventory\ArticleEditController,
     Inventory\CreationController,
     Inventory\DraftController,
+    Inventory\MovementHistoryController,
+    Inventory\StockAdjustmentController,
     InventoryController};
-use Illuminate\Http\Request;
 
 Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::get('', [InventoryController::class, 'index'])->name('index');
@@ -52,13 +54,14 @@ Route::prefix('inventory')->name('inventory.')->group(function () {
     Route::get('/{id}/movements', [ArticleController::class, 'getMovements'])->name('movements');
     Route::get('/variants/{id}', [ArticleController::class, 'getVariant'])->name('variant.show');
     Route::post('{article}/labels/print-preview', [ArticleController::class, 'printLabelsPreview'])->name('labels.print-preview');
-    Route::get('/{article}/movements/history', [\App\Http\Controllers\Inventory\MovementHistoryController::class, 'index'])->name('movements.history');
-    Route::get('/{article}/movements/history/table', [\App\Http\Controllers\Inventory\MovementHistoryController::class, 'table'])->name('movements.history.table');
-    Route::post('/{article}/stock/adjust', [\App\Http\Controllers\Inventory\StockAdjustmentController::class, 'store'])->name('stock.adjust');
-    Route::get('/{id}/edit', [\App\Http\Controllers\Inventory\ArticleEditController::class, 'edit'])->name('edit');
-    Route::post('/{id}/edit', [\App\Http\Controllers\Inventory\ArticleEditController::class, 'update'])->name('edit.save');
+    Route::get('/{article}/movements/history', [MovementHistoryController::class, 'index'])->name('movements.history');
+    Route::get('/{article}/movements/history/table', [MovementHistoryController::class, 'table'])->name('movements.history.table');
+    Route::get('/{article}/transactions/history/table', [MovementHistoryController::class, 'transactionsTable'])->name('transactions.history.table');
+    Route::post('/{article}/stock/adjust', [StockAdjustmentController::class, 'store'])->name('stock.adjust');
+    Route::get('/{id}/edit', [ArticleEditController::class, 'edit'])->name('edit');
+    Route::post('/{id}/edit', [ArticleEditController::class, 'update'])->name('edit.save');
 
-    
+
     Route::post('/generate-barcode', [CreationController::class, 'generateBarcode'])->name('generate.barcode');
     Route::post('/check-barcode-unique', [CreationController::class, 'checkBarcodeUnique'])->name('check.barcode.unique');
 });

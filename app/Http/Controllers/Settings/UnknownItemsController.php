@@ -171,6 +171,12 @@ class UnknownItemsController extends Controller
      */
     private function deductStockForRegularization(Variant $variant, $quantity, TransactionItem $transactionItem)
     {
+        // Vérifier si l'article a l'option stock illimité
+        if ($variant->article->stock_no_limit) {
+            // Pour les articles avec stock illimité, ne pas décompter le stock
+            return;
+        }
+
         $remainingQuantity = $quantity;
 
         // Récupérer les stocks par ordre FIFO (plus anciens en premier)

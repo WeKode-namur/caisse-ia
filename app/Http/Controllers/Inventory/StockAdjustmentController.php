@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
-use App\Models\Article;
 use App\Models\Stock;
-use App\Models\Variant;
+use App\Models\Transaction;
+use App\Models\TransactionItem;
 use App\Models\TransactionStockMovement;
+use App\Models\Variant;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -57,7 +59,7 @@ class StockAdjustmentController extends Controller
             }
 
             // Créer la transaction technique
-            $transaction = \App\Models\Transaction::create([
+            $transaction = Transaction::create([
                 'transaction_number' => 'ADJ-' . now()->format('YmdHis'),
                 'transaction_type' => 'stock_adjustment',
                 'status' => 'completed',
@@ -69,7 +71,7 @@ class StockAdjustmentController extends Controller
             ]);
 
             // Créer le TransactionItem technique
-            $transactionItem = \App\Models\TransactionItem::create([
+            $transactionItem = TransactionItem::create([
                 'transaction_id' => $transaction->id,
                 'variant_id' => $variant->id,
                 'stock_id' => $stock->id,
@@ -89,21 +91,23 @@ class StockAdjustmentController extends Controller
                 'source' => 'stock_adjustment',
             ]);
 
-            // Créer le mouvement de stock (entrée)
-            \App\Models\TransactionStockMovement::create([
-                'transaction_item_id' => $transactionItem->id,
-                'stock_id' => $stock->id,
-                'quantity_used' => -$quantity, // Entrée
-                'cost_price' => $buyPrice,
-                'total_cost' => $quantity * $buyPrice,
-                'lot_reference' => $stock->lot_reference,
-            ]);
+            // Créer le mouvement de stock (entrée) - seulement si l'article n'a pas l'option stock illimité
+            if (!$variant->article->stock_no_limit) {
+                TransactionStockMovement::create([
+                    'transaction_item_id' => $transactionItem->id,
+                    'stock_id' => $stock->id,
+                    'quantity_used' => -$quantity, // Entrée
+                    'cost_price' => $buyPrice,
+                    'total_cost' => $quantity * $buyPrice,
+                    'lot_reference' => $stock->lot_reference,
+                ]);
+            }
 
             DB::commit();
             return response()->json(['success' => true, 'message' => 'Stock ajouté avec succès']);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json(['success' => false, 'message' => 'Erreur : ' . $e->getMessage()], 422);
         }
     }
-} 
+}

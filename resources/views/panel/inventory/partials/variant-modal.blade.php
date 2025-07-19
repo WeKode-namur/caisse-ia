@@ -231,7 +231,8 @@
                             </div>
                         </div>
                         <!-- Stock -->
-                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
+                        <div class="bg-gray-50 dark:bg-gray-700 rounded-lg p-4"
+                             x-show="!$store.config?.draft?.stock_no_limit">
                             <div class="flex items-center space-x-2 mb-4">
                                 <i class="fas fa-cube text-lg text-purple-600"></i>
                                 <h4 class="font-semibold text-gray-900 dark:text-gray-100">Stock initial</h4>
@@ -284,6 +285,19 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <!-- Message pour stock illimité -->
+                        <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4"
+                             x-show="$store.config?.draft?.stock_no_limit">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <i class="fas fa-infinity text-lg text-green-600"></i>
+                                <h4 class="font-semibold text-green-800 dark:text-green-200">Stock illimité</h4>
+                            </div>
+                            <p class="text-sm text-green-700 dark:text-green-300">
+                                Cet article est configuré comme un service/prestation avec stock illimité.
+                                Aucune gestion de stock n'est nécessaire pour les variants.
+                            </p>
                         </div>
                     </div>
                     <!-- Colonne 3 : Identification + Photo -->

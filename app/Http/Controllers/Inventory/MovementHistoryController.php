@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Article, TransactionStockMovement, TransactionItem, Transaction, User};
+use App\Models\{Article, TransactionItem, TransactionStockMovement, User};
 use Illuminate\Http\Request;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\Log;
 
 class MovementHistoryController extends Controller
 {
@@ -14,6 +12,12 @@ class MovementHistoryController extends Controller
     {
         $article = Article::findOrFail($articleId);
         $users = User::orderBy('name')->get();
+
+        // Si l'article a un stock illimité, utiliser une vue différente
+        if ($article->stock_no_limit) {
+            return view('panel.inventory.transactions-history', compact('article', 'users'));
+        }
+
         return view('panel.inventory.movements-history', compact('article', 'users'));
     }
 
@@ -79,5 +83,72 @@ class MovementHistoryController extends Controller
         }
         $mouvements = $query->paginate(20);
         return view('panel.inventory.partials.article.movements-history-table', compact('mouvements'))->render();
+    }
+
+    public function transactionsTable($articleId, Request $request)
+    {
+        $article = Article::findOrFail($articleId);
+
+        // Récupérer les transactions pour cet article
+        $query = TransactionItem::query()
+            ->whereHas('variant', function ($q) use ($article) {
+                $q->where('article_id', $article->id);
+            })
+            ->with(['variant', 'transaction', 'transaction.cashier']);
+
+        // Filtres dynamiques
+        if ($request->filled('origine')) {
+            if ($request->origine === 'caisse') {
+                $query->whereHas('transaction', function ($q) {
+                    $q->where('is_wix_release', false);
+                });
+            } elseif ($request->origine === 'eshop') {
+                $query->whereHas('transaction', function ($q) {
+                    $q->where('is_wix_release', true);
+                });
+            }
+        }
+        if ($request->filled('membre')) {
+            $query->whereHas('transaction', function ($q) use ($request) {
+                $q->where('cashier_id', $request->membre);
+            });
+        }
+        if ($request->filled('date_debut')) {
+            $query->whereDate('created_at', '>=', $request->date_debut);
+        }
+        if ($request->filled('date_fin')) {
+            $query->whereDate('created_at', '<=', $request->date_fin);
+        }
+        if ($request->filled('quantite_min')) {
+            $query->where('quantity', '>=', $request->quantite_min);
+        }
+        if ($request->filled('quantite_max')) {
+            $query->where('quantity', '<=', $request->quantite_max);
+        }
+
+        // Tri
+        $sort = $request->get('sort', 'created_at_desc');
+        switch ($sort) {
+            case 'created_at_asc':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'quantite_asc':
+                $query->orderBy('quantity', 'asc');
+                break;
+            case 'quantite_desc':
+                $query->orderBy('quantity', 'desc');
+                break;
+            case 'prix_asc':
+                $query->orderBy('total_price_ttc', 'asc');
+                break;
+            case 'prix_desc':
+                $query->orderBy('total_price_ttc', 'desc');
+                break;
+            default:
+                $query->orderBy('created_at', 'desc');
+        }
+
+        $transactions = $query->paginate(20);
+        return view('panel.inventory.partials.article.transactions-history-table', compact('transactions'))->render();
     }
 }

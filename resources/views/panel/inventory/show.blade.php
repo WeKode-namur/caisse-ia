@@ -132,12 +132,14 @@
                                                 Ces prix servent de base pour les variants. Chaque variant peut avoir ses propres prix.
                                             </p>
                                             <div class="mt-3 grid grid-cols-2 gap-4">
+                                                @if($article->buy_price > 0)
+                                                    <div>
+                                                        <span class="text-xs text-amber-600 dark:text-amber-400 me-1">Prix d'achat:</span>
+                                                        <span class="font-medium">{{ number_format($article->buy_price ?? 0, 2) }}€</span>
+                                                    </div>
+                                                @endif
                                                 <div>
-                                                    <span class="text-xs text-amber-600 dark:text-amber-400">Prix d'achat de base:</span>
-                                                    <span class="font-medium">{{ number_format($article->buy_price ?? 0, 2) }}€</span>
-                                                </div>
-                                                <div>
-                                                    <span class="text-xs text-amber-600 dark:text-amber-400">Prix de vente de base:</span>
+                                                    <span class="text-xs text-amber-600 dark:text-amber-400 me-1">Prix de vente:</span>
                                                     <span class="font-medium">{{ number_format($article->sell_price ?? 0, 2) }}€</span>
                                                 </div>
                                             </div>
@@ -173,7 +175,8 @@
 
                                 <!-- Résumé des stocks -->
                                 <div id="variants-summary" class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-600">
-                                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                    <div
+                                        class="grid grid-cols-2 {{ (!$article->stock_no_limit && $stats->variants_low_stock > 0) ? 'md:grid-cols-4' : 'md:grid-cols-2' }} gap-4">
                                         <div class="text-center">
                                             <div class="text-xl font-bold text-blue-600 dark:text-blue-400" id="total-stock">
                                                 {{ $stats->total_stock }}
@@ -186,6 +189,7 @@
                                             </div>
                                             <div class="text-xs text-gray-500 dark:text-gray-400">Variants en stock</div>
                                         </div>
+                                        @if(!$article->stock_no_limit && $stats->variants_low_stock > 0)
                                         <div class="text-center">
                                             <div class="text-xl font-bold text-orange-600 dark:text-orange-400" id="variants-low-stock">
                                                 {{ $stats->variants_low_stock }}
@@ -198,6 +202,7 @@
                                             </div>
                                             <div class="text-xs text-gray-500 dark:text-gray-400">Ruptures</div>
                                         </div>
+                                        @endif
                                     </div>
                                 </div>
                             </div>
@@ -243,16 +248,19 @@
                             <button id="btn-edit-article" class="w-full px-3 py-2 bg-amber-500 dark:bg-amber-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
                                 <i class="fas fa-pen mr-2"></i>Modifier
                             </button>
-                            <button id="btn-ajuster-stock" class="w-full px-3 py-2 bg-green-500 dark:bg-green-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
-                                <i class="fas fa-plus mr-2"></i>Ajuster le stock
-                            </button>
+                            @if(!$article->stock_no_limit)
+                                <button id="btn-ajuster-stock"
+                                        class="w-full px-3 py-2 bg-green-500 dark:bg-green-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
+                                    <i class="fas fa-plus mr-2"></i>Ajuster le stock
+                                </button>
+                            @endif
                             <button id="modal_print_etiquette"
                                     class="w-full px-3 py-2 bg-blue-500 dark:bg-blue-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm">
                                 <i class="fas fa-barcode mr-2"></i>Imprimer étiquette
                             </button>
                             <a href="{{ route('inventory.movements.history', $article) }}"
                                class="w-full px-3 py-2 bg-violet-500 dark:bg-violet-800 hover:opacity-75 hover:scale-105 duration-500 text-white rounded-md text-sm flex items-center justify-center">
-                                <i class="fas fa-clock mr-2"></i>Historique
+                                <i class="fas fa-clock mr-2"></i>{{ $article->stock_no_limit ? 'Transactions' : 'Historique' }}
                             </a>
                         </div>
                     </div>
@@ -270,22 +278,39 @@
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-sm text-gray-600 dark:text-gray-400">Stock combiné</span>
-                                    <span class="font-medium text-gray-900 dark:text-gray-100">{{ $stats->total_stock }}</span>
+                                    <span class="font-medium text-gray-900 dark:text-gray-100">
+                                        @if($article->stock_no_limit)
+                                            <i class="fas fa-infinity text-blue-500"></i>
+                                        @else
+                                            {{ $stats->total_stock }}
+                                        @endif
+                                    </span>
                                 </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">Variants actifs</span>
-                                    <span class="font-medium text-green-600 dark:text-green-400">{{ $stats->variants_in_stock }}</span>
-                                </div>
-                                <div class="flex items-center justify-between">
-                                    <span class="text-sm text-gray-600 dark:text-gray-400">En rupture</span>
-                                    <span class="font-medium text-red-600 dark:text-red-400">{{ $stats->variants_out_of_stock }}</span>
-                                </div>
+                                @if(!$article->stock_no_limit)
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600 dark:text-gray-400">Variants actifs</span>
+                                        <span
+                                            class="font-medium text-green-600 dark:text-green-400">{{ $stats->variants_in_stock }}</span>
+                                    </div>
+                                    <div class="flex items-center justify-between">
+                                        <span class="text-sm text-gray-600 dark:text-gray-400">En rupture</span>
+                                        <span
+                                            class="font-medium text-red-600 dark:text-red-400">{{ $stats->variants_out_of_stock }}</span>
+                                    </div>
+                                @else
+                                    <div class="flex items-center justify-between">
+                                        <span
+                                            class="text-sm text-gray-600 dark:text-gray-400">Variants disponibles</span>
+                                        <span
+                                            class="font-medium text-blue-600 dark:text-blue-400">{{ $stats->variants_count }}</span>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     @endif
                     <div class="pb-6">
                         <!-- Alertes -->
-                        @if($variants->isEmpty() && $stats->total_stock <= 10)
+                        @if(!$article->stock_no_limit && $variants->isEmpty() && is_numeric($stats->total_stock) && $stats->total_stock <= 10)
                             <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg">
                                 <div class="p-4">
                                     <div class="flex items-start">
@@ -309,7 +334,7 @@
                                     </div>
                                 </div>
                             </div>
-                        @elseif($variants->isNotEmpty() && ($stats->variants_out_of_stock > 0 || $stats->variants_low_stock > 0))
+                        @elseif(!$article->stock_no_limit && $variants->isNotEmpty() && ($stats->variants_out_of_stock > 0 || $stats->variants_low_stock > 0))
                             <div class="bg-white/50 backdrop-blur dark:bg-gray-800/50 dark:text-gray-200 overflow-hidden shadow-xl lg:rounded-lg">
                                 <div class="p-4">
                                     <div class="flex items-start">
@@ -323,10 +348,10 @@
                                                 Alertes variants
                                             </h3>
                                             <div class="mt-2 text-sm text-orange-700 dark:text-orange-300 space-y-1">
-                                                @if($stats->variants_out_of_stock > 0)
+                                                @if(!$article->stock_no_limit && $stats->variants_out_of_stock > 0)
                                                     <div>• {{ $stats->variants_out_of_stock }} variant(s) en rupture</div>
                                                 @endif
-                                                @if($stats->variants_low_stock > 0)
+                                                @if(!$article->stock_no_limit && $stats->variants_low_stock > 0)
                                                     <div>• {{ $stats->variants_low_stock }} variant(s) en stock faible</div>
                                                 @endif
                                             </div>
@@ -353,7 +378,9 @@
                     <tr>
                         <th colspan="2" class="text-start">Nom du variant</th>
                         <th class="text-start">Attributs</th>
-                        <th>Stock</th>
+                        @if(!$article->stock_no_limit)
+                            <th>Stock</th>
+                        @endif
                         <th class="text-center w-8">Quantité</th>
                     </tr>
                     </thead>
@@ -373,7 +400,9 @@
                                 @endphp
                                 <span>{!! $attrs !!}</span>
                             </td>
-                            <td class="text-center">{{ $variant->total_stock ?? 0 }}</td>
+                            @if(!$article->stock_no_limit)
+                                <td class="text-center">{{ $variant->total_stock ?? 0 }}</td>
+                            @endif
                             <td class="text-center">
                                 <div class="flex items-center justify-end space-x-1">
                                     <button type="button"

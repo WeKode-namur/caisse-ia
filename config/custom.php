@@ -53,6 +53,10 @@ return [
         $value = SettingsService::get('date_expiration_optionnel');
         return ($value === true && env('DATE_EXPIRATION_OPTIONNEL') !== null) ? env('DATE_EXPIRATION_OPTIONNEL') : $value;
     })(),
+    'item_stock_no_limit' => (function () {
+        $value = SettingsService::get('item_stock_no_limit');
+        return ($value === null && env('ITEM_STOCK_NO_LIMIT') !== null) ? env('ITEM_STOCK_NO_LIMIT') : $value;
+    })(),
     'version' => [
         'current' => env('APP_VERSION', 'v0.0.1'),
         'check_from' => env('APP_VERSION_CHECK_FROM', 'v0.0.1'),

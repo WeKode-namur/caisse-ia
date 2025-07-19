@@ -47,11 +47,11 @@ class CartController extends Controller
             'attributeValues.attribute'
         ])->findOrFail($request->variant_id);
 
-        // Vérifier le stock disponible
-        $availableStock = $variant->stocks->sum('quantity');
+        // Vérifier le stock disponible (sauf pour les articles avec stock illimité)
+        $availableStock = $variant->article->stock_no_limit ? null : $variant->stocks->sum('quantity');
         $quantity = $request->quantity ?? 1;
 
-        if ($quantity > $availableStock) {
+        if (!$variant->article->stock_no_limit && $quantity > $availableStock) {
             return response()->json([
                 'success' => false,
                 'message' => "Stock insuffisant. Disponible: {$availableStock}"
@@ -61,27 +61,39 @@ class CartController extends Controller
         // Déterminer le prix
         $unitPrice = $request->price_override ?? (float) $variant->sell_price;
 
-        // Sélectionner le stock à utiliser (FIFO)
-        $stockToUse = $variant->stocks->first();
+        // Sélectionner le stock à utiliser (FIFO) - pas nécessaire pour les articles avec stock illimité
+        $stockToUse = null;
+        if (!$variant->article->stock_no_limit) {
+            $stockToUse = $variant->stocks->first();
 
-        if (!$stockToUse) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Aucun stock disponible pour ce produit'
-            ], 422);
+            if (!$stockToUse) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Aucun stock disponible pour ce produit'
+                ], 422);
+            }
         }
 
-        // Vérifier si l'article existe déjà dans le panier (même variant_id et stock_id)
+        // Vérifier si l'article existe déjà dans le panier
         $cart = RegisterSessionService::getCart();
         $existingItemId = null;
         foreach ($cart as $id => $item) {
-            if (
-                isset($item['variant_id'], $item['stock_id']) &&
-                $item['variant_id'] == $variant->id &&
-                $item['stock_id'] == $stockToUse->id
-            ) {
-                $existingItemId = $id;
-                break;
+            if ($variant->article->stock_no_limit) {
+                // Pour les articles avec stock illimité, vérifier seulement le variant_id
+                if (isset($item['variant_id']) && $item['variant_id'] == $variant->id) {
+                    $existingItemId = $id;
+                    break;
+                }
+            } else {
+                // Pour les articles normaux, vérifier variant_id et stock_id
+                if (
+                    isset($item['variant_id'], $item['stock_id']) &&
+                    $item['variant_id'] == $variant->id &&
+                    $item['stock_id'] == $stockToUse->id
+                ) {
+                    $existingItemId = $id;
+                    break;
+                }
             }
         }
         if ($existingItemId !== null) {
@@ -101,7 +113,7 @@ class CartController extends Controller
         // Préparer l'item
         $itemData = [
             'variant_id' => $variant->id,
-            'stock_id' => $stockToUse->id,
+            'stock_id' => $variant->article->stock_no_limit ? null : $stockToUse->id,
             'article_name' => $variant->article->name,
             'variant_reference' => $variant->reference,
             'barcode' => $variant->barcode,
@@ -109,7 +121,7 @@ class CartController extends Controller
             'unit_price' => $unitPrice,
             'total_price' => $unitPrice * $quantity,
             'tax_rate' => $variant->article->tva ?? 21,
-            'cost_price' => (float) $stockToUse->buy_price,
+            'cost_price' => $variant->article->stock_no_limit ? 0 : (float)$stockToUse->buy_price,
             'variant_attributes' => $this->getVariantAttributes($variant)
         ];
 
@@ -179,13 +191,15 @@ class CartController extends Controller
 
         $variant = Variant::with('stocks')->find($item['variant_id']);
 
-        // Vérifier le stock
-        $availableStock = $variant->stocks->sum('quantity');
-        if ($request->quantity > $availableStock) {
-            return response()->json([
-                'success' => false,
-                'message' => "Stock insuffisant. Disponible: {$availableStock}"
-            ], 422);
+        // Vérifier le stock (sauf pour les articles avec stock illimité)
+        if (!$variant->article->stock_no_limit) {
+            $availableStock = $variant->stocks->sum('quantity');
+            if ($request->quantity > $availableStock) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Stock insuffisant. Disponible: {$availableStock}"
+                ], 422);
+            }
         }
 
         // Préparer les mises à jour

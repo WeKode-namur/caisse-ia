@@ -2,7 +2,7 @@
 namespace App\Http\Controllers\Inventory;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Article, Variant, Fournisseur};
+use App\Models\{Article, Category, Fournisseur, Variant};
 use Endroid\QrCode\{QrCode, Writer\PngWriter};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -157,17 +157,27 @@ class ArticleController extends Controller
             'average_margin' => 0
         ];
 
-        if ($variants->isNotEmpty()) {
-            $stats->total_stock = $variants->sum('total_stock');
-            $stats->total_value = $variants->sum('stock_value');
-            $stats->variants_in_stock = $variants->where('total_stock', '>', 0)->count();
-            $stats->variants_low_stock = $variants->filter(function($v) {
-                return $v->total_stock <= $v->seuil_alerte && $v->total_stock > 0;
-            })->count();
-            $stats->variants_out_of_stock = $variants->where('total_stock', 0)->count();
+        // Pour les articles avec stock illimité
+        if ($article->stock_no_limit) {
+            $stats->total_stock = '∞';
+            $stats->total_value = 0; // Pas de valeur de stock pour les articles illimités
+            $stats->variants_in_stock = $variants->count(); // Tous les variants sont "en stock"
+            $stats->variants_low_stock = 0; // Pas d'alerte de stock faible
+            $stats->variants_out_of_stock = 0; // Pas de rupture de stock
         } else {
-            $stats->total_stock = $article->stock_actuel ?? 0;
-            $stats->total_value = $article->valeur_stock ?? 0;
+            // Pour les articles avec stock limité
+            if ($variants->isNotEmpty()) {
+                $stats->total_stock = $variants->sum('total_stock');
+                $stats->total_value = $variants->sum('stock_value');
+                $stats->variants_in_stock = $variants->where('total_stock', '>', 0)->count();
+                $stats->variants_low_stock = $variants->filter(function ($v) {
+                    return $v->total_stock <= $v->seuil_alerte && $v->total_stock > 0;
+                })->count();
+                $stats->variants_out_of_stock = $variants->where('total_stock', 0)->count();
+            } else {
+                $stats->total_stock = $article->stock_actuel ?? 0;
+                $stats->total_value = $article->valeur_stock ?? 0;
+            }
         }
 
         // Calcul de la marge moyenne
@@ -208,7 +218,7 @@ class ArticleController extends Controller
             return $variant;
         });
 
-        return view('panel.inventory.partials.article.variants-table', compact('variants'));
+        return view('panel.inventory.partials.article.variants-table', compact('variants', 'article'));
     }
 
     /**
@@ -391,7 +401,7 @@ class ArticleController extends Controller
     {
         $articles = Article::with(['category', 'type', 'subtype', 'fournisseur', 'variants.stocks', 'variants.medias'])
             ->paginate(20);
-        $categories = \App\Models\Category::all();
+        $categories = Category::all();
         $stockStatuses = [
             'all' => 'Tous',
             'in_stock' => 'En stock',

@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Register;
 
 use App\Http\Controllers\Controller;
-use Exception;
 use App\Models\{Company,
     Customer,
     LoyaltyPoint,
@@ -14,6 +13,7 @@ use App\Models\{Company,
     TransactionItem,
     UnknownItem};
 use App\Services\RegisterSessionService;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -614,6 +614,13 @@ class PaymentController extends Controller
      */
     private function decrementStockFIFO(TransactionItem $transactionItem, $variantId, $quantity, $articleName = null)
     {
+        // Vérifier si l'article a l'option stock illimité
+        $variant = Variant::with('article')->find($variantId);
+        if ($variant && $variant->article->stock_no_limit) {
+            // Pour les articles avec stock illimité, ne pas décompter le stock
+            return;
+        }
+
         $remainingQuantity = $quantity;
 
         // Récupérer tous les stocks disponibles pour ce variant, triés par date de création (plus ancien en premier)

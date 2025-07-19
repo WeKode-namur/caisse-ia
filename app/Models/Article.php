@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use DB;
+use Exception;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,12 +31,14 @@ class Article extends Model
         'buy_price',
         'tva',
         'fournisseur_id',
+        'stock_no_limit',
     ];
 
     protected $casts = [
         'sell_price' => 'decimal:2',
         'buy_price' => 'decimal:2',
         'tva' => 'integer',
+        'stock_no_limit' => 'boolean',
     ];
 
     /**
@@ -86,7 +90,7 @@ class Article extends Model
     {
         return $this->variants()
             ->join('stocks', 'variants.id', '=', 'stocks.variant_id')
-            ->sum(\DB::raw('stocks.quantity * stocks.buy_price'));
+            ->sum(DB::raw('stocks.quantity * stocks.buy_price'));
     }
 
     /**
@@ -187,7 +191,7 @@ class Article extends Model
 
         // Vérifier qu'il y a au moins un variant
         if ($this->variants()->count() === 0) {
-            throw new \Exception('L\'article doit avoir au moins un variant pour être finalisé.');
+            throw new Exception('L\'article doit avoir au moins un variant pour être finalisé.');
         }
 
         return $this->update(['status' => 'active']);

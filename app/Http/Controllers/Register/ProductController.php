@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Register;
 
 use App\Http\Controllers\Controller;
-use App\Models\Variant;
 use App\Models\Article;
 use App\Models\Category;
+use App\Models\Variant;
 use Illuminate\Http\Request;
 
 class ProductController extends Controller
@@ -17,11 +17,13 @@ class ProductController extends Controller
     {
         $perPage = $request->get('per_page', 25);
 
-        // Récupérer les articles avec leurs variants en stock
+        // Récupérer les articles avec leurs variants en stock (ou avec stock illimité)
         $query = Article::with(['category', 'variants.stocks'])
             ->where('name', '!=', '')
-            ->whereHas('variants.stocks', function($q) {
-                $q->where('quantity', '>=', 0);
+            ->where(function ($q) {
+                $q->whereHas('variants.stocks', function ($sq) {
+                    $sq->where('quantity', '>', 0);
+                })->orWhere('stock_no_limit', true);
             });
 
         // Filtrage par recherche
@@ -78,8 +80,12 @@ class ProductController extends Controller
                         $subQ->where('articles.name', 'like', "%{$query}%");
                     });
             })
-            ->whereHas('stocks', function($q) {
-                $q->where('quantity', '>', 0);
+            ->where(function ($q) {
+                $q->whereHas('stocks', function ($sq) {
+                    $sq->where('quantity', '>', 0);
+                })->orWhereHas('article', function ($aq) {
+                    $aq->where('stock_no_limit', true);
+                });
             })
             ->limit(10)
             ->get();
@@ -99,8 +105,12 @@ class ProductController extends Controller
     {
         $variant = Variant::with(['article.category', 'stocks'])
             ->where('barcode', $barcode)
-            ->whereHas('stocks', function($q) {
-                $q->where('quantity', '>', 0);
+            ->where(function ($q) {
+                $q->whereHas('stocks', function ($sq) {
+                    $sq->where('quantity', '>', 0);
+                })->orWhereHas('article', function ($aq) {
+                    $aq->where('stock_no_limit', true);
+                });
             })
             ->first();
 
@@ -126,8 +136,12 @@ class ProductController extends Controller
             ->whereHas('article', function($q) use ($category) {
                 $q->where('category_id', $category->id);
             })
-            ->whereHas('stocks', function($q) {
-                $q->where('quantity', '>', 0);
+            ->where(function ($q) {
+                $q->whereHas('stocks', function ($sq) {
+                    $sq->where('quantity', '>', 0);
+                })->orWhereHas('article', function ($aq) {
+                    $aq->where('stock_no_limit', true);
+                });
             })
             ->paginate(20);
 
@@ -155,9 +169,9 @@ class ProductController extends Controller
     {
         $article = Article::with(['variants.stocks'])->findOrFail($articleId);
 
-        // Récupérer tous les variants en stock
+        // Récupérer tous les variants en stock (ou avec stock illimité)
         $variants = $article->variants->filter(function($variant) {
-            return $variant->stocks->sum('quantity') > 0;
+            return $variant->article->stock_no_limit || $variant->stocks->sum('quantity') > 0;
         });
 
         if ($variants->count() <= 1) {
@@ -191,9 +205,9 @@ class ProductController extends Controller
      */
     private function formatArticle($article)
     {
-        // Récupérer tous les variants en stock
+        // Récupérer tous les variants en stock (ou avec stock illimité)
         $variantsInStock = $article->variants->filter(function($variant) {
-            return $variant->stocks->sum('quantity') > 0;
+            return $variant->article->stock_no_limit || $variant->stocks->sum('quantity') > 0;
         });
 
         // Calculer les prix min/max
@@ -209,8 +223,8 @@ class ProductController extends Controller
             number_format($minPrice, 0) . '€' :
             number_format($minPrice, 0) . '-' . number_format($maxPrice, 0) . '€';
 
-        // Stock total
-        $totalStock = $variantsInStock->sum(function($variant) {
+        // Stock total (infini pour les articles avec stock_no_limit)
+        $totalStock = $article->stock_no_limit ? '∞' : $variantsInStock->sum(function ($variant) {
             return $variant->stocks->sum('quantity');
         });
 
@@ -225,9 +239,9 @@ class ProductController extends Controller
             })->unique()->take(4)->values()->all();
         }
 
-        // Compter les variants en rupture de stock
+        // Compter les variants en rupture de stock (sauf ceux avec stock illimité)
         $variantsOutOfStockCount = $article->variants->filter(function($variant) {
-            return $variant->stocks->sum('quantity') == 0;
+            return !$variant->article->stock_no_limit && $variant->stocks->sum('quantity') == 0;
         })->count();
 
         return [
@@ -245,7 +259,7 @@ class ProductController extends Controller
             'variants_count' => $article->variants->count(),
             'variants_out_of_stock_count' => $variantsOutOfStockCount,
             'has_multiple_variants' => $article->variants->count() > 1,
-            'in_stock' => $totalStock > 0,
+            'in_stock' => $article->stock_no_limit || $totalStock > 0,
             'primary_image' => $primaryImage,
             'thumbnails' => $thumbnails,
         ];
@@ -268,8 +282,8 @@ class ProductController extends Controller
                 'id' => $variant->article->category->id,
                 'name' => $variant->article->category->name
             ] : null,
-            'stock_quantity' => $variant->stocks->sum('quantity'),
-            'in_stock' => $variant->stocks->sum('quantity') > 0,
+            'stock_quantity' => $variant->article->stock_no_limit ? '∞' : $variant->stocks->sum('quantity'),
+            'in_stock' => $variant->article->stock_no_limit || $variant->stocks->sum('quantity') > 0,
             'primary_image' => $variant->primary_image,
             'attributes_display' => $variant->attributes_display,
             'attributes' => $variant->attributeValues->map(function($av) {
