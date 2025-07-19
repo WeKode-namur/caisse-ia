@@ -289,6 +289,9 @@
                     if (window.registerManager) {
                         await window.registerManager.addProductToCart(data.single_variant.id);
                     }
+                } else if (data.success && data.variants && data.variants.length > 1) {
+                    // Si plusieurs variants, ouvrir le modal au lieu d'afficher une erreur
+                    showArticleVariants(articleId);
                 } else {
                     showNotification('Erreur lors de l\'ajout', 'error');
                 }

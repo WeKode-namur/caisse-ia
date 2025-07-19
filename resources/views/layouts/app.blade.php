@@ -48,7 +48,8 @@
         @endif
         <div class="flex items-stretch relative">
             @livewire('panel.components.sidebar')
-            <div class="max-w-full flex-1 flex flex-col lg:min-h-auto min-h-[calc(100vh-65px)]">
+            <div
+                class="max-w-full flex-1 flex flex-col lg:min-h-auto {{ (request()->routeIs('register.index')) ? 'min-h-screen' : 'min-h-[calc(100vh-65px)]' }}">
                 @if(session('module_debug'))
                     {!! session('module_debug') !!}
                 @endif

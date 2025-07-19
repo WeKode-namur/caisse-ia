@@ -11,7 +11,8 @@ use App\Models\{Company,
     Stock,
     Transaction,
     TransactionItem,
-    UnknownItem};
+    UnknownItem,
+    Variant};
 use App\Services\RegisterSessionService;
 use Exception;
 use Illuminate\Http\Request;
