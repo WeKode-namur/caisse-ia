@@ -32,11 +32,14 @@ class CreationController extends Controller
         $tvaRates = [0, 6, 12, 21]; // Taux TVA belges
         $fournisseurs = config('custom.suppliers_enabled') ? Fournisseur::orderBy('name')->get() : collect();
 
+        // Récupérer la TVA par défaut depuis la configuration
+        $defaultTva = config('custom.register.tva_default');
+
         $formAction = $draftId
             ? route('inventory.create.step.one.store')
             : route('inventory.create.step.one.store');
 
-        return view('panel.inventory.create.step-one', compact('draft', 'categories', 'tvaRates', 'formAction', 'draftId', 'fournisseurs'));
+        return view('panel.inventory.create.step-one', compact('draft', 'categories', 'tvaRates', 'formAction', 'draftId', 'fournisseurs', 'defaultTva'));
     }
 
     public function storeStepOne(Request $request)
@@ -44,7 +47,7 @@ class CreationController extends Controller
         $rules = [
             'name' => 'required|max:255',
             'category_id' => 'required|exists:categories,id',
-            'tva' => 'required|integer|in:6,12,21',
+            'tva' => 'required|integer|in:0,6,12,21',
             'buy_price' => 'nullable|numeric|min:0',
             'sell_price' => 'nullable|numeric|min:0',
         ];
@@ -63,7 +66,7 @@ class CreationController extends Controller
             // Messages pour le champ 'tva'
             'tva.required' => 'Le taux de TVA est obligatoire.',
             'tva.integer' => 'Le taux de TVA doit être un nombre entier.',
-            'tva.in' => 'Le taux de TVA doit être 6%, 12% ou 21%.',
+            'tva.in' => 'Le taux de TVA doit être 0%, 6%, 12% ou 21%.',
 
             // Messages pour les prix
             'buy_price.numeric' => 'Le prix d\'achat doit être un nombre.',

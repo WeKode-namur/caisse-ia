@@ -3,6 +3,7 @@
 use App\Http\Controllers\Settings\AttributesController;
 use App\Http\Controllers\Settings\CategoriesController;
 use App\Http\Controllers\Settings\SettingsController;
+use App\Http\Controllers\Settings\SystemSettingsController;
 use App\Http\Controllers\Settings\UnknownItemsController;
 use App\Http\Controllers\Settings\UpdatesController;
 use Illuminate\Support\Facades\Route;
@@ -122,6 +123,17 @@ Route::prefix('settings')->name('settings.')->middleware(['auth:sanctum', 'verif
     // Historique des mises à jour
     Route::prefix('updates')->name('updates.')->group(function () {
         Route::get('/', [UpdatesController::class, 'index'])->name('index');
+    });
+
+    // Paramètres système
+    Route::prefix('system')->name('system.')->group(function () {
+        Route::get('/', [SystemSettingsController::class, 'index'])->name('index');
+        Route::post('/', [SystemSettingsController::class, 'update'])->name('update');
+        Route::post('/confirm', [SystemSettingsController::class, 'confirmChanges'])->name('confirm');
+        Route::post('/cancel-change', [SystemSettingsController::class, 'cancelChange'])->name('cancel-change');
+        Route::get('/get-changes', [SystemSettingsController::class, 'getChanges'])->name('get-changes');
+        Route::get('/reset', [SystemSettingsController::class, 'reset'])->name('reset');
+        Route::post('/fill-from-env', [SystemSettingsController::class, 'fillFromEnv'])->name('fill-from-env');
     });
 });
 

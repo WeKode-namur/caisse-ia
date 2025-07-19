@@ -114,6 +114,28 @@
                 </h2>
                 <div class="p-4">
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <!-- Paramètres système -->
+                        {{--                        <div--}}
+                        {{--                            class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200">--}}
+                        {{--                            <div class="flex items-center mb-3">--}}
+                        {{--                                <div--}}
+                        {{--                                    class="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center mr-3">--}}
+                        {{--                                    <i class="fas fa-sliders-h text-blue-600 dark:text-blue-400"></i>--}}
+                        {{--                                </div>--}}
+                        {{--                                <div>--}}
+                        {{--                                    <h3 class="font-semibold text-gray-900 dark:text-white">Paramètres système</h3>--}}
+                        {{--                                    <p class="text-sm text-gray-600 dark:text-gray-400">Configuration générale</p>--}}
+                        {{--                                </div>--}}
+                        {{--                            </div>--}}
+                        {{--                            <div class="space-y-2">--}}
+                        {{--                                <a href="{{ route('settings.system.index') }}"--}}
+                        {{--                                   class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-600 rounded hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors">--}}
+                        {{--                                    <span class="text-sm text-gray-700 dark:text-gray-300">Configuration</span>--}}
+                        {{--                                    <i class="fas fa-chevron-right text-gray-400"></i>--}}
+                        {{--                                </a>--}}
+                        {{--                            </div>--}}
+                        {{--                        </div>--}}
+
                         <!-- Attributs -->
                         <div
                             class="bg-white dark:bg-gray-700 rounded-lg p-4 border border-gray-200 dark:border-gray-600 hover:shadow-md transition-all duration-200">

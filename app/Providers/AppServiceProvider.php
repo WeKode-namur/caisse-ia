@@ -2,9 +2,9 @@
 
 namespace App\Providers;
 
+use App\Helpers\SettingsHelper;
+use Illuminate\Support\Facades\{Auth, Blade, Schema, View};
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\{Blade, Schema, View, Auth};
-use App\Helpers\TransactionHelper;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -42,6 +42,39 @@ class AppServiceProvider extends ServiceProvider
 
         Blade::if('suppliersEnabled', function () {
             return config('custom.suppliers_enabled');
+        });
+
+        // Rendre le helper SettingsHelper disponible globalement
+        View::share('settings', new class {
+            public function get($key, $default = null)
+            {
+                return SettingsHelper::get($key, $default);
+            }
+
+            public function getDefaultTva()
+            {
+                return SettingsHelper::getDefaultTva();
+            }
+
+            public function isCustomerManagementEnabled()
+            {
+                return SettingsHelper::isCustomerManagementEnabled();
+            }
+
+            public function isSuppliersEnabled()
+            {
+                return SettingsHelper::isSuppliersEnabled();
+            }
+
+            public function isBarcodeGeneratorEnabled()
+            {
+                return SettingsHelper::isBarcodeGeneratorEnabled();
+            }
+
+            public function getArticleSeuil()
+            {
+                return SettingsHelper::getArticleSeuil();
+            }
         });
     }
 }

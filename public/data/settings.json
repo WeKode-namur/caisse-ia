@@ -1,0 +1,35 @@
+{
+    "register": {
+        "tva_default": 12,
+        "customer_management": false,
+        "arrondissement_method": false
+    },
+    "article": {
+        "seuil": 5
+    },
+    "generator": {
+        "barcode": false
+    },
+    "email": {
+        "active": false
+    },
+    "barcode": {
+        "prefix_one": "WK",
+        "prefix_two": "NAM"
+    },
+    "referent_lot_optionnel": true,
+    "date_expiration_optionnel": true,
+    "loyalty_point_step": "10",
+    "items": {
+        "sous_type": false
+    },
+    "suppliers_enabled": false,
+    "company": {
+        "address_street": "",
+        "address_postal": "",
+        "address_city": "",
+        "address_country": "",
+        "tva_number": "",
+        "phone": ""
+    }
+}
